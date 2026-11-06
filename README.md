@@ -2,7 +2,8 @@
 
 Shell Android implementado: Hoje, Tarefas, Hábitos, Calendário e destinos do menu lateral.
 Aparência claro/escuro/sistema salva com DataStore; Compose/Material 3 e Hilt/KSP.
-Tarefas, hábitos, moedas e recompensas ainda não têm motores ou cadastro; a interface usa estados vazios.
+Listas, Caixa de entrada, tarefas, checklists, prazos, recorrências e revisão são persistidos localmente com Room.
+Hábitos, moedas/XP e recompensas continuam como etapas futuras, sem dados ou valores fictícios.
 
 ## Abrir e compilar
 
@@ -26,7 +27,7 @@ sh ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:assem
 - Debug instalável: `app/build/outputs/apk/debug/app-debug.apk`.
 - Release otimizado sem assinatura: `app/build/outputs/apk/release/app-release-unsigned.apk`.
 - Lint: `app/build/reports/lint-results-debug.html`.
-- Testes JVM verificam persistência da aparência e recuperação de falhas. Testes Compose de navegação
+- Testes JVM verificam datas, recorrências, correções, aparência e recuperação de falhas. Testes Room/Compose
   executam com `:app:connectedDebugAndroidTest` em dispositivo/emulador.
 
 ## Instalar e verificar
@@ -42,7 +43,7 @@ adb shell am start -W -n com.ethos.app/.MainActivity
 Android mínimo: 7.0 (API 24). Verifique abertura sem internet, rotação e reabertura,
 aparência clara/escura, maior fonte do sistema, retrato/paisagem e rótulos das ações pelo leitor de tela.
 A aplicação não solicita permissões nem depende de rede em execução.
-Resultados e limitações reais: [verificação atual](specs/002-app-shell/verification.md).
+Resultados e limitações reais: [verificação atual](specs/003-task-lists/verification.md).
 A fundação tem [evidência histórica](specs/001-android-foundation/verification.md).
 
 ## Assinatura local de release
@@ -65,5 +66,10 @@ As versões são fixas em `gradle/libs.versions.toml`; use o Wrapper incluído.
 Documentação da entrega: [spec](specs/001-android-foundation/spec.md),
 [plano](specs/001-android-foundation/plan.md), [tarefas](specs/001-android-foundation/tasks.md).
 
-Entrega atual: [spec](specs/002-app-shell/spec.md), [plano](specs/002-app-shell/plan.md),
-[tarefas](specs/002-app-shell/tasks.md), [validação](specs/002-app-shell/quickstart.md).
+Shell anterior: [spec](specs/002-app-shell/spec.md), [plano](specs/002-app-shell/plan.md).
+
+Entrega atual: [spec](specs/003-task-lists/spec.md), [plano](specs/003-task-lists/plan.md),
+[tarefas](specs/003-task-lists/tasks.md), [validação](specs/003-task-lists/quickstart.md).
+
+O domínio compartilhado está em `core/tasks/domain`; o Room em `core/tasks/data` e as telas em `features/tasks`.
+O schema inicial é versionado em `app/schemas`. Não há fallback destrutivo, lembretes ou motor financeiro.
