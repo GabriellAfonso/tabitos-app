@@ -49,6 +49,15 @@ Após a especificação e autorização da etapa de implementação: criar o pro
 estabelecer tema e navegação mínima, integrar persistência e verificar build/lint/testes pertinentes.
 Não incluir CRUD completo, recorrências, lembretes, login ou sincronização nessa fundação sem especificá-los.
 
+## Extensões funcionais registradas durante o design
+
+- Lembretes e notificações fazem parte do produto desejado, em specify próprio.
+- Acompanhamento de tempo iniciado pelo usuário para tarefas/atividades e metas por período
+  (ex.: 30 minutos de leitura ou 3 horas semanais).
+- Recompensas com duração também poderão ter acompanhamento de tempo (ex.: 2 horas de gameplay).
+- Regras, ordem das entregas e integração com moedas/XP ainda serão especificadas.
+- Registro detalhado: `TODO/planejamento_lembretes_tempo.md`.
+
 ## Referência
 
 `C:/Users/gabri/Projetos/Ipb_castelo_branco/app`: aproveitar convenções de arquitetura e desenvolvimento.
