@@ -53,6 +53,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun EthosShell(
     presentation: ShellPresentation = ShellPresentation(),
+    pendingCount: Int = presentation.pendingItems.size,
+    drawerLists: (@Composable (() -> Unit) -> Unit)? = null,
+    taskPage: (@Composable (ShellDestination, ContentFilter, (ContentFilter) -> Unit,
+        () -> Unit, () -> Unit) -> Unit)? = null,
     settingsContent: @Composable () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -89,8 +93,8 @@ fun EthosShell(
                             label = { Text(stringResource(destination.title)) },
                             selected = current == destination,
                             badge = {
-                                if (destination == ShellDestination.REVIEW && presentation.pendingItems.isNotEmpty()) {
-                                    Text(presentation.pendingItems.size.toString())
+                                if (destination == ShellDestination.REVIEW && pendingCount > 0) {
+                                    Text(pendingCount.toString())
                                 }
                             },
                             onClick = { scope.launch { drawer.close(); navigate(destination) } },
@@ -98,8 +102,12 @@ fun EthosShell(
                     }
                     HorizontalDivider()
                     Text(stringResource(R.string.your_lists), style = MaterialTheme.typography.titleSmall)
-                    Text(stringResource(R.string.no_lists), style = MaterialTheme.typography.bodyMedium)
-                    Text(stringResource(R.string.create_list_future), style = MaterialTheme.typography.labelLarge)
+                    if (drawerLists != null) {
+                        drawerLists { scope.launch { drawer.close(); navigate(ShellDestination.TASKS) } }
+                    } else {
+                        Text(stringResource(R.string.no_lists), style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.create_list_future), style = MaterialTheme.typography.labelLarge)
+                    }
                     HorizontalDivider()
                     NavigationDrawerItem(
                         label = { Text(stringResource(R.string.settings)) },
@@ -152,7 +160,11 @@ fun EthosShell(
                 ShellDestination.entries.forEach { destination ->
                     composable(destination.route) {
                         var filter by rememberSaveable { mutableStateOf(ContentFilter.ALL) }
-                        ShellPage {
+                        if (taskPage != null && destination in listOf(ShellDestination.TODAY,
+                                ShellDestination.TASKS, ShellDestination.REVIEW, ShellDestination.CALENDAR)) {
+                            taskPage(destination, filter, { filter = it },
+                                { navigate(ShellDestination.REWARDS) }, { navigate(ShellDestination.REVIEW) })
+                        } else ShellPage {
                             when (destination) {
                                 ShellDestination.TODAY -> TodayContent(
                                     presentation, filter, { filter = it },
