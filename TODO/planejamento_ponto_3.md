@@ -1,6 +1,7 @@
 # Ponto 3 — listas e tarefas
 
-Registro de design em andamento. Não é prompt de specify e não autoriza implementação.
+Registro consolidado de design. Prompt salvo em `TODO/specify_listas_tarefas_app.md`.
+Este registro e o prompt não autorizam implementação nem executam Spec Kit.
 
 ## Contexto
 
@@ -74,11 +75,11 @@ Registro de design em andamento. Não é prompt de specify e não autoriza imple
   serão excluídos. Preservar histórico de moedas e XP já registrados; excluir a lista não altera
   saldo, XP ou níveis nem estorna ganhos/penalidades anteriores.
 
-## Proposta de campos, ainda em discussão
+## Campos consolidados
 
 - Título obrigatório, descrição opcional, lista, prazo (sem data/dia/semana), horário opcional,
   repetição, dificuldade e importância.
-- A resposta sobre incluir subtarefas não confirma individualmente todas as propostas acima.
+- Os campos foram confirmados ao longo das decisões registradas acima; checklist também incluído.
 
 ## Questões abertas
 
@@ -86,4 +87,6 @@ Registro de design em andamento. Não é prompt de specify e não autoriza imple
   semanais e recompensas temporais. Registrar como entregas próprias, sem implementar por
   consequência neste ponto. Detalhes em `TODO/planejamento_lembretes_tempo.md`.
 
-- Campos finais, organização de listas, edição/exclusão de séries e reversão de conclusões.
+- Detalhes de consistência para plano/clarify: fuso e mudanças de relógio, estornos com ocorrências
+  seguintes já resolvidas, contagem de exceções excluídas e representação de revisão no reagendamento.
+- Moedas/XP e seus estornos são regras de integração futura, sem implementar motor financeiro aqui.
