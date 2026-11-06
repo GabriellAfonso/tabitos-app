@@ -15,16 +15,20 @@
 - Direção de gamificação proposta pelo usuário: ganhar moedas ao concluir tarefas/hábitos,
   com dificuldade influenciando prêmio ou punição, e cadastrar recompensas com custo em moedas
   (ex.: jogar meia hora ou lanchar). Não tratar como moedas reais ou compra dentro do app.
-- XP/energia foram sugestões anteriores do assistente, não decisões aprovadas; não incluí-los
-  automaticamente na solução de moedas.
 - Atualização posterior: o usuário aprovou XP e níveis; rejeitou energia nesta etapa.
+- XP é ganho ao cumprir tarefas e metas. Falhas não retiram XP nem níveis; consequências
+  negativas ficam nas moedas. Resgatar recompensas não deve ser tratado como falha.
 - Descumprimentos descontam moedas. O saldo pode ficar negativo até um piso, para que uma ausência
-  prolongada não gere dívida impossível de recuperar em poucos dias. Valor/fórmula ainda não definidos.
+  prolongada não gere dívida impossível de recuperar em poucos dias; piso definido abaixo.
+- Piso definido pelo usuário: −300 moedas. Descontos não podem reduzir o saldo abaixo desse valor.
+  A possibilidade de editar o piso nas configurações ainda não foi aprovada.
+- Resgatar recompensa exige saldo suficiente para pagar seu custo integral; resgates não podem
+  gerar dívida. Saldo negativo só pode resultar de penalidades, respeitando o piso de −300.
 - Dificuldade e importância serão campos separados para balancear recompensas e penalidades.
 - Ao selecionar Difícil, o padrão deve ir para Importante; o usuário pode alterar a importância.
-  Ainda definir como essa sugestão interage com uma importância já editada manualmente.
+  A edição manual tem prioridade sobre sugestões posteriores.
 - Ganhos e penalidades devem ficar claros; o usuário quer poder consultar a tabela ou ter uma
-  apresentação equivalente explícita. Local da tabela e desenho dos valores ainda serão definidos.
+  apresentação equivalente explícita. A apresentação aprovada está descrita abaixo.
 - Apresentação aprovada: mostrar ganhos em moedas/XP e penalidade em moedas na criação/edição,
   com acesso à tabela explicativa também disponível nas configurações. Valores ainda não definidos.
 - Preservar importância editada manualmente ao mudar dificuldade; a sugestão automática de
@@ -39,6 +43,10 @@
   no mesmo dia, respeitando o piso global do saldo. Não limitar a uma penalidade diária.
   A interface deve mostrar o desconto antes da confirmação; reversão de registros ainda precisa
   de definição completa quanto a histórico e saldo.
+- Hábitos com limite máximo por período: ocorrências dentro do limite não geram penalidade;
+  cada ocorrência excedente gera um desconto individual, respeitando o piso global.
+  Exemplo aprovado: máximo 1 delivery por semana → primeiro sem penalidade, segundo e seguintes
+  com penalidade por ocorrência. Não confundir limite máximo com proibição total.
 - Não será feita confirma descumprimento e aplica a penalidade prevista.
 - Em tarefas recorrentes, Não será feita encerra e penaliza somente a ocorrência escolhida;
   a série e as próximas ocorrências continuam normalmente.
@@ -59,8 +67,6 @@
   para X dias após a data prevista da ocorrência encerrada, não após o dia em que ela foi revisada.
 - Se a tarefa deixou de fazer sentido, a pessoa a exclui, sem precisar marcar Não será feita
   e sem penalidade por essa exclusão. Não criar uma ação separada Cancelar sem penalidade.
-- Para hábitos, revisão do período e confirmação de registros foram propostas do assistente,
-  ainda não aprovadas. Reagendamento e seus efeitos em penalidades também não foram definidos.
 - Atualização: aprovada uma aba única Revisar pendências, reunindo tarefas e hábitos, com filtros
   Tudo/Tarefas/Hábitos. Permitir corrigir registros esquecidos e confirmar descumprimentos;
   penalidades por prazo/meta não cumpridos dependem de confirmação, não só da passagem do tempo.
@@ -79,23 +85,36 @@ terão especificações próprias. A divisão final ainda deve ser discutida.
 
 ## Protótipo exploratório
 
+Rodada 02: modelo B com saldo/nível no topo de Hoje e acesso a Recompensas e Histórico de moedas
+no menu lateral. O usuário aceitou experimentar essa posição e pediu para visualizá-la.
+Três celulares mostram Hoje, Recompensas e Revisar pendências como estados independentes do mesmo
+design. Listas incluem abas Tarefas/Hábitos. Resgates e revisões pedem confirmação; os saldos
+mudam apenas na memória da página. Os valores +10 moedas/+15 XP/−5 moedas, preços das recompensas,
+saldo inicial de 120 e nível 4 são exemplos visuais, não parâmetros aprovados de balanceamento.
+
 `prototypes/hoje/index.html`: comparação da fundação atual com três opções de Hoje, dados fictícios,
 temas, navegação e ações simuladas. Organização B aprovada; paleta e demais controles ainda propostos.
 Não altera código Kotlin, não salva dados e não calcula recorrências.
 
-## Perguntas para próximas conversas
+## Estado consolidado e próximos specifies
 
-- Como representar saldo e acesso às recompensas na estrutura B escolhida?
-- Qual piso do saldo negativo, manual ou calculado? Como dificuldade e importância definem moedas/XP?
-- XP pode ser perdido? Não perder XP/níveis foi sugestão do assistente, ainda não confirmada.
-- Quais valores podem ser personalizados?
-- Como avaliar cumprimento e falhas por período, evitar prêmio repetido e reverter registros/resgates?
-- Para tarefas recorrentes: exclusão de ocorrência versus série e preservação de histórico/saldo.
-- Para hábitos: como confirmar cumprimento/descumprimento e permitir registros esquecidos?
-- Resgate é apenas registro manual e débito de saldo? Há limites por recompensa?
-- Hábitos negativos admitem várias ocorrências diárias? Qual histórico/metas mostrar?
-- Tarefas recorrentes seguem datas fixas ou intervalo contado após a conclusão, ou ambas?
-- O que acontece com ocorrências não concluídas? E dias mensais inexistentes, como dia 31?
-- Navegação final, cores, criação rápida e calendário ainda não foram aprovados.
-- Projeto é apenas uma lista nomeada ou terá recursos próprios? Começar sem uma entidade extra
-  é uma proposta a discutir, não decisão aprovada.
+O usuário aprovou a aparência da rodada 02 e pediu para salvar o prompt do ponto 2.
+Prompt: `TODO/specify_interface_navegacao_app.md`. Gerar esse arquivo não executa Spec Kit.
+
+Separação proposta para as entregas seguintes:
+- Ponto 2: interface/navegação, temas persistidos e estados vazios honestos; sem motores funcionais.
+- Ponto 3: listas/tarefas, Room, edição, conclusão, prazos e recorrências.
+- Ponto 4: hábitos e metas.
+- Ponto 5: moedas, XP, níveis e histórico contábil.
+- Ponto 6: cadastro e resgate de recompensas.
+
+## Questões ainda abertas
+
+- Ponto 3: campos das listas/tarefas, organização, exclusão/edição de série versus ocorrência,
+  efeitos do reagendamento e reversão de conclusão, datas/fuso e gerações atrasadas de recorrências.
+- Hábitos: metas mínimas/exatas, registro retroativo e revisão dos períodos; histórico e correções.
+- Gamificação: fórmulas de dificuldade/importância, XP por nível, parametrização, estornos e piso editável.
+- Recompensas: cadastro/edição, cancelamento de resgate e eventuais limites.
+- Calendário: comportamento funcional completo; projeto como entidade própria ainda não decidido.
+
+Posições e estrutura visual da rodada 02 estão aprovadas. Números de exemplo não são balanceamento.
