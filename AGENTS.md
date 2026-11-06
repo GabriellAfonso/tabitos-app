@@ -104,9 +104,10 @@
 
 <!-- SPECKIT START -->
 Fundação Android implementada: specs/001-android-foundation/spec.md.
-Plano: specs/001-android-foundation/plan.md; tarefas: specs/001-android-foundation/tasks.md.
-Verificação: specs/001-android-foundation/verification.md (2026-11-06).
-Debug/lint/release R8 aprovados; execução validada em API 36, sem cobertura em API 24.
-Kotlin integrado/AGP 9, Compose Material 3, Hilt/KSP; sem persistência ou navegação.
+Interface/navegação implementada: specs/002-app-shell/spec.md.
+Plano: specs/002-app-shell/plan.md; tarefas: specs/002-app-shell/tasks.md (15/15).
+Verificação: specs/002-app-shell/verification.md (2026-11-06).
+Debug/lint/release R8, 5 testes JVM e 6 testes Android aprovados em API 36; API 24 não validada.
+Navigation Compose, temas claro/escuro/sistema com DataStore; sem motores de tarefas/hábitos/moedas.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->

@@ -1,7 +1,8 @@
-﻿# Ethos
+# Ethos
 
-Fundação Android implementada: um módulo `:app`, tela estática “Ethos”, Compose/Material 3 e Hilt/KSP.
-Ainda não há tarefas, hábitos, rotinas, banco, navegação ou preferências persistidas.
+Shell Android implementado: Hoje, Tarefas, Hábitos, Calendário e destinos do menu lateral.
+Aparência claro/escuro/sistema salva com DataStore; Compose/Material 3 e Hilt/KSP.
+Tarefas, hábitos, moedas e recompensas ainda não têm motores ou cadastro; a interface usa estados vazios.
 
 ## Abrir e compilar
 
@@ -25,7 +26,8 @@ sh ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:assem
 - Debug instalável: `app/build/outputs/apk/debug/app-debug.apk`.
 - Release otimizado sem assinatura: `app/build/outputs/apk/release/app-release-unsigned.apk`.
 - Lint: `app/build/reports/lint-results-debug.html`.
-- Não há regras de negócio para testes unitários nesta entrega; NO-SOURCE não demonstra comportamento.
+- Testes JVM verificam persistência da aparência e recuperação de falhas. Testes Compose de navegação
+  executam com `:app:connectedDebugAndroidTest` em dispositivo/emulador.
 
 ## Instalar e verificar
 
@@ -38,9 +40,10 @@ adb shell am start -W -n com.ethos.app/.MainActivity
 ```
 
 Android mínimo: 7.0 (API 24). Verifique abertura sem internet, rotação e reabertura,
-aparência clara/escura, maior fonte do sistema, retrato/paisagem e leitura de “Ethos” pelo leitor de tela.
+aparência clara/escura, maior fonte do sistema, retrato/paisagem e rótulos das ações pelo leitor de tela.
 A aplicação não solicita permissões nem depende de rede em execução.
-Resultados e limitações reais: [verificação](specs/001-android-foundation/verification.md).
+Resultados e limitações reais: [verificação atual](specs/002-app-shell/verification.md).
+A fundação tem [evidência histórica](specs/001-android-foundation/verification.md).
 
 ## Assinatura local de release
 
@@ -53,9 +56,14 @@ Não há automação de assinatura ou publicação configurada.
 
 ## Organização e escopo
 
-`features/foundation` contém a tela; `core/ui/theme` contém o tema mínimo.
+`features/shell` contém navegação e apresentações; `features/settings` contém estado e UI de aparência.
+`core/preferences` contém o contrato/DataStore e `core/ui/theme` os temas sálvia claro/escuro.
+Amostras fictícias existem apenas em previews explícitos; não alimentam o app em produção.
 Não há camadas ou dependências futuras instaladas sem uso. Kotlin é integrado ao AGP 9;
 o plugin Compose e o classpath Kotlin têm versão alinhada no catálogo central.
 As versões são fixas em `gradle/libs.versions.toml`; use o Wrapper incluído.
 Documentação da entrega: [spec](specs/001-android-foundation/spec.md),
 [plano](specs/001-android-foundation/plan.md), [tarefas](specs/001-android-foundation/tasks.md).
+
+Entrega atual: [spec](specs/002-app-shell/spec.md), [plano](specs/002-app-shell/plan.md),
+[tarefas](specs/002-app-shell/tasks.md), [validação](specs/002-app-shell/quickstart.md).
