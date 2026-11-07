@@ -3,7 +3,8 @@
 Shell Android implementado: Hoje, Tarefas, Hábitos, Calendário e destinos do menu lateral.
 Aparência claro/escuro/sistema salva com DataStore; Compose/Material 3 e Hilt/KSP.
 Listas, Caixa de entrada, tarefas, checklists, prazos, recorrências e revisão são persistidos localmente com Room.
-Hábitos, moedas/XP e recompensas continuam como etapas futuras, sem dados ou valores fictícios.
+Hábitos/metas e moedas/XP/níveis estão implementados, com tabelas editáveis e histórico financeiro local.
+Recompensas para resgate continuam como etapa futura, sem dados ou valores fictícios.
 
 ## Abrir e compilar
 
@@ -43,7 +44,7 @@ adb shell am start -W -n com.ethos.app/.MainActivity
 Android mínimo: 7.0 (API 24). Verifique abertura sem internet, rotação e reabertura,
 aparência clara/escura, maior fonte do sistema, retrato/paisagem e rótulos das ações pelo leitor de tela.
 A aplicação não solicita permissões nem depende de rede em execução.
-Resultados e limitações reais: [verificação atual](specs/003-task-lists/verification.md).
+Resultados e limitações reais: [verificação atual](specs/005-coins-xp-levels/verification.md).
 A fundação tem [evidência histórica](specs/001-android-foundation/verification.md).
 
 ## Assinatura local de release
@@ -68,8 +69,11 @@ Documentação da entrega: [spec](specs/001-android-foundation/spec.md),
 
 Shell anterior: [spec](specs/002-app-shell/spec.md), [plano](specs/002-app-shell/plan.md).
 
-Entrega atual: [spec](specs/003-task-lists/spec.md), [plano](specs/003-task-lists/plan.md),
+Entrega de tarefas: [spec](specs/003-task-lists/spec.md), [plano](specs/003-task-lists/plan.md),
 [tarefas](specs/003-task-lists/tasks.md), [validação](specs/003-task-lists/quickstart.md).
 
 O domínio compartilhado está em `core/tasks/domain`; o Room em `core/tasks/data` e as telas em `features/tasks`.
-O schema inicial é versionado em `app/schemas`. Não há fallback destrutivo, lembretes ou motor financeiro.
+O schema inicial é versionado em `app/schemas`. Migrações 1→2→3 preservam os dados; não há fallback destrutivo, lembretes ou resgate de recompensas.
+Contabilização em `core/accounting` e interface em `features/accounting`. Documentação:
+[spec financeira](specs/005-coins-xp-levels/spec.md), [plano](specs/005-coins-xp-levels/plan.md),
+[tarefas](specs/005-coins-xp-levels/tasks.md).

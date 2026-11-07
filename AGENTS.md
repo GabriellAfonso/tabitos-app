@@ -107,12 +107,15 @@ Fundação Android implementada: specs/001-android-foundation/spec.md.
 Interface/navegação implementada: specs/002-app-shell/spec.md.
 Listas/tarefas/checklists/prazos/recorrências/revisão implementados: specs/003-task-lists/spec.md.
 Hábitos/metas implementados: specs/004-habits-goals/spec.md.
-Plano: specs/004-habits-goals/plan.md; tarefas: specs/004-habits-goals/tasks.md (21/21).
-Verificação: specs/004-habits-goals/verification.md (2026-11-06).
-Debug/lint/release R8, 47 testes JVM e 14 testes Android aprovados em API 36.
-API 24, dispositivo físico e TalkBack por áudio não validados; matriz visual registrada na verificação.
-Room 2.8.5 com schemas 1/2 exportados; migração 1→2 preservadora validada.
-Hábitos: regras históricas, períodos civis, correções, pausas, exclusão/restauração e revisão integrada.
-DataStore preserva temas claro/escuro/sistema; sem motores de moedas/XP/lembretes/tempo.
+Moedas/XP/níveis implementados: specs/005-coins-xp-levels/spec.md.
+Plano: specs/005-coins-xp-levels/plan.md; tarefas: specs/005-coins-xp-levels/tasks.md (20/20).
+Verificação: specs/005-coins-xp-levels/verification.md (2026-11-06).
+Debug/lint/release R8,65 testes JVM e21 testes Android aprovados em API36; sem novos avisos lint.
+API24, dispositivo físico e TalkBack por áudio não validados; matriz visual registrada na verificação.
+Room2.8.5 com schemas1/2/3 exportados; migrações1→2→3 preservadoras validadas.
+Carteira offline, piso−300, XP/níveis lineares, tabelas prospectivas e lançamentos/estornos vinculados.
+Ativação sem pagamento/cobrança do histórico antigo; efeitos financeiros e resultados gravados atomicamente.
+Prática premia dias válidos até a meta; evitar/limitar usam eventos e fechamento confirmado.
+DataStore preserva temas claro/escuro/sistema; sem resgates de recompensas, lembretes ou motores de tempo.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->
