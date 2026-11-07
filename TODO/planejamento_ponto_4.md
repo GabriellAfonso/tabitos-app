@@ -1,6 +1,7 @@
 # Ponto 4 — hábitos e metas
 
-Conversa de design em andamento. Não é prompt de specify e não autoriza implementação.
+Registro de design consolidado. Prompt salvo em `TODO/specify_habitos_metas_app.md`.
+Salvar o prompt não executa Spec Kit nem autoriza implementação.
 
 ## Contexto e decisões anteriores
 
@@ -27,6 +28,15 @@ Conversa de design em andamento. Não é prompt de specify e não autoriza imple
 - Hábitos ativos de evitar/limitar permanecem visíveis em Hoje durante todo o período, mesmo
   após ultrapassar o limite, permitindo continuar registrando ocorrências. Não escondê-los
   automaticamente após falha nem transferi-los para Metas cumpridas por falta de registros.
+- Ao fechar um período de evitar/limitar, pedir confirmação na revisão de que os registros
+  estão completos, inclusive quando não houver ocorrências: Os registros deste período estão
+  completos? Permitir confirmar ou adicionar ocorrências esquecidas. Não presumir sucesso
+  apenas pela ausência de registros. A revisão avalia os registros reais e não deve duplicar
+  penalidades por ocorrências já confirmadas.
+- Em hábitos de prática, reconhecer cumprimento assim que os registros atingirem a meta
+  (ex.: terceiro dia distinto de uma meta semanal de três). Não exigir confirmação adicional
+  ao fim do período para metas já atingidas; somente períodos incompletos entram em revisão.
+  Correções posteriores continuam recalculando progresso e sequência conforme as regras aprovadas.
 - Excluir um hábito não apaga seu histórico nem registros passados. Retirar do acompanhamento
   ativo, preservando consulta histórica. A exclusão não aplica penalidade nem estorna ganhos,
   descontos ou XP já registrados. O usuário corrigiu explicitamente a proposta de apagar registros.
@@ -91,7 +101,9 @@ Conversa de design em andamento. Não é prompt de specify e não autoriza imple
   no período (ex.: cinco dias exigidos, três disponíveis) e pedir ajuste. Não tratar esse aviso
   como autorização para alterar automaticamente a quantidade escolhida pelo usuário.
 
-## Questões a discutir
+## Questões de consistência para clarify/plan
 
-- Períodos permitidos, metas por dia, registros retroativos e confirmação na revisão.
-- Histórico, edição/pausa do hábito e escopo das alterações.
+- Registros durante pausas/intervalos excluídos, restauração com lista original excluída,
+  alteração do tipo/período e apresentação da sequência em períodos parcialmente revisados.
+- Período de revisão de hábitos de evitar e efeitos de correções em períodos já revisados.
+- Moedas/XP, lembretes e sessões de tempo continuam em specifies próprios.
