@@ -2,6 +2,7 @@ package com.ethos.app.features.tasks
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -72,6 +73,7 @@ fun TaskDrawer(
 fun TasksContent(
     state: TasksUiState, page: TaskPage, filter: Int, onNew: () -> Unit, onOpen: (String) -> Unit,
     onAction: (TaskAction) -> Unit, onManage: () -> Unit, onRetry: () -> Unit, onDismissError: () -> Unit,
+    extraItems: (LazyListScope.() -> Unit)? = null,
     header: @Composable () -> Unit = {},
 ) {
     var collapsed by rememberSaveable(page, state.selectedListId) { mutableStateOf(true) }
@@ -118,10 +120,11 @@ fun TasksContent(
             }) { Text(stringResource(R.string.show_date)) }
             if (calendarError) Text(stringResource(R.string.task_invalid_input))
         }
-        if (page != TaskPage.REVIEW && !habits) item {
+        if (page != TaskPage.REVIEW && !habits && filter != 2) item {
             Button(onNew, enabled = !state.loading && !state.busy) { Text(stringResource(R.string.new_task)) }
         }
-        if (!state.loading && visible.isEmpty()) item {
+        if (!state.loading && visible.isEmpty() && !(extraItems != null &&
+                (habits || filter == 2 || page == TaskPage.REVIEW || page == TaskPage.TODAY))) item {
             Text(stringResource(if ((page == TaskPage.LIST && habits) || filter == 2)
                 R.string.habits_empty_detail else if (page == TaskPage.REVIEW)
                 R.string.review_empty_detail else R.string.task_empty_real))
@@ -140,6 +143,8 @@ fun TasksContent(
                 TaskRow(o, state.busy, false, { onOpen(o.id) }, onAction)
             }
         }
+        if (extraItems != null && ((page == TaskPage.LIST && habits) ||
+                (page in listOf(TaskPage.TODAY, TaskPage.REVIEW) && filter != 1))) extraItems()
     }
 }
 

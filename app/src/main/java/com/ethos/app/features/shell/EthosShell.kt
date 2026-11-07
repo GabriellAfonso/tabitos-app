@@ -161,7 +161,8 @@ fun EthosShell(
                     composable(destination.route) {
                         var filter by rememberSaveable { mutableStateOf(ContentFilter.ALL) }
                         if (taskPage != null && destination in listOf(ShellDestination.TODAY,
-                                ShellDestination.TASKS, ShellDestination.REVIEW, ShellDestination.CALENDAR)) {
+                                ShellDestination.TASKS, ShellDestination.REVIEW, ShellDestination.CALENDAR,
+                                ShellDestination.HABITS)) {
                             taskPage(destination, filter, { filter = it },
                                 { navigate(ShellDestination.REWARDS) }, { navigate(ShellDestination.REVIEW) })
                         } else ShellPage {

@@ -34,6 +34,8 @@ import com.ethos.app.features.tasks.TasksScreen
 import com.ethos.app.features.tasks.TasksContent
 import com.ethos.app.features.tasks.TaskDrawer
 import com.ethos.app.features.tasks.TaskPage
+import com.ethos.app.features.habits.*
+import androidx.compose.runtime.LaunchedEffect
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import dagger.hilt.android.AndroidEntryPoint
@@ -57,8 +59,15 @@ class MainActivity : ComponentActivity() {
                 }
                 EthosTheme(darkTheme = dark) {
                     val tasksViewModel: TasksViewModel = viewModel()
+                    val habitsViewModel: HabitsViewModel = viewModel()
                     TasksScreen(tasksViewModel) { tasks ->
-                        val pending = tasks.snapshot.activeOccurrences.count { it.needsReview(tasks.today) }
+                      HabitsScreen(habitsViewModel) { habits ->
+                        LaunchedEffect(tasks.snapshot.activeLists) {
+                            habitsViewModel.listIds(tasks.snapshot.activeLists.map { it.id }.toSet())
+                        }
+                        HabitDialogs(habits, tasks.snapshot.activeLists, habitsViewModel)
+                        val pending = tasks.snapshot.activeOccurrences.count { it.needsReview(tasks.today) } +
+                            habits.pendingCount
                         EthosShell(
                             pendingCount = pending,
                             drawerLists = { navigate ->
@@ -66,6 +75,10 @@ class MainActivity : ComponentActivity() {
                                     tasksViewModel::newList, { tasksViewModel.manageLists(true) })
                             },
                             taskPage = { destination, filter, onFilter, onRewards, onReview ->
+                              if (destination == ShellDestination.HABITS) {
+                                HabitsContent(habits, HabitPage.ALL, { habitsViewModel.newHabit(null) },
+                                    habitsViewModel::detail, habitsViewModel::retry)
+                              } else {
                                 val page = when (destination) {
                                     ShellDestination.TODAY -> TaskPage.TODAY
                                     ShellDestination.REVIEW -> TaskPage.REVIEW
@@ -75,7 +88,16 @@ class MainActivity : ComponentActivity() {
                                 TasksContent(tasks, page, filter.ordinal, tasksViewModel::newTask,
                                     tasksViewModel::detail, tasksViewModel::action,
                                     { tasksViewModel.manageLists(true) }, tasksViewModel::retry,
-                                    tasksViewModel::dismissError) {
+                                    tasksViewModel::dismissError,
+                                    extraItems = {
+                                        habitItems(habits, when (page) {
+                                            TaskPage.TODAY -> HabitPage.TODAY
+                                            TaskPage.REVIEW -> HabitPage.REVIEW
+                                            else -> HabitPage.LIST
+                                        }, tasks.selectedListId,
+                                            { habitsViewModel.newHabit(tasks.selectedListId) },
+                                            habitsViewModel::detail, habitsViewModel::retry)
+                                    }) {
                                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                         if (page == TaskPage.TODAY) {
                                             Text(tasks.today.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM",
@@ -94,9 +116,11 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                 }
+                              }
                             },
                             settingsContent = { SettingsContent(state, onSelect, onRetry) },
                         )
+                      }
                     }
                 }
             }
