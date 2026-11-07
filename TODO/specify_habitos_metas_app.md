@@ -93,6 +93,10 @@ an ambiguous generic counter.
   failure. A practice on an off-schedule day must not silently satisfy another date.
 - Recognize practice success as soon as qualifying records reach the target. No extra confirmation
   is required at Sunday/month end for a goal already met.
+- Later user clarification during point 5: once a practice target is met, reject additional
+  practice entries for that period. Corrections/deletions remain available; if they make the
+  target incomplete, allow valid entries again. Do not pay a target-closing bonus or extra-day
+  rewards. This restriction does not apply to avoid/limit events, which remain recordable.
 - Incomplete flexible weekly/monthly goals produce ONE review item for the whole period, with
   progress such as 2 of 3 days or 8 of 10 days; do not create one failure per missing day.
 - Missed scheduled practice days are reviewed for their actual date; do not infer failure solely

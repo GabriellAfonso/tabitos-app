@@ -37,6 +37,10 @@ Salvar o prompt não executa Spec Kit nem autoriza implementação.
   (ex.: terceiro dia distinto de uma meta semanal de três). Não exigir confirmação adicional
   ao fim do período para metas já atingidas; somente períodos incompletos entram em revisão.
   Correções posteriores continuam recalculando progresso e sequência conforme as regras aprovadas.
+- Decisão posterior durante o ponto 5: após atingir a meta de prática, bloquear novos registros
+  de prática no período. Correções/exclusões continuam permitidas e reabrem registros se a meta
+  ficar incompleta. Não há bônus de fechamento ou prêmio por dias além da meta. Essa restrição
+  não se aplica a evitar/limitar, que continuam aceitando ocorrências excedentes.
 - Excluir um hábito não apaga seu histórico nem registros passados. Retirar do acompanhamento
   ativo, preservando consulta histórica. A exclusão não aplica penalidade nem estorna ganhos,
   descontos ou XP já registrados. O usuário corrigiu explicitamente a proposta de apagar registros.
