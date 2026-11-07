@@ -13,6 +13,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.ethos.app.R
 import com.ethos.app.core.ui.accounting.*
 import com.ethos.app.core.accounting.domain.*
+import com.ethos.app.core.rewards.domain.Purchase
+import com.ethos.app.core.ui.rewards.rewardSymbol
 
 @Composable
 fun AccountingStatus(state: AccountingUiState, retry: () -> Unit) {
@@ -87,7 +89,7 @@ fun AccountingSettings(state: AccountingUiState, edit: () -> Unit, change: (List
 }
 
 @Composable
-fun AccountingHistory(state: AccountingUiState, retry: () -> Unit) {
+fun AccountingHistory(state: AccountingUiState, retry: () -> Unit, purchases: List<Purchase> = emptyList()) {
     LazyColumn(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { AccountingStatus(state, retry) }
         if (!state.loading && !state.error && state.snapshot.entries.isEmpty()) {
@@ -96,6 +98,11 @@ fun AccountingHistory(state: AccountingUiState, retry: () -> Unit) {
         items(state.snapshot.entries.asReversed(), key = { it.sequence }) { entry ->
             OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
                 FinancialEntryContent(entry)
+                purchases.firstOrNull { it.ledgerSequence == entry.sequence }?.let { purchase ->
+                    Text(rewardSymbol(purchase.reward.icon))
+                    if (purchase.reward.description.isNotEmpty()) Text(purchase.reward.description)
+                    Text(stringResource(R.string.reward_reference, purchase.id))
+                }
                 entry.related?.let { id ->
                     val original = state.snapshot.entries.firstOrNull { it.sequence == id }
                     if (original != null) Text(stringResource(R.string.finance_related, original.title,

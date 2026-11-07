@@ -59,6 +59,7 @@ fun EthosShell(
         () -> Unit, () -> Unit) -> Unit)? = null,
     historyContent: (@Composable () -> Unit)? = null,
     walletContent: (@Composable (() -> Unit) -> Unit)? = null,
+    rewardsContent: (@Composable () -> Unit)? = null,
     settingsContent: @Composable () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -169,6 +170,8 @@ fun EthosShell(
                                 { navigate(ShellDestination.REWARDS) }, { navigate(ShellDestination.REVIEW) })
                         } else if (destination == ShellDestination.HISTORY && historyContent != null) {
                             historyContent()
+                        } else if (destination == ShellDestination.REWARDS && rewardsContent != null) {
+                            rewardsContent()
                         } else ShellPage {
                             when (destination) {
                                 ShellDestination.TODAY -> TodayContent(

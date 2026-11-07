@@ -36,6 +36,9 @@ import com.ethos.app.features.tasks.TaskDrawer
 import com.ethos.app.features.tasks.TaskPage
 import com.ethos.app.features.habits.*
 import com.ethos.app.features.accounting.*
+import com.ethos.app.features.rewards.*
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ethos.app.core.ui.accounting.LocalFinancialPrices
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -64,6 +67,8 @@ class MainActivity : ComponentActivity() {
                     val tasksViewModel: TasksViewModel = viewModel()
                     val habitsViewModel: HabitsViewModel = viewModel()
                     val accountingViewModel: AccountingViewModel = viewModel()
+                    val rewardsViewModel: RewardsViewModel = viewModel()
+                    val rewardsState by rewardsViewModel.state.collectAsStateWithLifecycle()
                     AccountingScreen(accountingViewModel) { financial ->
                     CompositionLocalProvider(LocalFinancialPrices provides
                         financial.snapshot.prices.takeUnless { financial.loading || financial.error }) {
@@ -125,7 +130,9 @@ class MainActivity : ComponentActivity() {
                                 }
                               }
                             },
-                            historyContent = { AccountingHistory(financial, accountingViewModel::retry) },
+                            historyContent = { AccountingHistory(financial, accountingViewModel::retry,
+                                rewardsState.snapshot.purchases) },
+                            rewardsContent = { RewardsScreen(rewardsViewModel) },
                             walletContent = { rewards -> WalletTiles(financial, rewards, accountingViewModel::retry) },
                             settingsContent = {
                                 SettingsContent(state, onSelect, onRetry)

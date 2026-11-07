@@ -51,11 +51,13 @@ fun FinancialEntryContent(entry: LedgerEntry) {
         "REAPPLY" -> R.string.finance_reapply
         "CORRECTION" -> R.string.finance_correction
         "PENALTY" -> R.string.finance_failure
+        "PURCHASE" -> R.string.finance_purchase
         else -> R.string.finance_gain
     }
     Text(stringResource(kind), style = MaterialTheme.typography.titleSmall)
     Text(entry.title)
     val reason = when {
+        entry.key.startsWith("purchase:") -> R.string.finance_source_purchase
         entry.key.startsWith("task:") -> R.string.finance_source_task
         entry.key.startsWith("practice:") -> R.string.finance_source_day
         entry.key.startsWith("event:") -> R.string.finance_source_event

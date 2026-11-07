@@ -1,0 +1,33 @@
+package com.ethos.app.core.rewards.domain
+
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
+
+object RewardRules {
+    val icons = listOf("GIFT", "GAME", "FOOD", "REST")
+    val periods = listOf("DAY", "WEEK", "MONTH")
+
+    fun validate(reward: Reward) {
+        require(reward.id.isNotBlank() && reward.name.isNotBlank() && reward.cost > 0)
+        require(reward.icon in icons && reward.period in periods)
+        require(reward.limit == null || reward.limit > 0)
+    }
+
+    fun used(reward: Reward, purchases: List<Purchase>, today: LocalDate): Int {
+        val start = when (reward.period) {
+            "WEEK" -> today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+            "MONTH" -> today.withDayOfMonth(1)
+            else -> today
+        }
+        val end = when (reward.period) {
+            "WEEK" -> start.plusDays(6)
+            "MONTH" -> start.with(TemporalAdjusters.lastDayOfMonth())
+            else -> today
+        }
+        return purchases.count { it.reward.id == reward.id && it.date >= start && it.date <= end }
+    }
+
+    fun available(reward: Reward, balance: Long, used: Int): Boolean =
+        !reward.deleted && reward.cost > 0 && balance >= reward.cost && (reward.limit == null || used < reward.limit)
+}
