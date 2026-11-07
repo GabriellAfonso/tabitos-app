@@ -174,6 +174,11 @@ fun TaskRow(o: TaskOccurrence, busy: Boolean, reorder: Boolean, onOpen: () -> Un
 
 @Composable
 fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
+    state.financialPreview?.let { preview ->
+        com.ethos.app.core.ui.accounting.FinancialConfirmation(preview, state.busy,
+            { viewModel.confirmFinancial(true) }, { viewModel.confirmFinancial(false) })
+        return
+    }
     val error: @Composable () -> Unit = { TaskError(state, viewModel::retry, viewModel::dismissError) }
     state.draft?.let { draft ->
         TaskEditor(draft, state.snapshot.activeLists, state.busy, error, viewModel::updateDraft,

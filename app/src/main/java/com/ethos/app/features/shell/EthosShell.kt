@@ -57,6 +57,8 @@ fun EthosShell(
     drawerLists: (@Composable (() -> Unit) -> Unit)? = null,
     taskPage: (@Composable (ShellDestination, ContentFilter, (ContentFilter) -> Unit,
         () -> Unit, () -> Unit) -> Unit)? = null,
+    historyContent: (@Composable () -> Unit)? = null,
+    walletContent: (@Composable (() -> Unit) -> Unit)? = null,
     settingsContent: @Composable () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -165,6 +167,8 @@ fun EthosShell(
                                 ShellDestination.HABITS)) {
                             taskPage(destination, filter, { filter = it },
                                 { navigate(ShellDestination.REWARDS) }, { navigate(ShellDestination.REVIEW) })
+                        } else if (destination == ShellDestination.HISTORY && historyContent != null) {
+                            historyContent()
                         } else ShellPage {
                             when (destination) {
                                 ShellDestination.TODAY -> TodayContent(
@@ -184,7 +188,8 @@ fun EthosShell(
                                     presentation.pendingItems, filter,
                                 ) { filter = it }
                                 ShellDestination.REWARDS -> {
-                                    BalanceTiles(presentation) { navigate(ShellDestination.REWARDS) }
+                                    if (walletContent != null) walletContent { navigate(ShellDestination.REWARDS) }
+                                    else BalanceTiles(presentation) { navigate(ShellDestination.REWARDS) }
                                     EmptyContent(R.string.rewards_empty, R.string.rewards_empty_detail)
                                 }
                                 ShellDestination.HISTORY -> EmptyContent(

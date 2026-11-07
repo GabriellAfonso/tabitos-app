@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ethos.app.core.tasks.domain.*
+import com.ethos.app.core.accounting.domain.AccountingRepository
+import com.ethos.app.core.accounting.domain.FinancialPreview
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.LocalTime
@@ -34,11 +36,13 @@ data class TasksUiState(
     val completionText: String = "", val uncheckedConfirmation: Int? = null,
     val listDraft: TaskList? = null, val deleteListId: String? = null, val deleteTaskId: String? = null,
     val manageLists: Boolean = false, val selectedListId: String? = null,
+    val financialPreview: FinancialPreview? = null,
 )
 
 @HiltViewModel
 class TasksViewModel @Inject constructor(
     private val repository: TaskRepository, private val clock: TaskClock, private val saved: SavedStateHandle,
+    private val accounting: AccountingRepository? = null,
 ) : ViewModel() {
     private val mutable = MutableStateFlow(TasksUiState(today = clock.today(), draft = saved["taskDraft"]))
     val state: StateFlow<TasksUiState> = mutable.asStateFlow()
@@ -47,6 +51,14 @@ class TasksViewModel @Inject constructor(
     private var retryAction: TaskAction? = null
     private var retryClose: Boolean = false
     private var completionAction: TaskAction.Resolve? = null
+    private var financialAction: TaskAction? = null
+
+    fun confirmFinancial(confirm: Boolean) {
+        val action = financialAction
+        financialAction = null
+        mutable.update { it.copy(financialPreview = null) }
+        if (confirm && action != null) execute(action, confirmed = true)
+    }
 
     init { observe(); refresh() }
     private fun observe() {
@@ -163,8 +175,25 @@ class TasksViewModel @Inject constructor(
     fun requestDeleteTask(id: String?) { mutable.update { it.copy(deleteTaskId = id) } }
     fun action(action: TaskAction) = execute(action)
 
-    private fun execute(action: TaskAction, closeDraft: Boolean = false) {
+    private fun execute(action: TaskAction, closeDraft: Boolean = false, confirmed: Boolean = false) {
         if (mutable.value.busy) return
+        if (!confirmed && accounting != null && (action is TaskAction.Resolve || action is TaskAction.Undo)) {
+            mutable.update { it.copy(busy = true, error = null) }
+            viewModelScope.launch {
+                try {
+                    val preview = accounting.previewTask(action)
+                    financialAction = action
+                    mutable.update { it.copy(busy = false, financialPreview = preview) }
+                } catch (e: CancellationException) { throw e
+                } catch (e: TaskRuleException) {
+                    mutable.update { it.copy(busy = false, error = e.problem) }
+                } catch (_: Exception) {
+                    retryAction = action
+                    mutable.update { it.copy(busy = false, storageError = true) }
+                }
+            }
+            return
+        }
         retryAction = null
         mutable.update { it.copy(busy = true, error = null, storageError = readFailed) }
         viewModelScope.launch {

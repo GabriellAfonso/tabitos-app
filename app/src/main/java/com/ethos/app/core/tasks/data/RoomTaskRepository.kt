@@ -1,6 +1,8 @@
 package com.ethos.app.core.tasks.data
 
 import androidx.room.withTransaction
+import com.ethos.app.core.accounting.data.AccountingStore
+import com.ethos.app.core.accounting.domain.AccountingProjection
 import com.ethos.app.core.tasks.domain.TaskAction
 import com.ethos.app.core.tasks.domain.TaskClock
 import com.ethos.app.core.tasks.domain.TaskRepository
@@ -17,9 +19,19 @@ class RoomTaskRepository(private val database: TaskDatabase, private val clock: 
 
     override suspend fun execute(action: TaskAction) {
         database.withTransaction {
+            val accounting = AccountingStore(database, clock)
+            accounting.initialize()
             val before = read()
             val after = TaskRules.apply(before, action, clock.today(), clock.nowMillis())
             if (before != after) write(after)
+            if (action is TaskAction.Resolve || action is TaskAction.Undo) {
+                val id = when (action) {
+                    is TaskAction.Resolve -> action.id
+                    is TaskAction.Undo -> action.id
+                }
+                accounting.reconcile(AccountingProjection.tasks(after).filter { it.owner == "task:$id" },
+                    setOf("task:$id"))
+            }
             if (action is TaskAction.DeleteList) {
                 database.habits().closeListIntervals(action.id, clock.today())
                 database.habits().excludeList(action.id)

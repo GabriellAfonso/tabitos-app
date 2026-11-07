@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskClock
+import com.ethos.app.core.accounting.domain.AccountingRepository
+import com.ethos.app.core.accounting.domain.FinancialPreview
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.util.UUID
@@ -29,6 +31,7 @@ data class HabitsUiState(
     val recordDate: String = "", val correctionId: String? = null,
     val lifecycle: HabitLifecycleDraft? = null, val preview: HabitPeriod? = null,
     val previewReady: Boolean = false,
+    val financialPreview: FinancialPreview? = null,
 ) {
     val pendingCount: Int get() = periods.count { it.outcome == PeriodOutcome.PENDING }
 }
@@ -36,6 +39,7 @@ data class HabitsUiState(
 @HiltViewModel
 class HabitsViewModel @Inject constructor(
     private val repository: HabitRepository, private val clock: TaskClock, private val saved: SavedStateHandle,
+    private val accounting: AccountingRepository? = null,
 ) : ViewModel() {
     private val mutable = MutableStateFlow(HabitsUiState(today = clock.today(), draft = saved["habitDraft"]))
     val state: StateFlow<HabitsUiState> = mutable.asStateFlow()
@@ -44,6 +48,14 @@ class HabitsViewModel @Inject constructor(
     private var readFailed = false
     private var closeAfterRetry = false
     private var lists: Set<String> = emptySet()
+    private var financialAction: HabitAction? = null
+    private var financialClose = false
+    fun confirmFinancial(confirm: Boolean) {
+        val action = financialAction
+        financialAction = null
+        mutable.update { it.copy(financialPreview = null) }
+        if (confirm && action != null) execute(action, financialClose, confirmed = true)
+    }
     init { observe() }
     private fun derive(s: HabitsUiState): HabitsUiState = s.copy(
         periods = s.snapshot.habits.flatMap { HabitRules.periods(s.snapshot, it.id, s.today) },
@@ -136,8 +148,32 @@ class HabitsViewModel @Inject constructor(
         val action = retryAction
         if (action != null) execute(action, closeAfterRetry)
     }
-    private fun execute(action: HabitAction, close: Boolean = false) {
+    private fun execute(action: HabitAction, close: Boolean = false, confirmed: Boolean = false) {
         if (state.value.busy) return
+        if (!confirmed && accounting != null && (action !is HabitAction.Status ||
+                (action.status != HabitStatus.EXCLUDED && action.partialTarget != null))) {
+            mutable.update { it.copy(busy = true, problem = null) }
+            viewModelScope.launch {
+                try {
+                    val preview = accounting.previewHabit(action)
+                    if (action is HabitAction.Save && preview.entries.isEmpty()) {
+                        mutable.update { it.copy(busy = false) }
+                        execute(action, close, confirmed = true)
+                    } else {
+                        financialAction = action
+                        financialClose = close
+                        mutable.update { it.copy(busy = false, financialPreview = preview) }
+                    }
+                } catch (e: CancellationException) { throw e
+                } catch (e: HabitRuleException) {
+                    mutable.update { it.copy(busy = false, problem = e.reason) }
+                } catch (_: Exception) {
+                    retryAction = action; closeAfterRetry = close
+                    mutable.update { it.copy(busy = false, storageError = true) }
+                }
+            }
+            return
+        }
         mutable.update { it.copy(busy = true, problem = null) }
         viewModelScope.launch {
             try {

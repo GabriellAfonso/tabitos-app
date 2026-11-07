@@ -31,6 +31,11 @@ fun HabitsScreen(viewModel: HabitsViewModel, content: @Composable (HabitsUiState
 
 @Composable
 fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewModel) {
+    state.financialPreview?.let { preview ->
+        com.ethos.app.core.ui.accounting.FinancialConfirmation(preview, state.busy,
+            { vm.confirmFinancial(true) }, { vm.confirmFinancial(false) })
+        return
+    }
     if (state.draft != null) HabitEditor(state, lists,
         HabitEditorActions(vm::draft, vm::difficulty, vm::save, vm::retry))
     if (state.draft != null && state.previewReady) AlertDialog(

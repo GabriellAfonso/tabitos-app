@@ -2,6 +2,8 @@ package com.ethos.app.core.tasks.data
 
 import android.content.Context
 import androidx.room.Room
+import com.ethos.app.core.accounting.data.*
+import com.ethos.app.core.accounting.domain.AccountingRepository
 import com.ethos.app.core.habits.data.HABIT_MIGRATION_1_2
 import com.ethos.app.core.habits.data.RoomHabitRepository
 import com.ethos.app.core.habits.domain.HabitRepository
@@ -24,7 +26,9 @@ object TaskModule {
     }
     @Provides @Singleton fun database(@ApplicationContext context: Context): TaskDatabase =
         Room.databaseBuilder(context, TaskDatabase::class.java, "ethos-tasks.db")
-            .addMigrations(HABIT_MIGRATION_1_2).build()
+            .addMigrations(HABIT_MIGRATION_1_2, ACCOUNTING_MIGRATION_2_3).build()
+    @Provides @Singleton fun accounting(database: TaskDatabase, clock: TaskClock): AccountingRepository =
+        RoomAccountingRepository(database, clock)
     @Provides @Singleton fun habits(database: TaskDatabase, clock: TaskClock): HabitRepository =
         RoomHabitRepository(database, clock)
     @Provides @Singleton fun repository(database: TaskDatabase, clock: TaskClock): TaskRepository =

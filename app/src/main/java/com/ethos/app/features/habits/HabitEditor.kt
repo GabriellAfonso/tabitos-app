@@ -53,6 +53,7 @@ fun HabitEditor(state: HabitsUiState, lists: List<TaskList>, actions: HabitEdito
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     HabitError(state, actions.retry)
+                    com.ethos.app.core.ui.accounting.FinancialEstimate(d.habit.difficulty, d.habit.importance)
                     HabitInput(R.string.habit_name, d.habit.name, !state.busy) {
                         actions.change(d.copy(habit = d.habit.copy(name = it))) }
                     HabitInput(R.string.habit_description, d.habit.description, !state.busy) {

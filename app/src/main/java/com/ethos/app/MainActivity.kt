@@ -35,6 +35,9 @@ import com.ethos.app.features.tasks.TasksContent
 import com.ethos.app.features.tasks.TaskDrawer
 import com.ethos.app.features.tasks.TaskPage
 import com.ethos.app.features.habits.*
+import com.ethos.app.features.accounting.*
+import com.ethos.app.core.ui.accounting.LocalFinancialPrices
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -60,6 +63,10 @@ class MainActivity : ComponentActivity() {
                 EthosTheme(darkTheme = dark) {
                     val tasksViewModel: TasksViewModel = viewModel()
                     val habitsViewModel: HabitsViewModel = viewModel()
+                    val accountingViewModel: AccountingViewModel = viewModel()
+                    AccountingScreen(accountingViewModel) { financial ->
+                    CompositionLocalProvider(LocalFinancialPrices provides
+                        financial.snapshot.prices.takeUnless { financial.loading || financial.error }) {
                     TasksScreen(tasksViewModel) { tasks ->
                       HabitsScreen(habitsViewModel) { habits ->
                         LaunchedEffect(tasks.snapshot.activeLists) {
@@ -104,7 +111,7 @@ class MainActivity : ComponentActivity() {
                                                 Locale.forLanguageTag("pt-BR"))))
                                             Text(stringResource(R.string.one_step),
                                                 style = MaterialTheme.typography.headlineSmall)
-                                            BalanceTiles(ShellPresentation(), onRewards)
+                                            WalletTiles(financial, onRewards, accountingViewModel::retry)
                                             if (pending > 0) Card(onClick = onReview) {
                                                 Text(pluralStringResource(R.plurals.pending_count, pending, pending),
                                                     Modifier.padding(16.dp))
@@ -118,9 +125,17 @@ class MainActivity : ComponentActivity() {
                                 }
                               }
                             },
-                            settingsContent = { SettingsContent(state, onSelect, onRetry) },
+                            historyContent = { AccountingHistory(financial, accountingViewModel::retry) },
+                            walletContent = { rewards -> WalletTiles(financial, rewards, accountingViewModel::retry) },
+                            settingsContent = {
+                                SettingsContent(state, onSelect, onRetry)
+                                AccountingSettings(financial, accountingViewModel::edit, accountingViewModel::draft,
+                                    accountingViewModel::save, accountingViewModel::retry)
+                            },
                         )
                       }
+                    }
+                    }
                     }
                 }
             }

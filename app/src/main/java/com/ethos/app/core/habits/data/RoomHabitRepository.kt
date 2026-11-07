@@ -1,6 +1,8 @@
 package com.ethos.app.core.habits.data
 
 import androidx.room.withTransaction
+import com.ethos.app.core.accounting.data.AccountingStore
+import com.ethos.app.core.accounting.domain.AccountingProjection
 import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.data.TaskDatabase
 import com.ethos.app.core.tasks.domain.TaskClock
@@ -21,8 +23,11 @@ class RoomHabitRepository(private val database: TaskDatabase, private val clock:
     }
     override suspend fun execute(action: HabitAction) {
         database.withTransaction {
+            val accounting = AccountingStore(database, clock)
+            accounting.initialize()
             val lists = database.tasks().lists().filterNot { it.deleted }.map { it.id }.toSet()
-            val s = HabitRules.apply(read(), action, clock.today(), clock.nowMillis(), lists)
+            val before = read()
+            val s = HabitRules.apply(before, action, clock.today(), clock.nowMillis(), lists)
             val dao = database.habits()
             dao.habits(s.habits.map { HabitEntity(it) })
             dao.removeReplacedRules(s.rules.map { it.id })
@@ -32,6 +37,22 @@ class RoomHabitRepository(private val database: TaskDatabase, private val clock:
             dao.records(s.records.map { HabitRecordEntity(it) })
             dao.reviews(s.reviews.map { HabitReviewEntity(it) })
             dao.audits(s.audits.map { HabitAuditEntity(it) })
+            if (action !is HabitAction.Status || (action.status != HabitStatus.EXCLUDED &&
+                    before.overrides != s.overrides)) {
+                val id = when (action) {
+                    is HabitAction.Record -> action.habitId
+                    is HabitAction.Correct -> before.records.first { it.id == action.id }.habitId
+                    is HabitAction.Review -> s.audits.last().habitId
+                    is HabitAction.Save -> action.habit.id
+                    is HabitAction.Status -> action.id
+                }
+                // Presentation-only edits never create financial transitions.
+                if (action !is HabitAction.Save || before.rules != s.rules || before.overrides != s.overrides) {
+                    accounting.reconcile(accounting.habitOutcomes(s)
+                        .filter { it.owner == "habit:$id" }, setOf("habit:$id"),
+                        AccountingProjection.practiceOrigins(before, s, action, clock.today()))
+                }
+            }
         }
     }
 }

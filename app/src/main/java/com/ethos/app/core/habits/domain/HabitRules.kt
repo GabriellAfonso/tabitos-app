@@ -160,6 +160,12 @@ object HabitRules {
             }
             is HabitAction.Record -> if (s.records.none { it.id == action.id }) {
                 dateAllowed(habit(action.habitId), action.date)
+                val period = periods(s, action.habitId, today).firstOrNull { action.date in it.start..it.end }
+                if (period?.rule?.type == HabitType.PRACTICE) {
+                    check(period.count < period.target, HabitProblem.CAPACITY)
+                    check(period.rule.unit != HabitUnit.DAY ||
+                        period.rule.weekdays and (1 shl (action.date.dayOfWeek.value - 1)) != 0)
+                }
                 s = s.copy(records = s.records + HabitRecord(action.id, action.habitId, action.date, now))
                 audit(action.habitId, action.id, "RECORD", new = action.date.toString())
             }

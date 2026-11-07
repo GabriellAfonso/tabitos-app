@@ -62,6 +62,7 @@ fun TaskEditor(
                 ChoiceRow(R.string.importance, listOf(R.string.low, R.string.medium, R.string.high),
                     draft.fields.importance, !busy) {
                     onChange(draft.copy(fields = draft.fields.copy(importance = it, importanceManual = true))) }
+                com.ethos.app.core.ui.accounting.FinancialEstimate(draft.fields.difficulty, draft.fields.importance)
                 val offset = if (draft.rule.kind == RepeatKind.NONE) 0 else 1
                 ChoiceRow(R.string.deadline, deadlineLabels.drop(offset), draft.fields.deadline.ordinal - offset,
                     !busy) {
