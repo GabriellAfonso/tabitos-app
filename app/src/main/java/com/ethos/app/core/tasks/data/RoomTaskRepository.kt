@@ -20,6 +20,10 @@ class RoomTaskRepository(private val database: TaskDatabase, private val clock: 
             val before = read()
             val after = TaskRules.apply(before, action, clock.today(), clock.nowMillis())
             if (before != after) write(after)
+            if (action is TaskAction.DeleteList) {
+                database.habits().closeListIntervals(action.id, clock.today())
+                database.habits().excludeList(action.id)
+            }
         }
     }
 

@@ -1,0 +1,8 @@
+package com.ethos.app.core.habits.domain
+
+import kotlinx.coroutines.flow.Flow
+
+interface HabitRepository {
+    fun observe(): Flow<HabitSnapshot>
+    suspend fun execute(action: HabitAction)
+}

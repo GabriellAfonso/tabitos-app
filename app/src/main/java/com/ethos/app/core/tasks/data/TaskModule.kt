@@ -2,6 +2,9 @@ package com.ethos.app.core.tasks.data
 
 import android.content.Context
 import androidx.room.Room
+import com.ethos.app.core.habits.data.HABIT_MIGRATION_1_2
+import com.ethos.app.core.habits.data.RoomHabitRepository
+import com.ethos.app.core.habits.domain.HabitRepository
 import com.ethos.app.core.tasks.domain.TaskClock
 import com.ethos.app.core.tasks.domain.TaskRepository
 import dagger.Module
@@ -20,7 +23,10 @@ object TaskModule {
         override fun nowMillis(): Long = System.currentTimeMillis()
     }
     @Provides @Singleton fun database(@ApplicationContext context: Context): TaskDatabase =
-        Room.databaseBuilder(context, TaskDatabase::class.java, "ethos-tasks.db").build()
+        Room.databaseBuilder(context, TaskDatabase::class.java, "ethos-tasks.db")
+            .addMigrations(HABIT_MIGRATION_1_2).build()
+    @Provides @Singleton fun habits(database: TaskDatabase, clock: TaskClock): HabitRepository =
+        RoomHabitRepository(database, clock)
     @Provides @Singleton fun repository(database: TaskDatabase, clock: TaskClock): TaskRepository =
         RoomTaskRepository(database, clock)
 }
