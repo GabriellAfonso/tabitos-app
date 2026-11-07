@@ -106,11 +106,13 @@
 Fundação Android implementada: specs/001-android-foundation/spec.md.
 Interface/navegação implementada: specs/002-app-shell/spec.md.
 Listas/tarefas/checklists/prazos/recorrências/revisão implementados: specs/003-task-lists/spec.md.
-Plano: specs/003-task-lists/plan.md; tarefas: specs/003-task-lists/tasks.md (20/20).
-Verificação: specs/003-task-lists/verification.md (2026-11-06).
-Debug/lint/release R8, 28 testes JVM e 10 testes Android aprovados em API 36.
+Hábitos/metas implementados: specs/004-habits-goals/spec.md.
+Plano: specs/004-habits-goals/plan.md; tarefas: specs/004-habits-goals/tasks.md (21/21).
+Verificação: specs/004-habits-goals/verification.md (2026-11-06).
+Debug/lint/release R8, 47 testes JVM e 14 testes Android aprovados em API 36.
 API 24, dispositivo físico e TalkBack por áudio não validados; matriz visual registrada na verificação.
-Room 2.8.5 com schema 1 exportado; datas civis locais e correções com histórico.
-DataStore preserva temas claro/escuro/sistema; sem motores de hábitos/moedas/XP/lembretes.
+Room 2.8.5 com schemas 1/2 exportados; migração 1→2 preservadora validada.
+Hábitos: regras históricas, períodos civis, correções, pausas, exclusão/restauração e revisão integrada.
+DataStore preserva temas claro/escuro/sistema; sem motores de moedas/XP/lembretes/tempo.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->
