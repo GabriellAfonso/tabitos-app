@@ -131,5 +131,13 @@ Sessões ligadas a tarefa/hábito/compra; um cronômetro contando; tempo por rel
 Reinício recupera último checkpoint pausado; meta pausa no objetivo e só conclui via fluxos existentes.
 Serviço em primeiro plano specialUse com notificação privada Pausar/Abrir; sem alarme exato/isenção.
 Compra temporizada: consentir pausa antes de cobrar; débito, recibo e sessão na mesma transação.
+Calendário mês/semana/dia e acompanhamentos por hábito implementados: specs/009-calendar-habit-trackers/spec.md.
+Plano: specs/009-calendar-habit-trackers/plan.md; tarefas: specs/009-calendar-habit-trackers/tasks.md (30/30).
+Verificação: specs/009-calendar-habit-trackers/verification.md; 108 JVM e 58 Android aprovados em API36.
+Room schema7 (trackers, versões, perguntas, opções, registros, respostas); migração preservadora6→7 testada.
+Formulário versionado; registros guardam versão, data de referência e momento; um por dia via índice único.
+Acompanhamentos nunca alteram moedas/XP/metas/registros do hábito; arquivar substitui remoção destrutiva.
+Lembrete ReminderKind.TRACKER: aviso neutro contínuo (dispensável no Android 14+), Preencher/Adiar, só do dia.
+Calendário substitui busca por data: filtros tipo/lista/hábito, "Sem dados", paridade com inDay das tarefas.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->
