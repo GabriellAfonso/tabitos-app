@@ -20,6 +20,8 @@ import androidx.compose.ui.unit.dp
 import com.ethos.app.R
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.ui.reminders.LocalOpenReminders
+import com.ethos.app.core.ui.timers.LocalOpenTimer
+import com.ethos.app.core.timers.domain.TimerKind
 import com.ethos.app.core.reminders.domain.ReminderKind
 import java.time.Instant
 import java.time.LocalDate
@@ -238,6 +240,9 @@ private fun TaskDetail(
                     modifier = Modifier.semantics { contentDescription = c.label })
                 Text(c.label, Modifier.padding(top = 12.dp))
             } }
+            val timer = LocalOpenTimer.current
+            TextButton({ timer(TimerKind.TASK, o.id) }, enabled = !state.busy) {
+                Text(stringResource(R.string.timer_button)) }
             if (o.status == TaskStatus.OPEN) {
                 val reminders = LocalOpenReminders.current
                 TextButton({ reminders(ReminderKind.TASK, o.id) }, enabled = !state.busy) {

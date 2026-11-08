@@ -9,6 +9,7 @@ interface RewardRepository {
     suspend fun move(id: String, direction: Int)
     suspend fun delete(id: String)
     suspend fun preview(id: String)
-    suspend fun confirm(expected: PurchaseIntent): PurchaseResult
+    /** Timed purchases return RUNNING_CONFLICT, uncharged, while another timer runs unless [pauseRunning]. */
+    suspend fun confirm(expected: PurchaseIntent, pauseRunning: Boolean = false): PurchaseResult
     suspend fun close(intentId: String)
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ethos.app.core.rewards.domain.*
+import com.ethos.app.core.timers.domain.TimerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
 import javax.inject.Inject
@@ -26,14 +27,18 @@ data class RewardsUiState(
     val loading: Boolean = true, val error: Boolean = false, val busy: Boolean = false,
     val invalid: Boolean = false, val stale: Boolean = false, val unavailable: Boolean = false,
     val draft: List<String>? = null, val deleteId: String? = null,
+    /** Title of the running timer that must be paused, with consent, before a timed purchase is charged. */
+    val pauseRequired: String? = null,
 )
 
 @HiltViewModel
 class RewardsViewModel @Inject constructor(
     private val repository: RewardRepository, private val saved: SavedStateHandle,
+    private val timers: TimerRepository? = null,
 ) : ViewModel() {
     private val mutable = MutableStateFlow(RewardsUiState(
-        draft = saved.get<ArrayList<String>>("rewardDraft"), deleteId = saved["rewardDelete"]))
+        draft = saved.get<ArrayList<String>>("rewardDraft")?.let { if (it.size == 7) it + "" else it },
+        deleteId = saved["rewardDelete"]))
     val state = mutable.asStateFlow()
     private var observer: Job? = null
     private var failed: (() -> Unit)? = null
@@ -63,8 +68,8 @@ class RewardsViewModel @Inject constructor(
 
     fun edit(reward: Reward? = null) {
         draft(reward?.let { listOf(it.id, it.name, it.description, it.icon, it.cost.toString(),
-            it.limit?.toString().orEmpty(), it.period) }
-            ?: listOf(UUID.randomUUID().toString(), "", "", "GIFT", "", "", "DAY"))
+            it.limit?.toString().orEmpty(), it.period, it.minutes?.toString().orEmpty()) }
+            ?: listOf(UUID.randomUUID().toString(), "", "", "GIFT", "", "", "DAY", ""))
     }
 
     fun draft(value: List<String>?) {
@@ -76,10 +81,12 @@ class RewardsViewModel @Inject constructor(
     fun save() {
         val fields = state.value.draft ?: return
         val reward = try {
-            require(fields.size == 7 && fields[4].isNotEmpty() && fields[4].all(Char::isDigit))
+            require(fields.size == 8 && fields[4].isNotEmpty() && fields[4].all(Char::isDigit))
             require(fields[5].isEmpty() || fields[5].all(Char::isDigit))
+            require(fields[7].length <= 4 && fields[7].all(Char::isDigit))
             Reward(fields[0], fields[1], fields[2], fields[3], fields[4].toLong(),
-                fields[5].takeIf { it.isNotEmpty() }?.toInt(), fields[6]).also(RewardRules::validate)
+                fields[5].takeIf { it.isNotEmpty() }?.toInt(), fields[6],
+                minutes = fields[7].takeIf { it.isNotEmpty() }?.toInt()).also(RewardRules::validate)
         } catch (_: IllegalArgumentException) {
             mutable.update { it.copy(invalid = true) }; return
         }
@@ -110,14 +117,27 @@ class RewardsViewModel @Inject constructor(
             mutable.update { it.copy(stale = false, unavailable = false) }
         }
     }
-    fun confirm() {
+    fun confirm() = confirm(false)
+
+    /** A timed purchase while another timer runs first asks consent; [pause] carries that consent. */
+    fun confirm(pause: Boolean) {
         val intent = state.value.snapshot.intent ?: return
-        write(::confirm) {
-            val result = repository.confirm(intent)
+        write({ confirm(pause) }) {
+            if (!pause && intent.reward.minutes != null) {
+                val running = timers?.observe()?.first()?.running
+                if (running != null) {
+                    mutable.update { it.copy(pauseRequired = running.title) }
+                    return@write
+                }
+            }
+            val result = repository.confirm(intent, pause)
+            val conflict = if (result == PurchaseResult.RUNNING_CONFLICT)
+                timers?.observe()?.first()?.running?.title.orEmpty() else null
             mutable.update { it.copy(stale = result == PurchaseResult.STALE,
-                unavailable = result == PurchaseResult.UNAVAILABLE) }
+                unavailable = result == PurchaseResult.UNAVAILABLE, pauseRequired = conflict) }
         }
     }
+    fun cancelPause() { mutable.update { it.copy(pauseRequired = null) } }
     fun close() {
         val id = state.value.snapshot.intent?.id ?: return
         write(::close) {

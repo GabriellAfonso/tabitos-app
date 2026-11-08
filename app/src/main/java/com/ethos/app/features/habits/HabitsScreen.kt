@@ -11,6 +11,8 @@ import com.ethos.app.R
 import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskList
 import com.ethos.app.core.ui.reminders.LocalOpenReminders
+import com.ethos.app.core.ui.timers.LocalOpenTimer
+import com.ethos.app.core.timers.domain.TimerKind
 import com.ethos.app.core.reminders.domain.ReminderKind
 import androidx.compose.runtime.*
 import androidx.lifecycle.Lifecycle
@@ -57,6 +59,7 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
         AlertDialog(onDismissRequest = { if (!state.busy) vm.detail(null) }, title = { Text(h.name) }, text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 HabitError(state, vm::retry)
+                if (state.recordExists) Text(stringResource(R.string.timer_habit_record_exists))
                 if (h.description.isNotBlank()) Text(h.description)
                 state.streaks[h.id]?.let { streak ->
                     val unit = stringResource(when (streak.unit) {
@@ -113,6 +116,9 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                             Text(stringResource(R.string.habit_confirm_review)) }
                     }
                 }
+                val timer = LocalOpenTimer.current
+                TextButton({ timer(TimerKind.HABIT, h.id) }, enabled = !state.busy) {
+                    Text(stringResource(R.string.timer_button)) }
                 if (h.status != HabitStatus.EXCLUDED) {
                     val reminders = LocalOpenReminders.current
                     TextButton({ reminders(ReminderKind.HABIT, h.id) }, enabled = !state.busy) {

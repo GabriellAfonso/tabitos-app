@@ -7,18 +7,24 @@ import com.ethos.app.core.accounting.domain.LedgerEntry
 import com.ethos.app.core.rewards.domain.*
 import com.ethos.app.core.tasks.data.TaskDatabase
 import com.ethos.app.core.tasks.domain.TaskClock
+import com.ethos.app.core.timers.data.TimerStore
+import com.ethos.app.core.timers.domain.TimerClock
+import com.ethos.app.core.timers.platform.AndroidTimerClock
 import java.util.UUID
 import kotlinx.coroutines.flow.*
 
-class RoomRewardRepository(private val database: TaskDatabase, private val clock: TaskClock) : RewardRepository {
+class RoomRewardRepository(
+    private val database: TaskDatabase, private val clock: TaskClock, timerClock: TimerClock = AndroidTimerClock(),
+) : RewardRepository {
     private val dao get() = database.rewards()
     private val store = AccountingStore(database, clock)
+    private val timers = TimerStore(database, timerClock)
     private val refreshes = MutableStateFlow(0L)
 
     override fun observe(): Flow<RewardSnapshot> = flow {
         database.withTransaction { store.initialize() }
         emitAll(combine(database.invalidationTracker.createFlow("rewards", "reward_intents",
-            "reward_purchases", "accounting_ledger", emitInitialState = true), refreshes) { _, _ ->
+            "reward_purchases", "accounting_ledger", "timer_sessions", emitInitialState = true), refreshes) { _, _ ->
             database.withTransaction {
                 RewardSnapshot(dao.rewards().map { it.value }.filter { !it.deleted },
                     dao.purchases().map { it.domain() }, store.snapshot(), dao.pending()?.domain(), clock.today())
@@ -73,7 +79,7 @@ class RoomRewardRepository(private val database: TaskDatabase, private val clock
         }
     }
 
-    override suspend fun confirm(expected: PurchaseIntent): PurchaseResult = database.withTransaction {
+    override suspend fun confirm(expected: PurchaseIntent, pauseRunning: Boolean) = database.withTransaction {
         val intentId = expected.id
         store.initialize()
         if (dao.purchase(intentId) != null) return@withTransaction PurchaseResult.PURCHASED
@@ -97,12 +103,17 @@ class RoomRewardRepository(private val database: TaskDatabase, private val clock
         }
         if (!RewardRules.available(reward, wallet.balance, used)) return@withTransaction PurchaseResult.UNAVAILABLE
         RewardRules.validate(reward)
+        // Consent to pause another timer is resolved before anything is charged.
+        if (reward.minutes != null && !pauseRunning && timers.snapshot().running != null)
+            return@withTransaction PurchaseResult.RUNNING_CONFLICT
         val sequence = Math.addExact(wallet.entries.lastOrNull()?.sequence ?: 0, 1)
         val time = clock.nowMillis()
         val entry = LedgerEntry(sequence, "purchase:$intentId", reward.name, today, time, "PURCHASE",
             -reward.cost, -reward.cost, 0, Math.subtractExact(wallet.balance, reward.cost), wallet.totalXp)
         database.accounting().append(listOf(LedgerEntity(sequence, entry)))
         dao.purchase(PurchaseEntity(intentId, reward, today, time, sequence))
+        // Debit, receipt and the running countdown commit together; the session id derives from the receipt.
+        reward.minutes?.let { timers.startReward(intentId, reward.name, it) }
         PurchaseResult.PURCHASED
     }
 

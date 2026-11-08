@@ -12,6 +12,7 @@ object RewardRules {
         require(reward.id.isNotBlank() && reward.name.isNotBlank() && reward.cost > 0)
         require(reward.icon in icons && reward.period in periods)
         require(reward.limit == null || reward.limit > 0)
+        require(reward.minutes == null || reward.minutes in 1..1440)
     }
 
     fun used(reward: Reward, purchases: List<Purchase>, today: LocalDate): Int {

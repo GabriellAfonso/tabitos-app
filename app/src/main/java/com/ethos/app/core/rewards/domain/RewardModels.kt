@@ -7,6 +7,8 @@ data class Reward(
     val id: String, val name: String, val description: String = "", val icon: String = "GIFT",
     val cost: Long, val limit: Int? = null, val period: String = "DAY",
     val position: Long = 0, val revision: Long = 0, val deleted: Boolean = false,
+    /** Optional purchased duration; null keeps the immediate non-timed behavior. */
+    val minutes: Int? = null,
 )
 
 data class PurchaseIntent(
@@ -24,4 +26,4 @@ data class RewardSnapshot(
     val today: LocalDate = LocalDate.of(1970, 1, 1),
 )
 
-enum class PurchaseResult { PURCHASED, STALE, UNAVAILABLE }
+enum class PurchaseResult { PURCHASED, STALE, UNAVAILABLE, RUNNING_CONFLICT }

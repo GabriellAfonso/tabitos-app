@@ -31,7 +31,7 @@ data class HabitsUiState(
     val recordDate: String = "", val correctionId: String? = null,
     val lifecycle: HabitLifecycleDraft? = null, val preview: HabitPeriod? = null,
     val previewReady: Boolean = false,
-    val financialPreview: FinancialPreview? = null,
+    val financialPreview: FinancialPreview? = null, val recordExists: Boolean = false,
 ) {
     val pendingCount: Int get() = periods.count { it.outcome == PeriodOutcome.PENDING }
 }
@@ -119,7 +119,7 @@ class HabitsViewModel @Inject constructor(
         } catch (_: Exception) { mutable.update { it.copy(problem = HabitProblem.INPUT) } }
     }
     fun detail(id: String?) { mutable.update { it.copy(detail = id, recordDate = clock.today().toString(),
-        correctionId = null, problem = null) } }
+        correctionId = null, problem = null, recordExists = false) } }
     fun date(value: String) { mutable.update { it.copy(recordDate = value) } }
     fun correct(record: HabitRecord) { mutable.update { it.copy(correctionId = record.id,
         recordDate = record.date.toString()) } }
@@ -131,6 +131,13 @@ class HabitsViewModel @Inject constructor(
                 ?: HabitAction.Record(UUID.randomUUID().toString(), s.detail ?: return, date)
             execute(action)
         } catch (_: Exception) { mutable.update { it.copy(problem = HabitProblem.DATE) } }
+    }
+    /** Confirmed duration objective: one practice on [date] through the normal financial preview, never twice. */
+    fun recordDuration(habitId: String, date: LocalDate) {
+        detail(habitId)
+        val exists = state.value.snapshot.records.any { it.habitId == habitId && it.date == date && !it.deleted }
+        mutable.update { it.copy(recordExists = exists, recordDate = date.toString()) }
+        if (!exists) execute(HabitAction.Record(UUID.randomUUID().toString(), habitId, date))
     }
     fun lifecycle(value: HabitLifecycleDraft?) { mutable.update { it.copy(lifecycle = value, problem = null) } }
     fun confirmLifecycle() {

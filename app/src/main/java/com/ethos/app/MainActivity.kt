@@ -53,19 +53,35 @@ import com.ethos.app.core.ui.reminders.LocalOpenReminders
 import com.ethos.app.core.reminders.domain.ReminderKind
 import java.util.UUID
 import androidx.core.net.toUri
+import com.ethos.app.core.timers.domain.TimerKind
+import com.ethos.app.core.timers.platform.TimerCoordinator
+import com.ethos.app.core.ui.timers.LocalOpenTimer
+import com.ethos.app.features.timers.*
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var timerCoordinator: TimerCoordinator
     private var reminderRequest by mutableStateOf<Pair<String, String>?>(null)
+    /** Session id from a timer notification, resolved once task/habit/timer state has loaded. */
+    private var timerSessionRequest by mutableStateOf<String?>(null)
+    private var timerRequest by mutableStateOf<Pair<TimerKind, String>?>(null)
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         acceptReminder(intent)
     }
+    override fun onStart() {
+        super.onStart()
+        // Foreground is the reliable moment to (re)attach the session service after kills or refused starts.
+        timerCoordinator.request()
+    }
     private fun acceptReminder(intent: Intent?) {
         val data = intent?.data ?: return
         if (data.scheme == "ethos-reminder" && data.authority == "local")
             reminderRequest = data.toString() to UUID.randomUUID().toString()
+        if (data.scheme == "ethos-timer" && data.authority == "local" && data.pathSegments.firstOrNull() == "OPEN")
+            timerSessionRequest = data.pathSegments.getOrNull(1)
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -93,8 +109,12 @@ class MainActivity : ComponentActivity() {
                     val reminderViewModel: ReminderViewModel = viewModel()
                     val reminderState by reminderViewModel.state.collectAsStateWithLifecycle()
                     val rewardsState by rewardsViewModel.state.collectAsStateWithLifecycle()
+                    val timerViewModel: TimerViewModel = viewModel()
+                    val timerState by timerViewModel.state.collectAsStateWithLifecycle()
+                    TimerTicker(timerViewModel)
                     ReminderPermissionControls(reminderState, reminderViewModel::refresh) { requestPermission ->
-                    CompositionLocalProvider(LocalOpenReminders provides reminderViewModel::open) {
+                    CompositionLocalProvider(LocalOpenReminders provides reminderViewModel::open,
+                        LocalOpenTimer provides { kind, id -> timerRequest = kind to id }) {
                     AccountingScreen(accountingViewModel) { financial ->
                     CompositionLocalProvider(LocalFinancialPrices provides
                         financial.snapshot.prices.takeUnless { financial.loading || financial.error }) {
@@ -121,6 +141,39 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                        val zone = timerViewModel.zone
+                        LaunchedEffect(timerSessionRequest, timerState.loading, tasks.loading, habits.loading) {
+                            val id = timerSessionRequest
+                            if (id != null && !timerState.loading && !tasks.loading && !habits.loading) {
+                                timerState.snapshot.sessions.firstOrNull { it.id == id }?.let {
+                                    timerRequest = it.kind to it.sourceId }
+                                timerSessionRequest = null
+                            }
+                        }
+                        LaunchedEffect(timerRequest, timerState.loading, tasks.loading, habits.loading) {
+                            val request = timerRequest
+                            if (request != null && !timerState.loading && !tasks.loading && !habits.loading) {
+                                timerViewModel.open(timerTarget(request.first, request.second, tasks.snapshot,
+                                    habits.snapshot, timerState.snapshot, tasks.today, zone))
+                                timerRequest = null
+                            }
+                        }
+                        LaunchedEffect(timerState.completion) {
+                            val completion = timerState.completion ?: return@LaunchedEffect
+                            // Existing flows keep checklist, financial preview and single-award rules.
+                            when (completion.kind) {
+                                TimerKind.TASK -> tasksViewModel.notification(completion.sourceId, true)
+                                TimerKind.HABIT -> habitsViewModel.recordDuration(completion.sourceId, completion.date)
+                                TimerKind.REWARD -> Unit
+                            }
+                            timerViewModel.consumeCompletion(completion.token)
+                        }
+                        val timerCards = TimerCardActions(open = { timerRequest = it.kind to it.sourceId },
+                            pause = timerViewModel::pause, resume = { session ->
+                                timerTarget(session.kind, session.sourceId, tasks.snapshot, habits.snapshot,
+                                    timerState.snapshot, tasks.today, zone)?.let { timerViewModel.start(it.start) }
+                            })
+                        val sessions = visibleSessions(tasks.snapshot, habits.snapshot, timerState, zone)
                         LaunchedEffect(tasks.snapshot.activeLists) {
                             habitsViewModel.listIds(tasks.snapshot.activeLists.map { it.id }.toSet())
                         }
@@ -164,6 +217,7 @@ class MainActivity : ComponentActivity() {
                                             Text(stringResource(R.string.one_step),
                                                 style = MaterialTheme.typography.headlineSmall)
                                             WalletTiles(financial, onRewards, accountingViewModel::retry)
+                                            TimerSessionCards(timerState, sessions, zone, timerCards)
                                             if (pending > 0) Card(onClick = onReview) {
                                                 Text(pluralStringResource(R.plurals.pending_count, pending, pending),
                                                     Modifier.padding(16.dp))
@@ -179,7 +233,12 @@ class MainActivity : ComponentActivity() {
                             },
                             historyContent = { AccountingHistory(financial, accountingViewModel::retry,
                                 rewardsState.snapshot.purchases) },
-                            rewardsContent = { RewardsScreen(rewardsViewModel) },
+                            rewardsContent = { RewardsScreen(rewardsViewModel) {
+                                val rewardSessions = sessions.filter { it.kind == TimerKind.REWARD }
+                                if (rewardSessions.isNotEmpty()) Text(stringResource(R.string.timer_reward_sessions),
+                                    style = MaterialTheme.typography.titleMedium)
+                                TimerSessionCards(timerState, rewardSessions, zone, timerCards)
+                            } },
                             walletContent = { rewards -> WalletTiles(financial, rewards, accountingViewModel::retry) },
                             settingsContent = {
                                 SettingsContent(state, onSelect, onRetry)
@@ -188,6 +247,9 @@ class MainActivity : ComponentActivity() {
                                 ReminderSettingsContent(reminderState, reminderViewModel, requestPermission)
                             },
                         )
+                        TimerDialogs(timerState, timerViewModel, { kind, id ->
+                            if (kind == TimerKind.TASK) tasksViewModel.detail(id) else habitsViewModel.detail(id)
+                        }, requestPermission)
                       }
                     }
                     }
