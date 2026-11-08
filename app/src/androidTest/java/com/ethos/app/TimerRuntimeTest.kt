@@ -44,7 +44,8 @@ class TimerRuntimeTest {
         shell("pm grant ${context.packageName} android.permission.POST_NOTIFICATIONS")
         val db = Room.databaseBuilder(context, TaskDatabase::class.java, "ethos-tasks.db")
             .addMigrations(HABIT_MIGRATION_1_2, ACCOUNTING_MIGRATION_2_3, REWARD_MIGRATION_3_4, REMINDER_MIGRATION_4_5,
-                TIMER_MIGRATION_5_6).build()
+                TIMER_MIGRATION_5_6,
+                com.ethos.app.core.trackers.data.TRACKER_MIGRATION_6_7).build()
         val clock = object : TaskClock {
             override fun today() = LocalDate.now()
             override fun nowMillis() = System.currentTimeMillis()

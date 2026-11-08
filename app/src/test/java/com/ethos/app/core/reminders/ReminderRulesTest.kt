@@ -3,6 +3,7 @@ package com.ethos.app.core.reminders
 import com.ethos.app.core.reminders.domain.*
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.habits.domain.*
+import com.ethos.app.core.trackers.domain.*
 import java.time.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -120,5 +121,42 @@ class ReminderRulesTest {
         val changed = rows.last().copy(dueAt = now + 888888)
         assertEquals(snoozed.dueAt, ReminderRules.reconcileRows(listOf(changed), listOf(snoozed),
             listOf(d), s, now, zone).single().dueAt)
+    }
+    private fun trackerSources(status: HabitStatus = HabitStatus.ACTIVE, active: Boolean = true,
+                               entries: List<TrackerEntry> = emptyList()) = ReminderSources(TaskSnapshot(),
+        HabitSnapshot(habits = listOf(Habit("h", monday, "Hábito privado", status = status)),
+            rules = listOf(HabitRule("hr", "h", monday)), intervals = listOf(ActiveInterval("i", "h", monday))),
+        TrackerSnapshot(listOf(Tracker("t", "h", monday, active = active)), entries = entries))
+    private val trackerReminder = ReminderDefinition("tracker:t", kind = ReminderKind.TRACKER, sourceId = "t",
+        mode = ReminderMode.WEEKDAYS, minute = 21 * 60)
+
+    @Test fun trackerSlotsAreDailyAndOnlyRelevantOnTheirOwnDate() {
+        val rows = ReminderRules.schedule(trackerSources(), listOf(trackerReminder), monday, zone)
+        assertEquals(33, rows.size)
+        assertEquals(monday, rows.minOf { it.slotDate })
+        assertTrue(rows.all { it.kind == ReminderKind.TRACKER && it.periodKey == it.slotDate.toString() })
+        val today = rows.first { it.slotDate == monday }
+        assertTrue(ReminderRules.relevant(today, trackerSources(), monday))
+        // Next day the past slot is no longer pending: no burst after downtime.
+        assertFalse(ReminderRules.relevant(today, trackerSources(), monday.plusDays(1)))
+        val later = ReminderRules.instant(monday.plusDays(3), 22 * 60, zone)
+        val reconciled = ReminderRules.reconcileRows(rows, rows, listOf(trackerReminder), trackerSources(), later, zone)
+        assertEquals(1, reconciled.count { it.state == DeliveryState.PENDING && it.dueAt <= later })
+    }
+
+    @Test fun trackerSlotsStopWhenFilledPausedOrArchived() {
+        val filled = trackerSources(entries = listOf(TrackerEntry("e", "t", 1, monday, 0, 0)))
+        val rows = ReminderRules.schedule(trackerSources(), listOf(trackerReminder), monday, zone)
+        val row = rows.first { it.slotDate == monday }
+        assertFalse(ReminderRules.relevant(row, filled, monday))
+        assertFalse(ReminderRules.schedule(filled, listOf(trackerReminder), monday, zone).any { it.slotDate == monday })
+        assertTrue(ReminderRules.schedule(trackerSources(HabitStatus.PAUSED), listOf(trackerReminder), monday, zone)
+            .isEmpty())
+        assertTrue(ReminderRules.schedule(trackerSources(active = false), listOf(trackerReminder), monday, zone)
+            .isEmpty())
+        val now = ReminderRules.instant(monday, 22 * 60, zone)
+        val cancelled = ReminderRules.reconcileRows(rows, rows, listOf(trackerReminder), filled, now, zone)
+        assertEquals(DeliveryState.CANCELLED, cancelled.first { it.key == row.key }.state)
+        ReminderRules.validate(trackerReminder)
     }
 }

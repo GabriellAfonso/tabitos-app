@@ -77,7 +77,8 @@ class TimerDatabaseTest {
             old.version = 5
         }
         val db = Room.databaseBuilder(context, TaskDatabase::class.java, name).addMigrations(HABIT_MIGRATION_1_2,
-            ACCOUNTING_MIGRATION_2_3, REWARD_MIGRATION_3_4, REMINDER_MIGRATION_4_5, TIMER_MIGRATION_5_6).build()
+            ACCOUNTING_MIGRATION_2_3, REWARD_MIGRATION_3_4, REMINDER_MIGRATION_4_5, TIMER_MIGRATION_5_6,
+                com.ethos.app.core.trackers.data.TRACKER_MIGRATION_6_7).build()
         try {
             expected.forEach { (table, row) -> db.openHelper.readableDatabase.query("SELECT * FROM `$table`").use {
                 assertTrue(it.moveToFirst())

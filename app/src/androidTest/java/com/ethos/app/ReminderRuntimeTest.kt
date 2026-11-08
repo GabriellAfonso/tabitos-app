@@ -68,7 +68,8 @@ class ReminderRuntimeTest {
         val db = Room.databaseBuilder(context, TaskDatabase::class.java, "ethos-tasks.db")
             .addMigrations(HABIT_MIGRATION_1_2, ACCOUNTING_MIGRATION_2_3, REWARD_MIGRATION_3_4,
                 REMINDER_MIGRATION_4_5,
-                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6).build()
+                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6,
+                com.ethos.app.core.trackers.data.TRACKER_MIGRATION_6_7).build()
         val clock = object : TaskClock {
             override fun today() = LocalDate.now()
             override fun nowMillis() = System.currentTimeMillis()
@@ -76,7 +77,8 @@ class ReminderRuntimeTest {
         val tasks = RoomTaskRepository(db, clock)
         val repository = RoomReminderRepository(db)
         val platform = ReminderPlatform(context)
-        val coordinator = ReminderCoordinator(repository, tasks, RoomHabitRepository(db, clock), platform)
+        val coordinator = ReminderCoordinator(repository, tasks, RoomHabitRepository(db, clock),
+            com.ethos.app.core.trackers.data.RoomTrackerRepository(db, clock), platform)
         val id = "runtime-${UUID.randomUUID()}"
         val at = ZonedDateTime.now().plusMinutes(1).withSecond(0).withNano(0)
             .let { if (it.toInstant().toEpochMilli() - System.currentTimeMillis() < 15000) it.plusMinutes(1) else it }
@@ -131,7 +133,8 @@ class ReminderRuntimeTest {
         val tasks = RoomTaskRepository(db, clock)
         val repository = RoomReminderRepository(db)
         val platform = ReminderPlatform(context)
-        val coordinator = ReminderCoordinator(repository, tasks, RoomHabitRepository(db, clock), platform)
+        val coordinator = ReminderCoordinator(repository, tasks, RoomHabitRepository(db, clock),
+            com.ethos.app.core.trackers.data.RoomTrackerRepository(db, clock), platform)
         val missed = ZonedDateTime.now().minusMinutes(10)
         val id = "missed-${UUID.randomUUID()}"
         try {

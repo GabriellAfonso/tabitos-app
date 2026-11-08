@@ -29,7 +29,8 @@ class ReminderIntegrationTest {
     private fun open(name: String) = Room.databaseBuilder(context, TaskDatabase::class.java, name)
         .addMigrations(HABIT_MIGRATION_1_2, ACCOUNTING_MIGRATION_2_3, REWARD_MIGRATION_3_4,
             REMINDER_MIGRATION_4_5,
-                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6).build()
+                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6,
+                com.ethos.app.core.trackers.data.TRACKER_MIGRATION_6_7).build()
 
     @Test fun migration4PreservesEveryColumnIncludingPurchases() {
         val name = "reminder-migration-${System.nanoTime()}.db"

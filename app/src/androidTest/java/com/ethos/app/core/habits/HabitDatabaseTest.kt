@@ -65,7 +65,8 @@ class HabitDatabaseTest {
                 com.ethos.app.core.accounting.data.ACCOUNTING_MIGRATION_2_3,
                 com.ethos.app.core.rewards.data.REWARD_MIGRATION_3_4,
                 com.ethos.app.core.reminders.data.REMINDER_MIGRATION_4_5,
-                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6).build()
+                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6,
+                com.ethos.app.core.trackers.data.TRACKER_MIGRATION_6_7).build()
         try {
             val tasks = RoomTaskRepository(db, clock).observe().first()
             assertEquals("Lista anterior", tasks.lists.single().name)
@@ -83,7 +84,8 @@ class HabitDatabaseTest {
                 com.ethos.app.core.accounting.data.ACCOUNTING_MIGRATION_2_3,
                 com.ethos.app.core.rewards.data.REWARD_MIGRATION_3_4,
                 com.ethos.app.core.reminders.data.REMINDER_MIGRATION_4_5,
-                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6).build()
+                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6,
+                com.ethos.app.core.trackers.data.TRACKER_MIGRATION_6_7).build()
             assertEquals(before, RoomHabitRepository(db, clock).observe().first())
             assertEquals(tasks, RoomTaskRepository(db, clock).observe().first())
         } finally { db.close(); context.deleteDatabase(name) }
