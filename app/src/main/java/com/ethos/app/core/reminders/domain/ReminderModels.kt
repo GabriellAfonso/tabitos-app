@@ -2,10 +2,11 @@ package com.ethos.app.core.reminders.domain
 
 import com.ethos.app.core.tasks.domain.TaskSnapshot
 import com.ethos.app.core.habits.domain.HabitSnapshot
+import com.ethos.app.core.trackers.domain.TrackerSnapshot
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
-enum class ReminderKind { TASK, HABIT }
+enum class ReminderKind { TASK, HABIT, TRACKER }
 enum class ReminderMode { CHOSEN, RELATIVE, WEEKDAYS }
 enum class DeliveryState { PENDING, POSTED, RECOVERED, CANCELLED }
 
@@ -28,7 +29,9 @@ data class ReminderSnapshot(
     val definitions: List<ReminderDefinition> = emptyList(),
     val deliveries: List<ReminderDelivery> = emptyList(), val settings: ReminderSettings = ReminderSettings(),
 )
-data class ReminderSources(val tasks: TaskSnapshot, val habits: HabitSnapshot)
+data class ReminderSources(
+    val tasks: TaskSnapshot, val habits: HabitSnapshot, val trackers: TrackerSnapshot = TrackerSnapshot(),
+)
 data class DaySummary(val tasks: Int, val habits: Int, val reviews: Int)
 
 interface ReminderRepository {

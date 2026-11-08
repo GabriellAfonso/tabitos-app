@@ -2,6 +2,7 @@ package com.ethos.app.core.reminders.domain
 
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.habits.domain.*
+import com.ethos.app.core.trackers.domain.TrackerRules
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -16,7 +17,7 @@ object ReminderRules {
         require(d.minute in 0..1439 && d.weekdays in 1..127 && d.fromOrdinal > 0)
         require(d.offsetMinutes in 0..525600 && (d.referenceMinute == null || d.referenceMinute in 0..1439))
         require(d.mode != ReminderMode.CHOSEN || d.chosenDate != null)
-        require(d.kind != ReminderKind.HABIT || d.mode == ReminderMode.WEEKDAYS)
+        require(d.kind == ReminderKind.TASK || d.mode == ReminderMode.WEEKDAYS)
     }
 
     fun effective(defs: List<ReminderDefinition>, o: TaskOccurrence): List<ReminderDefinition> = defs
@@ -42,6 +43,11 @@ object ReminderRules {
                 period != null && date in period.start..period.end &&
                 (period.rule.type != HabitType.PRACTICE || period.count < period.target)
         }
+        // A tracker slot belongs to its own civil date: past slots never stay pending (no burst).
+        ReminderKind.TRACKER -> s.trackers.tracker(row.sourceId)?.let { t ->
+            date == row.slotDate && TrackerRules.remindable(t, s.habits, date) &&
+                !TrackerRules.hasEntry(s.trackers, t.id, row.slotDate)
+        } == true
     }
 
     fun schedule(
@@ -91,6 +97,16 @@ object ReminderRules {
                     ?: return@forEach
                 if (p.rule.type == HabitType.PRACTICE && p.count >= p.target) return@forEach
                 add(d, h.id, p.key, date, null, instant(date, d.minute, zone))
+            }
+        }
+        defs.filter { it.enabled && it.kind == ReminderKind.TRACKER }.forEach { d ->
+            val t = s.trackers.tracker(d.sourceId) ?: return@forEach
+            (0L..32L).forEach { offset ->
+                val date = today.plusDays(offset)
+                if (d.weekdays and (1 shl (date.dayOfWeek.value - 1)) == 0 ||
+                    !TrackerRules.remindable(t, s.habits, date) || TrackerRules.hasEntry(s.trackers, t.id, date))
+                    return@forEach
+                add(d, t.id, date.toString(), date, null, instant(date, d.minute, zone))
             }
         }
         return rows.distinctBy { it.key }

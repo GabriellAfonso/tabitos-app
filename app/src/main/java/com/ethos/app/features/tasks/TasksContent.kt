@@ -24,12 +24,11 @@ import com.ethos.app.core.ui.timers.LocalOpenTimer
 import com.ethos.app.core.timers.domain.TimerKind
 import com.ethos.app.core.reminders.domain.ReminderKind
 import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-enum class TaskPage { LIST, TODAY, REVIEW, CALENDAR }
+enum class TaskPage { LIST, TODAY, REVIEW }
 private val listColors = listOf(Color(0xFF54745C), Color(0xFF426B96), Color(0xFF79568E),
     Color(0xFFA45B25), Color(0xFFA04D68), Color(0xFF657078))
 private val listSymbols = listOf("≡", "▣", "⌂", "▤", "♡", "☆")
@@ -82,9 +81,6 @@ fun TasksContent(
 ) {
     var collapsed by rememberSaveable(page, state.selectedListId) { mutableStateOf(true) }
     var habits by rememberSaveable(state.selectedListId) { mutableStateOf(false) }
-    var calendarText by rememberSaveable { mutableStateOf(state.today.toString()) }
-    var calendarDay by rememberSaveable { mutableLongStateOf(state.today.toEpochDay()) }
-    var calendarError by remember { mutableStateOf(false) }
     val listItems = state.snapshot.activeOccurrences.filter { it.fields.listId == state.selectedListId }
     val visible = when (page) {
         TaskPage.LIST -> if (habits) emptyList() else listItems
@@ -92,7 +88,6 @@ fun TasksContent(
             it.inDay(state.today) }
         TaskPage.REVIEW -> if (filter == 2) emptyList() else state.snapshot.activeOccurrences.filter {
             it.needsReview(state.today) }
-        TaskPage.CALENDAR -> state.snapshot.activeOccurrences.filter { it.inDay(LocalDate.ofEpochDay(calendarDay)) }
     }.sortedWith(compareBy<TaskOccurrence> { it.position }.thenBy { it.id })
     val pending = visible.filter { it.status == TaskStatus.OPEN }
     val resolved = visible.filter { it.status != TaskStatus.OPEN }
@@ -113,16 +108,6 @@ fun TasksContent(
                     habits = it == 1 }
                 TextButton(onManage) { Text(stringResource(R.string.manage_lists)) }
             }
-        }
-        if (page == TaskPage.CALENDAR) item {
-            Text(stringResource(R.string.calendar_task_date))
-            Input(R.string.date_format, calendarText) { calendarText = it }
-            TextButton({
-                val date = runCatching { LocalDate.parse(calendarText) }.getOrNull()
-                calendarError = date == null
-                if (date != null) calendarDay = date.toEpochDay()
-            }) { Text(stringResource(R.string.show_date)) }
-            if (calendarError) Text(stringResource(R.string.task_invalid_input))
         }
         if (page != TaskPage.REVIEW && !habits && filter != 2) item {
             Button(onNew, enabled = !state.loading && !state.busy) { Text(stringResource(R.string.new_task)) }

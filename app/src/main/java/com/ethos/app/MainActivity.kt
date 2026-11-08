@@ -57,6 +57,10 @@ import com.ethos.app.core.timers.domain.TimerKind
 import com.ethos.app.core.timers.platform.TimerCoordinator
 import com.ethos.app.core.ui.timers.LocalOpenTimer
 import com.ethos.app.features.timers.*
+import com.ethos.app.features.trackers.*
+import com.ethos.app.features.calendar.CalendarScreen
+import com.ethos.app.features.calendar.CalendarViewModel
+import com.ethos.app.core.ui.trackers.LocalOpenTracker
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -112,26 +116,35 @@ class MainActivity : ComponentActivity() {
                     val timerViewModel: TimerViewModel = viewModel()
                     val timerState by timerViewModel.state.collectAsStateWithLifecycle()
                     TimerTicker(timerViewModel)
+                    val trackerViewModel: TrackerViewModel = viewModel()
+                    val trackerState by trackerViewModel.state.collectAsStateWithLifecycle()
+                    val calendarViewModel: CalendarViewModel = viewModel()
+                    TrackerTicker(trackerViewModel)
                     ReminderPermissionControls(reminderState, reminderViewModel::refresh) { requestPermission ->
                     CompositionLocalProvider(LocalOpenReminders provides reminderViewModel::open,
-                        LocalOpenTimer provides { kind, id -> timerRequest = kind to id }) {
+                        LocalOpenTimer provides { kind, id -> timerRequest = kind to id },
+                        LocalOpenTracker provides trackerViewModel::open) {
                     AccountingScreen(accountingViewModel) { financial ->
                     CompositionLocalProvider(LocalFinancialPrices provides
                         financial.snapshot.prices.takeUnless { financial.loading || financial.error }) {
                     TasksScreen(tasksViewModel) { tasks ->
                       HabitsScreen(habitsViewModel) { habits ->
-                        LaunchedEffect(reminderRequest, tasks.loading, habits.loading) {
+                        LaunchedEffect(reminderRequest, tasks.loading, habits.loading, trackerState.loading) {
                             val request = reminderRequest
-                            if (request != null && !tasks.loading && !habits.loading) {
+                            if (request != null && !tasks.loading && !habits.loading && !trackerState.loading) {
                                 val uri = request.first.toUri()
                                 val action = uri.pathSegments.getOrNull(0).orEmpty()
                                 val key = uri.pathSegments.getOrNull(1).orEmpty()
                                 try {
                                     val row = reminderViewModel.request(key, action, request.second)
                                     if (row != null) {
-                                        if (row.kind == ReminderKind.TASK) {
-                                            tasksViewModel.notification(row.sourceId, action == "COMPLETE")
-                                        } else habitsViewModel.detail(row.sourceId)
+                                        when (row.kind) {
+                                            ReminderKind.TASK ->
+                                                tasksViewModel.notification(row.sourceId, action == "COMPLETE")
+                                            ReminderKind.HABIT -> habitsViewModel.detail(row.sourceId)
+                                            // Opening the form never resolves the notice; only a saved entry does.
+                                            ReminderKind.TRACKER -> trackerViewModel.fill(row.sourceId, row.slotDate)
+                                        }
                                     }
                                     reminderRequest = null
                                 } catch (e: kotlinx.coroutines.CancellationException) { throw e
@@ -187,14 +200,16 @@ class MainActivity : ComponentActivity() {
                                     tasksViewModel::newList, { tasksViewModel.manageLists(true) })
                             },
                             taskPage = { destination, filter, onFilter, onRewards, onReview ->
-                              if (destination == ShellDestination.HABITS) {
+                              if (destination == ShellDestination.CALENDAR) {
+                                CalendarScreen(calendarViewModel, tasksViewModel::detail, habitsViewModel::detail,
+                                    trackerViewModel::fill, trackerViewModel::editEntry)
+                              } else if (destination == ShellDestination.HABITS) {
                                 HabitsContent(habits, HabitPage.ALL, { habitsViewModel.newHabit(null) },
                                     habitsViewModel::detail, habitsViewModel::retry)
                               } else {
                                 val page = when (destination) {
                                     ShellDestination.TODAY -> TaskPage.TODAY
                                     ShellDestination.REVIEW -> TaskPage.REVIEW
-                                    ShellDestination.CALENDAR -> TaskPage.CALENDAR
                                     else -> TaskPage.LIST
                                 }
                                 TasksContent(tasks, page, filter.ordinal, tasksViewModel::newTask,
@@ -218,6 +233,10 @@ class MainActivity : ComponentActivity() {
                                                 style = MaterialTheme.typography.headlineSmall)
                                             WalletTiles(financial, onRewards, accountingViewModel::retry)
                                             TimerSessionCards(timerState, sessions, zone, timerCards)
+                                            TrackerPendingCard(trackerState.pending.size) {
+                                                trackerState.pending.firstOrNull()?.let {
+                                                    trackerViewModel.fill(it.id, trackerState.today) }
+                                            }
                                             if (pending > 0) Card(onClick = onReview) {
                                                 Text(pluralStringResource(R.plurals.pending_count, pending, pending),
                                                     Modifier.padding(16.dp))
@@ -247,6 +266,7 @@ class MainActivity : ComponentActivity() {
                                 ReminderSettingsContent(reminderState, reminderViewModel, requestPermission)
                             },
                         )
+                        TrackerDialogs(trackerState, trackerViewModel, requestPermission)
                         TimerDialogs(timerState, timerViewModel, { kind, id ->
                             if (kind == TimerKind.TASK) tasksViewModel.detail(id) else habitsViewModel.detail(id)
                         }, requestPermission)

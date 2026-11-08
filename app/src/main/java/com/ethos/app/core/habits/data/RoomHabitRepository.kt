@@ -15,11 +15,16 @@ class RoomHabitRepository(private val database: TaskDatabase, private val clock:
         "habit_audits", emitInitialState = true,
     ).map { database.withTransaction { read() } }
 
-    private suspend fun read(): HabitSnapshot {
-        val dao = database.habits()
-        return HabitSnapshot(dao.habits().map { it.value }, dao.rules().map { it.value },
-            dao.intervals().map { it.value }, dao.overrides().map { it.value }, dao.records().map { it.value },
-            dao.reviews().map { it.value }, dao.audits().map { it.value })
+    private suspend fun read(): HabitSnapshot = read(database)
+
+    companion object {
+        /** Reads the habit snapshot inside the caller's transaction (used by tracker validation). */
+        suspend fun read(database: TaskDatabase): HabitSnapshot {
+            val dao = database.habits()
+            return HabitSnapshot(dao.habits().map { it.value }, dao.rules().map { it.value },
+                dao.intervals().map { it.value }, dao.overrides().map { it.value }, dao.records().map { it.value },
+                dao.reviews().map { it.value }, dao.audits().map { it.value })
+        }
     }
     override suspend fun execute(action: HabitAction) {
         database.withTransaction {

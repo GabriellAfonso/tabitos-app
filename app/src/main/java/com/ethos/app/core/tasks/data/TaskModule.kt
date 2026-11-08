@@ -18,6 +18,9 @@ import com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6
 import com.ethos.app.core.timers.domain.TimerClock
 import com.ethos.app.core.timers.domain.TimerRepository
 import com.ethos.app.core.timers.platform.AndroidTimerClock
+import com.ethos.app.core.trackers.data.RoomTrackerRepository
+import com.ethos.app.core.trackers.data.TRACKER_MIGRATION_6_7
+import com.ethos.app.core.trackers.domain.TrackerRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -36,7 +39,7 @@ object TaskModule {
     @Provides @Singleton fun database(@ApplicationContext context: Context): TaskDatabase =
         Room.databaseBuilder(context, TaskDatabase::class.java, "ethos-tasks.db")
             .addMigrations(HABIT_MIGRATION_1_2, ACCOUNTING_MIGRATION_2_3, REWARD_MIGRATION_3_4,
-                REMINDER_MIGRATION_4_5, TIMER_MIGRATION_5_6).build()
+                REMINDER_MIGRATION_4_5, TIMER_MIGRATION_5_6, TRACKER_MIGRATION_6_7).build()
     @Provides @Singleton fun reminders(repository: RoomReminderRepository): ReminderRepository = repository
     @Provides @Singleton fun timerClock(@ApplicationContext context: Context): TimerClock =
         AndroidTimerClock(context)
@@ -49,6 +52,8 @@ object TaskModule {
         RoomAccountingRepository(database, clock)
     @Provides @Singleton fun habits(database: TaskDatabase, clock: TaskClock): HabitRepository =
         RoomHabitRepository(database, clock)
+    @Provides @Singleton fun trackers(database: TaskDatabase, clock: TaskClock): TrackerRepository =
+        RoomTrackerRepository(database, clock)
     @Provides @Singleton fun repository(database: TaskDatabase, clock: TaskClock): TaskRepository =
         RoomTaskRepository(database, clock)
 }

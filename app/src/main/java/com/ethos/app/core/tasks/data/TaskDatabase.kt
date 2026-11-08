@@ -8,6 +8,7 @@ import com.ethos.app.core.accounting.data.*
 import com.ethos.app.core.rewards.data.*
 import com.ethos.app.core.reminders.data.*
 import com.ethos.app.core.timers.data.*
+import com.ethos.app.core.trackers.data.*
 
 @Database(entities = [ListEntity::class, DefinitionEntity::class, OccurrenceEntity::class,
     ChecklistEntity::class, AuditEntity::class, HabitEntity::class, HabitRuleEntity::class,
@@ -16,7 +17,8 @@ import com.ethos.app.core.timers.data.*
     EntitlementEntity::class, LedgerEntity::class, RewardEntity::class,
     PurchaseIntentEntity::class, PurchaseEntity::class, ReminderEntity::class, DeliveryEntity::class,
     ReminderSettingsEntity::class, TimerGoalEntity::class, TimerSessionEntity::class, TimerSegmentEntity::class,
-    TimerAuditEntity::class], version = 6, exportSchema = true)
+    TimerAuditEntity::class, TrackerEntity::class, TrackerVersionEntity::class, TrackerQuestionEntity::class,
+    TrackerOptionEntity::class, TrackerEntryEntity::class, TrackerAnswerEntity::class], version = 7, exportSchema = true)
 @TypeConverters(TaskConverters::class)
 abstract class TaskDatabase : RoomDatabase() {
     abstract fun tasks(): TaskDao
@@ -25,4 +27,5 @@ abstract class TaskDatabase : RoomDatabase() {
     abstract fun rewards(): RewardDao
     abstract fun reminders(): ReminderDao
     abstract fun timers(): TimerDao
+    abstract fun trackers(): TrackerDao
 }

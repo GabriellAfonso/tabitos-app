@@ -12,6 +12,7 @@ import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskList
 import com.ethos.app.core.ui.reminders.LocalOpenReminders
 import com.ethos.app.core.ui.timers.LocalOpenTimer
+import com.ethos.app.core.ui.trackers.LocalOpenTracker
 import com.ethos.app.core.timers.domain.TimerKind
 import com.ethos.app.core.reminders.domain.ReminderKind
 import androidx.compose.runtime.*
@@ -119,6 +120,8 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                 val timer = LocalOpenTimer.current
                 TextButton({ timer(TimerKind.HABIT, h.id) }, enabled = !state.busy) {
                     Text(stringResource(R.string.timer_button)) }
+                val tracker = LocalOpenTracker.current
+                TextButton({ tracker(h.id) }, enabled = !state.busy) { Text(stringResource(R.string.tracker)) }
                 if (h.status != HabitStatus.EXCLUDED) {
                     val reminders = LocalOpenReminders.current
                     TextButton({ reminders(ReminderKind.HABIT, h.id) }, enabled = !state.busy) {

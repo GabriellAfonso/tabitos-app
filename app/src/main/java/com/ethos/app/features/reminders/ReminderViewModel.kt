@@ -167,7 +167,7 @@ class ReminderViewModel @Inject constructor(
 
     suspend fun request(key: String, action: String, token: String): ReminderDelivery? {
         if (saved.get<String>("handledReminder") == token) return null
-        if (action !in setOf("OPEN", "COMPLETE", "SNOOZE")) return null
+        if (action !in setOf("OPEN", "COMPLETE", "SNOOZE", "FILL")) return null
         val row = coordinator.validate(key)
         if (row == null || (action == "COMPLETE" && row.kind != ReminderKind.TASK)) {
             saved["handledReminder"] = token

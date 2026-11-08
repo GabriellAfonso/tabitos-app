@@ -76,6 +76,7 @@ class ReminderPlatform @Inject constructor(@param:ApplicationContext private val
     }
     fun show(row: ReminderDelivery, title: String): Boolean {
         if (!capability().reminders) return false
+        if (row.kind == ReminderKind.TRACKER) return post(row.key, tracker(row))
         val b = builder(REMINDERS).setContentTitle(title)
             .setContentText(context.getString(R.string.reminder_notice))
             .setWhen(row.dueAt).setContentIntent(activity(row.key, "OPEN"))
@@ -87,6 +88,15 @@ class ReminderPlatform @Inject constructor(@param:ApplicationContext private val
             activity(row.key, "OPEN")).build())
         return post(row.key, b.build())
     }
+    /** Neutral notice: no habit name, question or answer; ongoing is best-effort (dismissible on Android 14+). */
+    fun tracker(row: ReminderDelivery): Notification = builder(REMINDERS)
+        .setContentTitle(context.getString(R.string.app_name)).setContentText(context.getString(R.string.tracker_notice)).setWhen(row.dueAt)
+        .setOngoing(true).setAutoCancel(false).setContentIntent(activity(row.key, "FILL"))
+        .addAction(Notification.Action.Builder(null, context.getString(R.string.tracker_fill),
+            activity(row.key, "FILL")).build())
+        .addAction(Notification.Action.Builder(null, context.getString(R.string.reminder_snooze),
+            activity(row.key, "SNOOZE")).build())
+        .build()
     fun summary(summary: DaySummary): Boolean {
         if (!capability().summaries) return false
         return post(DAILY_TAG, builder(SUMMARIES).setContentTitle(context.getString(R.string.reminder_daily))
