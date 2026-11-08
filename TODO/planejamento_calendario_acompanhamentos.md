@@ -72,6 +72,11 @@ prompt(s) com escopo coeso. Não importar automaticamente todo o texto de refer�
 exportação, criptografia específica e módulos clínicos não foram definidos como funcionalidades
 de primeira entrega. Preservar privacidade local e regras existentes sem inventar esses requisitos.
 
+Prompt consolidado em `TODO/specify_calendario_acompanhamentos_app.md` (2026-11-07), em uma
+única spec com histórias priorizadas. Pontos não discutidos ficaram como suposições mínimas
+explícitas: horário diário único, resolução da pendência no modo múltiplo, exclusão individual
+de registro, ciclo de vida igual ao do hábito e apresentação de escala com faixa alterada.
+
 ## Propostas ainda em discussão
 
 - Formulário por hábito: métricas numéricas, perguntas de escolha única/múltipla e texto opcional.
