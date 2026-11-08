@@ -194,7 +194,8 @@ class AccountingDatabaseTest {
         } finally { old.close() }
         var db = Room.databaseBuilder(context, TaskDatabase::class.java, name)
             .addMigrations(ACCOUNTING_MIGRATION_2_3, com.ethos.app.core.rewards.data.REWARD_MIGRATION_3_4,
-                com.ethos.app.core.reminders.data.REMINDER_MIGRATION_4_5).build()
+                com.ethos.app.core.reminders.data.REMINDER_MIGRATION_4_5,
+                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6).build()
         try {
             val wallet = RoomAccountingRepository(db, clock)
             assertEquals(0L, wallet.observe().first().balance)
@@ -216,7 +217,8 @@ class AccountingDatabaseTest {
             db.close()
             db = Room.databaseBuilder(context, TaskDatabase::class.java, name)
                 .addMigrations(ACCOUNTING_MIGRATION_2_3, com.ethos.app.core.rewards.data.REWARD_MIGRATION_3_4,
-                com.ethos.app.core.reminders.data.REMINDER_MIGRATION_4_5).build()
+                com.ethos.app.core.reminders.data.REMINDER_MIGRATION_4_5,
+                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6).build()
             assertEquals(expected, RoomAccountingRepository(db, clock).observe().first())
         } finally { db.close(); context.deleteDatabase(name) }
     }

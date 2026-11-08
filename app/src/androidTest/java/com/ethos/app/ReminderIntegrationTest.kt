@@ -28,7 +28,8 @@ class ReminderIntegrationTest {
     }
     private fun open(name: String) = Room.databaseBuilder(context, TaskDatabase::class.java, name)
         .addMigrations(HABIT_MIGRATION_1_2, ACCOUNTING_MIGRATION_2_3, REWARD_MIGRATION_3_4,
-            REMINDER_MIGRATION_4_5).build()
+            REMINDER_MIGRATION_4_5,
+                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6).build()
 
     @Test fun migration4PreservesEveryColumnIncludingPurchases() {
         val name = "reminder-migration-${System.nanoTime()}.db"
@@ -66,7 +67,7 @@ class ReminderIntegrationTest {
         try {
             expected.forEach { (table, row) -> db.openHelper.readableDatabase.query("SELECT * FROM `$table`").use {
                 assertTrue(it.moveToFirst())
-                assertEquals(table, row, (0 until it.columnCount).map(it::getString))
+                assertEquals(table, row, row.indices.map(it::getString))
                 assertFalse(it.moveToNext())
             } }
             for (table in listOf("reminder_definitions", "reminder_deliveries", "reminder_settings")) {

@@ -67,7 +67,8 @@ class ReminderRuntimeTest {
         shell("appops set ${context.packageName} SCHEDULE_EXACT_ALARM allow")
         val db = Room.databaseBuilder(context, TaskDatabase::class.java, "ethos-tasks.db")
             .addMigrations(HABIT_MIGRATION_1_2, ACCOUNTING_MIGRATION_2_3, REWARD_MIGRATION_3_4,
-                REMINDER_MIGRATION_4_5).build()
+                REMINDER_MIGRATION_4_5,
+                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6).build()
         val clock = object : TaskClock {
             override fun today() = LocalDate.now()
             override fun nowMillis() = System.currentTimeMillis()

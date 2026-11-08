@@ -3,6 +3,7 @@ package com.ethos.app.core.rewards
 import androidx.lifecycle.SavedStateHandle
 import com.ethos.app.core.rewards.domain.*
 import com.ethos.app.features.rewards.*
+import com.ethos.app.core.timers.domain.*
 import java.io.IOException
 import java.time.LocalDate
 import kotlinx.coroutines.*
@@ -73,6 +74,50 @@ class RewardsViewModelTest {
         assertEquals(0, exact.allowanceAfter)
     }
 
+    @Test fun timedPurchaseWithRunningTimerAsksBeforeChargingAndCancelChargesNothing() = runTest(dispatcher) {
+        val reward = Reward("r", "Jogo", cost = 10, minutes = 120)
+        val repo = Fake()
+        repo.data.value = RewardSnapshot(rewards = listOf(reward),
+            intent = PurchaseIntent("i", reward, LocalDate.of(2026, 11, 7), 50, 0))
+        val running = TimerSession("s", TimerKind.TASK, "o", "Leitura", TimerState.RUNNING, created = 0)
+        val timers = FakeTimers(MutableStateFlow(TimerSnapshot(sessions = listOf(running))))
+        val vm = RewardsViewModel(repo, SavedStateHandle(), timers)
+        advanceUntilIdle()
+        vm.confirm()
+        advanceUntilIdle()
+        assertEquals("Leitura", vm.state.value.pauseRequired)
+        assertTrue(repo.confirms.isEmpty())
+        vm.cancelPause()
+        assertNull(vm.state.value.pauseRequired)
+        assertTrue(repo.confirms.isEmpty())
+        vm.confirm()
+        advanceUntilIdle()
+        vm.confirm(true)
+        advanceUntilIdle()
+        assertEquals(listOf(true), repo.confirms)
+        // Non-timed rewards keep point-6 behavior even while a timer runs.
+        repo.data.value = repo.data.value.copy(intent = PurchaseIntent("j", reward.copy(minutes = null),
+            LocalDate.of(2026, 11, 7), 50, 0))
+        advanceUntilIdle()
+        vm.confirm()
+        advanceUntilIdle()
+        assertEquals(listOf(true, false), repo.confirms)
+    }
+
+    private class FakeTimers(val data: MutableStateFlow<TimerSnapshot>) : TimerRepository {
+        override fun observe() = data
+        override suspend fun start(request: TimerStart, pauseOther: Boolean) = StartResult.STARTED
+        override suspend fun pause(sessionId: String) { }
+        override suspend fun finish(sessionId: String) { }
+        override suspend fun confirmed(sessionId: String) { }
+        override suspend fun sync(closedSources: Set<Pair<TimerKind, String>>) = TimerSync(null, null, emptyList())
+        override suspend fun checkpoint() { }
+        override suspend fun saveGoal(sourceKey: String, minutes: Int?) { }
+        override suspend fun addManual(request: TimerStart, start: Long, end: Long, bounds: TimerBounds) { }
+        override suspend fun correct(segmentId: String, start: Long, end: Long, bounds: TimerBounds) { }
+        override suspend fun delete(segmentId: String) { }
+    }
+
     private class Fake : RewardRepository {
         val data = MutableStateFlow(RewardSnapshot())
         var failRead = false
@@ -91,7 +136,11 @@ class RewardsViewModelTest {
         override suspend fun move(id: String, direction: Int) { }
         override suspend fun delete(id: String) { }
         override suspend fun preview(id: String) { }
-        override suspend fun confirm(expected: PurchaseIntent) = PurchaseResult.UNAVAILABLE
+        var confirms = mutableListOf<Boolean>()
+        override suspend fun confirm(expected: PurchaseIntent, pauseRunning: Boolean): PurchaseResult {
+            confirms += pauseRunning
+            return PurchaseResult.PURCHASED
+        }
         override suspend fun close(intentId: String) { }
     }
 }

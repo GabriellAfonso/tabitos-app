@@ -213,12 +213,13 @@ class RewardDatabaseTest {
             old.version = 3
         } finally { old.close() }
         val db = Room.databaseBuilder(context, TaskDatabase::class.java, name)
-            .addMigrations(REWARD_MIGRATION_3_4, com.ethos.app.core.reminders.data.REMINDER_MIGRATION_4_5).build()
+            .addMigrations(REWARD_MIGRATION_3_4, com.ethos.app.core.reminders.data.REMINDER_MIGRATION_4_5,
+                com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6).build()
         try {
             expected.forEach { (table, row) ->
                 db.openHelper.readableDatabase.query("SELECT * FROM `$table`").use { cursor ->
                     assertTrue(cursor.moveToFirst())
-                    assertEquals(table, row, (0 until cursor.columnCount).map { cursor.getString(it) })
+                    assertEquals(table, row, row.indices.map { cursor.getString(it) })
                     assertFalse(cursor.moveToNext())
                 }
             }
