@@ -122,6 +122,14 @@ Entrega/dispensa/recuperação não geram resultado de domínio; recuperação s
 Resumo diário desligado por padrão, horário escolhido, contagens reais de Hoje/revisão.
 Permissão de notificação pedida em contexto após configurar; status de canal/acesso exato explicados.
 Carteira, XP/níveis, recompensas e históricos mantêm as regras das features 005/006.
-DataStore preserva temas; configurações de agendamento ficam no Room (schema5); sem cronômetros.
+DataStore preserva temas; configurações de agendamento ficam no Room (schema5).
+Cronômetros/metas de tempo/recompensas temporizadas implementados: specs/008-timers-duration-goals/spec.md.
+Plano: specs/008-timers-duration-goals/plan.md; tarefas: specs/008-timers-duration-goals/tasks.md (20/20).
+Verificação: specs/008-timers-duration-goals/verification.md; 93 JVM e 52 Android aprovados em API36.
+Room schema6 (timer_goals/sessions/segments/audits, reward_minutes); migração preservadora5→6 testada.
+Sessões ligadas a tarefa/hábito/compra; um cronômetro contando; tempo por relógio monotônico e checkpoints.
+Reinício recupera último checkpoint pausado; meta pausa no objetivo e só conclui via fluxos existentes.
+Serviço em primeiro plano specialUse com notificação privada Pausar/Abrir; sem alarme exato/isenção.
+Compra temporizada: consentir pausa antes de cobrar; débito, recibo e sessão na mesma transação.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->
