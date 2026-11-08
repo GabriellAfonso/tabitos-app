@@ -1,6 +1,8 @@
 package com.ethos.app.features.tasks
 
 import androidx.lifecycle.SavedStateHandle
+import com.ethos.app.core.accounting.domain.*
+import com.ethos.app.core.habits.domain.HabitAction
 import com.ethos.app.core.tasks.domain.*
 import java.io.IOException
 import java.time.LocalDate
@@ -112,6 +114,66 @@ class TasksViewModelTest {
         advanceUntilIdle()
         assertTrue(repo.snapshot.value.occurrences.isEmpty())
         assertNotNull(vm.state.value.draft)
+    }
+
+    @Test fun notificationCompletionRevalidatesAndPreservesUncheckedConfirmation() = runTest(dispatcher) {
+        val repo = FakeRepository(clock)
+        repo.execute(TaskAction.Create("a", TaskFields(title = "Fictitious", checklist = listOf("One")),
+            RepeatRule(start = clock.today())))
+        val vm = TasksViewModel(repo, clock, SavedStateHandle())
+        advanceUntilIdle()
+        vm.notification("a:1", true)
+        advanceUntilIdle()
+        assertEquals(1, vm.state.value.uncheckedConfirmation)
+        assertEquals(TaskStatus.OPEN, repo.snapshot.value.occurrences.single().status)
+        vm.confirmCompletion(true)
+        advanceUntilIdle()
+        vm.notification("a:1", true)
+        advanceUntilIdle()
+        assertEquals(1, repo.snapshot.value.history.count { it.kind == AuditKind.COMPLETED })
+    }
+
+    @Test fun notificationReadFailureAndMissingSourceAreRecoverable() = runTest(dispatcher) {
+        val repo = FakeRepository(clock)
+        val vm = TasksViewModel(repo, clock, SavedStateHandle())
+        advanceUntilIdle()
+        vm.notification("missing", true)
+        advanceUntilIdle()
+        assertEquals(TaskProblem.NOT_OPEN, vm.state.value.error)
+        repo.failRead = true
+        vm.notification("missing", true)
+        advanceUntilIdle()
+        assertTrue(vm.state.value.storageError)
+    }
+    @Test fun notificationCompletionRequiresExistingFinancialConfirmation() = runTest(dispatcher) {
+        val repo = FakeRepository(clock)
+        repo.execute(TaskAction.Create("a", TaskFields(title = "Fictitious"), RepeatRule(start = clock.today())))
+        var previews = 0
+        val accounting = object : AccountingRepository {
+            override fun observe() = MutableStateFlow(AccountingSnapshot())
+            override suspend fun savePrices(prices: List<Price>) = Unit
+            override suspend fun previewTask(action: TaskAction): FinancialPreview {
+                previews++
+                return FinancialPreview(emptyList(), 10, 10)
+            }
+            override suspend fun previewHabit(action: HabitAction) = error("Unexpected habit mutation")
+        }
+        val vm = TasksViewModel(repo, clock, SavedStateHandle(), accounting)
+        advanceUntilIdle()
+        vm.notification("a:1", true)
+        advanceUntilIdle()
+        assertNotNull(vm.state.value.financialPreview)
+        assertEquals(TaskStatus.OPEN, repo.snapshot.value.occurrences.single().status)
+        vm.confirmFinancial(false)
+        advanceUntilIdle()
+        assertEquals(TaskStatus.OPEN, repo.snapshot.value.occurrences.single().status)
+        vm.notification("a:1", true)
+        advanceUntilIdle()
+        vm.confirmFinancial(true)
+        advanceUntilIdle()
+        assertEquals(2, previews)
+        assertEquals(TaskStatus.DONE, repo.snapshot.value.occurrences.single().status)
+        assertEquals(1, repo.snapshot.value.history.count { it.kind == AuditKind.COMPLETED })
     }
 
     private class FakeRepository(val clock: TaskClock) : TaskRepository {
