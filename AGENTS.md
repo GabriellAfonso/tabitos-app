@@ -109,17 +109,19 @@ Listas/tarefas/checklists/prazos/recorrências/revisão implementados: specs/003
 Hábitos/metas implementados: specs/004-habits-goals/spec.md.
 Moedas/XP/níveis implementados: specs/005-coins-xp-levels/spec.md.
 Recompensas pessoais implementadas: specs/006-personal-rewards/spec.md.
-Plano: specs/006-personal-rewards/plan.md; tarefas: specs/006-personal-rewards/tasks.md (18/18).
-Verificação: specs/006-personal-rewards/verification.md (2026-11-07).
-Debug/lint/release R8, 71 testes JVM e 34 testes Android aprovados em API36; sem novos avisos lint.
-API24, dispositivo físico e TalkBack por áudio não validados; matriz visual registrada na verificação.
-Room2.8.5 com schemas1/2/3/4 exportados; migrações preservadoras1→4,2→4,3→4 validadas.
-Carteira offline, piso−300, XP/níveis lineares, tabelas prospectivas e correções vinculadas preservados.
-Recompensas com cadastro/edição/ordem/exclusão confirmada e limites civis independentes por item.
-Compra confirmada exige saldo integral, registra uso imediato e débito atômico sem alterar XP.
-Intenção/recibo persistidos evitam cobrança duplicada; sem estoque, cancelamento ou reembolso de compras.
-Histórico preserva detalhes originais após edição/exclusão; limites editados contam compras existentes.
-Ativação sem cobrança retroativa; práticas/eventos/fechamentos e correções mantêm as regras existentes.
-DataStore preserva temas claro/escuro/sistema; sem lembretes ou motores de tempo.
+Lembretes/notificações implementados: specs/007-reminders-notifications/spec.md.
+Plano: specs/007-reminders-notifications/plan.md; tarefas: specs/007-reminders-notifications/tasks.md (20/20).
+Verificação: specs/007-reminders-notifications/verification.md (2026-11-07).
+Debug/lint/release R8, 85 testes JVM e 44 testes Android aprovados em API36; sem novos avisos lint.
+API24, dispositivo físico e TalkBack por áudio não validados; fabricante/force-stop não contornáveis.
+Room2.8.5 com schemas1–5 exportados; migração preservadora4→5 validada após cadeia1→4.
+Lembretes opcionais múltiplos por tarefa/hábito, escopo de série, data/antecedência/dias da semana.
+Alarmes locais únicos com fallback aproximado sem acesso exato; adiar substitui o mesmo slot.
+Ações abrem a Activity existente; Concluir revalida e usa confirmações existentes; hábito nunca registra.
+Entrega/dispensa/recuperação não geram resultado de domínio; recuperação sem rajada de pendências.
+Resumo diário desligado por padrão, horário escolhido, contagens reais de Hoje/revisão.
+Permissão de notificação pedida em contexto após configurar; status de canal/acesso exato explicados.
+Carteira, XP/níveis, recompensas e históricos mantêm as regras das features 005/006.
+DataStore preserva temas; configurações de agendamento ficam no Room (schema5); sem cronômetros.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->
