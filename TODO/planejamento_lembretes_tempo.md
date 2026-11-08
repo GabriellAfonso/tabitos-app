@@ -3,6 +3,14 @@
 Requisitos adicionados ao plano pelo usuário. Documento de design, não prompt de specify pronto.
 Não autoriza implementação nem amplia automaticamente o escopo do ponto 3.
 
+## Registros consolidados posteriores
+
+- Lembretes/notificações: `TODO/planejamento_ponto_7.md` e
+  `TODO/specify_lembretes_notificacoes_app.md`.
+- Cronômetros/metas de tempo: `TODO/planejamento_ponto_8.md`, com seis decisões iniciais e
+  quatro detalhes finais aprovados. Essas decisões substituem as antigas questões abaixo
+  quando o assunto já estiver resolvido, inclusive pausa/retomada de recompensas iniciadas na compra.
+
 ## Intenções confirmadas
 
 - Incluir lembretes e notificações no app. Podem ser tratados no próximo specify próprio;
