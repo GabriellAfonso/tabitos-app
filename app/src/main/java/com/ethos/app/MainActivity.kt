@@ -45,11 +45,33 @@ import androidx.compose.runtime.LaunchedEffect
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import dagger.hilt.android.AndroidEntryPoint
+import android.content.Intent
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.ethos.app.features.reminders.*
+import com.ethos.app.core.ui.reminders.LocalOpenReminders
+import com.ethos.app.core.reminders.domain.ReminderKind
+import java.util.UUID
+import androidx.core.net.toUri
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private var reminderRequest by mutableStateOf<Pair<String, String>?>(null)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        acceptReminder(intent)
+    }
+    private fun acceptReminder(intent: Intent?) {
+        val data = intent?.data ?: return
+        if (data.scheme == "ethos-reminder" && data.authority == "local")
+            reminderRequest = data.toString() to UUID.randomUUID().toString()
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) acceptReminder(intent)
+        else reminderRequest = savedInstanceState.getString("reminderUri")?.let {
+            it to savedInstanceState.getString("reminderToken").orEmpty() }
         enableEdgeToEdge()
         setContent {
             val appearanceViewModel: AppearanceViewModel = viewModel()
@@ -68,12 +90,37 @@ class MainActivity : ComponentActivity() {
                     val habitsViewModel: HabitsViewModel = viewModel()
                     val accountingViewModel: AccountingViewModel = viewModel()
                     val rewardsViewModel: RewardsViewModel = viewModel()
+                    val reminderViewModel: ReminderViewModel = viewModel()
+                    val reminderState by reminderViewModel.state.collectAsStateWithLifecycle()
                     val rewardsState by rewardsViewModel.state.collectAsStateWithLifecycle()
+                    ReminderPermissionControls(reminderState, reminderViewModel::refresh) { requestPermission ->
+                    CompositionLocalProvider(LocalOpenReminders provides reminderViewModel::open) {
                     AccountingScreen(accountingViewModel) { financial ->
                     CompositionLocalProvider(LocalFinancialPrices provides
                         financial.snapshot.prices.takeUnless { financial.loading || financial.error }) {
                     TasksScreen(tasksViewModel) { tasks ->
                       HabitsScreen(habitsViewModel) { habits ->
+                        LaunchedEffect(reminderRequest, tasks.loading, habits.loading) {
+                            val request = reminderRequest
+                            if (request != null && !tasks.loading && !habits.loading) {
+                                val uri = request.first.toUri()
+                                val action = uri.pathSegments.getOrNull(0).orEmpty()
+                                val key = uri.pathSegments.getOrNull(1).orEmpty()
+                                try {
+                                    val row = reminderViewModel.request(key, action, request.second)
+                                    if (row != null) {
+                                        if (row.kind == ReminderKind.TASK) {
+                                            tasksViewModel.notification(row.sourceId, action == "COMPLETE")
+                                        } else habitsViewModel.detail(row.sourceId)
+                                    }
+                                    reminderRequest = null
+                                } catch (e: kotlinx.coroutines.CancellationException) { throw e
+                                } catch (_: Exception) {
+                                    reminderViewModel.fallback(true)
+                                    reminderRequest = null
+                                }
+                            }
+                        }
                         LaunchedEffect(tasks.snapshot.activeLists) {
                             habitsViewModel.listIds(tasks.snapshot.activeLists.map { it.id }.toSet())
                         }
@@ -138,14 +185,23 @@ class MainActivity : ComponentActivity() {
                                 SettingsContent(state, onSelect, onRetry)
                                 AccountingSettings(financial, accountingViewModel::edit, accountingViewModel::draft,
                                     accountingViewModel::save, accountingViewModel::retry)
+                                ReminderSettingsContent(reminderState, reminderViewModel, requestPermission)
                             },
                         )
                       }
                     }
                     }
                     }
+                    ReminderDialogs(reminderState, reminderViewModel, requestPermission)
+                    }
+                    }
                 }
             }
         }
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        reminderRequest?.let { outState.putString("reminderUri", it.first)
+            outState.putString("reminderToken", it.second) }
+        super.onSaveInstanceState(outState)
     }
 }

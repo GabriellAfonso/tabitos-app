@@ -19,6 +19,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ethos.app.R
 import com.ethos.app.core.tasks.domain.*
+import com.ethos.app.core.ui.reminders.LocalOpenReminders
+import com.ethos.app.core.reminders.domain.ReminderKind
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -237,6 +239,9 @@ private fun TaskDetail(
                 Text(c.label, Modifier.padding(top = 12.dp))
             } }
             if (o.status == TaskStatus.OPEN) {
+                val reminders = LocalOpenReminders.current
+                TextButton({ reminders(ReminderKind.TASK, o.id) }, enabled = !state.busy) {
+                    Text(stringResource(R.string.reminders)) }
                 Input(R.string.actual_completion, state.completionText, !state.busy, change = date)
                 Button({ resolve(true) }, enabled = !state.busy) { Text(stringResource(R.string.complete_task)) }
                 TextButton({ resolve(false) }, enabled = !state.busy) { Text(stringResource(R.string.not_done)) }

@@ -10,6 +10,8 @@ import androidx.compose.ui.unit.dp
 import com.ethos.app.R
 import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskList
+import com.ethos.app.core.ui.reminders.LocalOpenReminders
+import com.ethos.app.core.reminders.domain.ReminderKind
 import androidx.compose.runtime.*
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -112,6 +114,9 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                     }
                 }
                 if (h.status != HabitStatus.EXCLUDED) {
+                    val reminders = LocalOpenReminders.current
+                    TextButton({ reminders(ReminderKind.HABIT, h.id) }, enabled = !state.busy) {
+                        Text(stringResource(R.string.reminders)) }
                     TextButton({ vm.edit(h) }, enabled = !state.busy) { Text(stringResource(R.string.edit_habit)) }
                     TextButton({ vm.lifecycle(HabitLifecycleDraft(h.id,
                         if (h.status == HabitStatus.ACTIVE) HabitStatus.PAUSED else HabitStatus.ACTIVE,

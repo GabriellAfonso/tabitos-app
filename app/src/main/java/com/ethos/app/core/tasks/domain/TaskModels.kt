@@ -81,4 +81,5 @@ sealed interface TaskAction {
     data class Move(val id: String, val listId: String?) : TaskAction
     data class Reorder(val id: String, val direction: Int) : TaskAction
     data object Refresh : TaskAction
+    data class Materialize(val through: LocalDate) : TaskAction
 }

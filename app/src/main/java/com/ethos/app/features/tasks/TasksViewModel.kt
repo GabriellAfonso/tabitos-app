@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class TaskDraft(
@@ -147,6 +148,22 @@ class TasksViewModel @Inject constructor(
     fun detail(id: String?) {
         mutable.update { it.copy(detailId = id, completionText = clock.today().toString(),
             uncheckedConfirmation = null) }
+    }
+    fun notification(id: String, complete: Boolean) {
+        viewModelScope.launch {
+            try {
+                val snapshot = repository.observe().first()
+                val occurrence = snapshot.occurrences.firstOrNull { it.id == id }
+                if (occurrence == null || occurrence.status != TaskStatus.OPEN) {
+                    mutable.update { it.copy(error = TaskProblem.NOT_OPEN) }
+                    return@launch
+                }
+                mutable.update { it.copy(snapshot = snapshot) }
+                detail(id)
+                if (complete) this@TasksViewModel.complete(occurrence, true)
+            } catch (e: CancellationException) { throw e
+            } catch (_: Exception) { mutable.update { it.copy(storageError = true) } }
+        }
     }
     fun completionDate(text: String) { mutable.update { it.copy(completionText = text) } }
     fun complete(o: TaskOccurrence, done: Boolean, confirmed: Boolean = false) {

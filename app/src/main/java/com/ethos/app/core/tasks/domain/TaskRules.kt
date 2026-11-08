@@ -7,7 +7,8 @@ import java.util.UUID
 
 object TaskRules {
     fun apply(snapshot: TaskSnapshot, action: TaskAction, today: LocalDate, now: Long): TaskSnapshot =
-        Mutation(snapshot, today, now).run(action)
+        Mutation(snapshot, if (action is TaskAction.Materialize) maxOf(today, action.through) else today, now)
+            .run(action)
 
     fun suggestDifficulty(fields: TaskFields, difficulty: Int): TaskFields = fields.copy(
         difficulty = difficulty,
@@ -196,7 +197,7 @@ object TaskRules {
                         ordered.forEachIndexed { index, item -> put(item.copy(position = index)) }
                     }
                 }
-                TaskAction.Refresh -> Unit
+                TaskAction.Refresh, is TaskAction.Materialize -> Unit
             }
             generate()
             return TaskSnapshot(lists.toList(), definitions.toList(), occurrences.toList(), history.toList())
