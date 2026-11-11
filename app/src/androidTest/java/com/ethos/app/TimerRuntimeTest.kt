@@ -1,5 +1,8 @@
 package com.ethos.app
 
+import com.ethos.app.core.preferences.AppearanceMode
+import com.ethos.app.core.preferences.AppearanceRepository
+import kotlinx.coroutines.flow.flowOf
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
@@ -52,8 +55,14 @@ class TimerRuntimeTest {
         }
         val tasks = RoomTaskRepository(db, clock)
         val timers = RoomTimerRepository(db, AndroidTimerClock(context))
+        val silent = object : AppearanceRepository {
+            override val modes = flowOf(AppearanceMode.SYSTEM)
+            override suspend fun setMode(mode: AppearanceMode) = Unit
+            override val timerAlarm = flowOf(false)
+            override suspend fun setTimerAlarm(enabled: Boolean) = Unit
+        }
         val coordinator = TimerCoordinator(context, timers, tasks, RoomHabitRepository(db, clock),
-            TimerNotifications(context))
+            TimerNotifications(context), silent)
         val id = "timer-runtime-${UUID.randomUUID()}"
         try {
             tasks.execute(TaskAction.Create(id, TaskFields(title = "Leitura de teste"),

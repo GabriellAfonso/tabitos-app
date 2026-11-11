@@ -77,5 +77,7 @@ class AppearanceViewModelTest {
             if (failWrite) throw IOException("write")
             saved.value = mode
         }
+        override val timerAlarm = MutableStateFlow(true)
+        override suspend fun setTimerAlarm(enabled: Boolean) { timerAlarm.value = enabled }
     }
 }
