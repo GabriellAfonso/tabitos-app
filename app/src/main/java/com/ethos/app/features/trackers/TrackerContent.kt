@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ethos.app.core.ui.components.ScrollableTimeField
 import com.ethos.app.R
 import com.ethos.app.core.trackers.domain.*
 import com.ethos.app.core.ui.theme.EthosTheme
@@ -286,8 +287,8 @@ fun TrackerFormContent(
             OutlinedButton({ add(type, multiple) }, Modifier.fillMaxWidth(), enabled = enabled) {
                 Text(stringResource(label)) }
         }
-        OutlinedTextField(draft.reminder, { change(draft.copy(reminder = it)) }, Modifier.fillMaxWidth(),
-            enabled = enabled, singleLine = true, label = { Text(stringResource(R.string.tracker_reminder)) })
+        ScrollableTimeField(R.string.tracker_reminder, draft.reminder, enabled, optional = true,
+            onChange = { change(draft.copy(reminder = it)) })
         Text(stringResource(R.string.tracker_reminder_hint), style = MaterialTheme.typography.bodySmall)
     }
 }

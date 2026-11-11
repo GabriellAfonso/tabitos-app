@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import com.ethos.app.core.ui.components.ScrollableTimeField
 import com.ethos.app.R
 import com.ethos.app.core.reminders.domain.*
 import com.ethos.app.core.reminders.platform.ReminderPlatform
@@ -92,7 +93,7 @@ fun ReminderSettingsPanel(state: ReminderUiState, summary: (String?) -> Unit, re
     Text(stringResource(R.string.reminder_daily), style = MaterialTheme.typography.titleMedium)
     Text(stringResource(if (state.snapshot.settings.summaryMinute == null) R.string.reminder_daily_off
         else R.string.reminder_daily_on))
-    ReminderInput(R.string.reminder_time, time, !state.busy) { time = it }
+    ScrollableTimeField(R.string.reminder_time, time, !state.busy) { time = it }
     Button({ summary(time) }, enabled = !state.busy && !state.loading) {
         Text(stringResource(R.string.reminder_save_summary)) }
     if (state.snapshot.settings.summaryMinute != null) TextButton({ summary(null) }, enabled = !state.busy) {
@@ -112,7 +113,7 @@ fun ReminderDialogs(state: ReminderUiState, vm: ReminderViewModel, requestPermis
                     Text(pluralStringResource(R.plurals.reminder_minutes, minute, minute)) } }
                 ReminderInput(R.string.reminder_date, state.customDate, !state.busy) {
                     vm.custom(it, state.customTime) }
-                ReminderInput(R.string.reminder_time, state.customTime, !state.busy) {
+                ScrollableTimeField(R.string.reminder_time, state.customTime, !state.busy) {
                     vm.custom(state.customDate, it) }
                 Button({ vm.snooze(null) }, enabled = !state.busy) { Text(stringResource(R.string.reminder_custom)) }
             }
@@ -183,9 +184,9 @@ fun ReminderEditor(state: ReminderUiState, change: (ReminderDraft?) -> Unit, sav
                 if (d.mode == ReminderMode.RELATIVE) {
                     ReminderInput(R.string.reminder_offset, draft.offset, !state.busy) {
                         change(draft.copy(offset = it)) }
-                    ReminderInput(R.string.reminder_reference, draft.reference, !state.busy) {
+                    ScrollableTimeField(R.string.reminder_reference, draft.reference, !state.busy, optional = true) {
                         change(draft.copy(reference = it)) }
-                } else ReminderInput(R.string.reminder_time, draft.time, !state.busy) {
+                } else ScrollableTimeField(R.string.reminder_time, draft.time, !state.busy) {
                     change(draft.copy(time = it)) }
                 if (d.mode == ReminderMode.WEEKDAYS) (0..6).forEach { index ->
                     val checked = d.weekdays and (1 shl index) != 0

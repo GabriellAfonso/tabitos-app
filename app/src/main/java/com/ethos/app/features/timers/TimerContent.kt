@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import com.ethos.app.core.ui.components.ScrollableTimeField
 import com.ethos.app.R
 import com.ethos.app.core.timers.domain.*
 import java.time.Instant
@@ -232,11 +233,10 @@ private fun ManualEditor(state: TimerUiState, draft: ManualDraft, vm: TimerViewM
             OutlinedTextField(draft.date, { vm.manual(draft.copy(date = it)) }, enabled = !state.busy,
                 singleLine = true,
                 label = { Text(stringResource(R.string.timer_manual_date)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(draft.start, { vm.manual(draft.copy(start = it)) }, enabled = !state.busy,
-                singleLine = true, label = { Text(stringResource(R.string.timer_manual_start)) },
-                modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(draft.end, { vm.manual(draft.copy(end = it)) }, enabled = !state.busy, singleLine = true,
-                label = { Text(stringResource(R.string.timer_manual_end)) }, modifier = Modifier.fillMaxWidth())
+            ScrollableTimeField(R.string.timer_manual_start, draft.start, !state.busy,
+                onChange = { vm.manual(draft.copy(start = it)) })
+            ScrollableTimeField(R.string.timer_manual_end, draft.end, !state.busy,
+                onChange = { vm.manual(draft.copy(end = it)) })
         } },
         confirmButton = { TextButton(vm::saveManual, enabled = !state.busy) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton({ vm.manual(null) }, enabled = !state.busy) {

@@ -378,7 +378,7 @@
     <string name="reminder_daily_on">Ativado no horário escolhido.</string>
     <string name="reminder_save_summary">Salvar horário e ativar resumo</string>
     <string name="reminder_disable_summary">Desativar resumo</string>
-    <string name="reminder_time">Horário (HH:mm)</string>
+    <string name="reminder_time">Horário</string>
     <string name="reminder_date">Data (AAAA-MM-DD)</string>
     <string name="reminder_gone">Este lembrete não existe mais ou o item já foi resolvido.</string>
     <plurals name="reminder_minutes">
@@ -397,7 +397,7 @@
     <string name="reminder_weekdays">Dias da semana e horário</string>
     <string name="reminder_deadline_hint">O lembrete não altera o prazo nem a meta do item.</string>
     <string name="reminder_offset">Antecedência em minutos (até 525600)</string>
-    <string name="reminder_reference">Horário de referência se não houver horário no prazo (HH:mm)</string>
+    <string name="reminder_reference">Horário de referência se não houver horário no prazo</string>
     <string name="reminder_future">Escopo: esta e futuras ocorrências · toque para mudar</string>
     <string name="reminder_only_this">Escopo: somente esta ocorrência · toque para mudar</string>
     <string name="reminder_loading">Carregando lembretes…</string>
@@ -493,8 +493,8 @@
     <string name="timer_error">Não foi possível salvar o tempo. Nada foi perdido; tente novamente.</string>
     <string name="timer_manual_hint">Quando foi feito? Se o fim for antes do início, termina no dia seguinte.</string>
     <string name="timer_manual_date">Data de início (AAAA-MM-DD)</string>
-    <string name="timer_manual_start">Início (HH:MM)</string>
-    <string name="timer_manual_end">Fim (HH:MM)</string>
+    <string name="timer_manual_start">Início</string>
+    <string name="timer_manual_end">Fim</string>
     <string name="timer_reward_sessions">Tempo comprado</string>
     <string name="reward_minutes">Duração em minutos (opcional)</string>
     <string name="reward_minutes_line">Duração: %1$s</string>
@@ -547,7 +547,7 @@
     <string name="tracker_remove_option">Remover opção</string>
     <string name="tracker_remove_question">Remover pergunta</string>
     <string name="tracker_question_number">Pergunta %1$d · %2$s</string>
-    <string name="tracker_reminder">Lembrete diário (HH:mm; vazio para nenhum)</string>
+    <string name="tracker_reminder">Lembrete diário</string>
     <string name="tracker_reminder_hint">Aviso diário para preencher. Some quando você salvar.</string>
     <string name="tracker_versions_hint">Mudanças valem para os próximos registros.</string>
     <string name="tracker_zero_effect">Não muda moedas, XP nem sequência.</string>
@@ -688,4 +688,6 @@
     <string name="game_mode_off_confirm">Desligar</string>
     <string name="game_mode_error">Não foi possível ler ou salvar o modo jogo.</string>
     <string name="game_mode_reward_timer_running">Pause o cronômetro da recompensa antes de mudar o modo jogo.</string>
+    <string name="time_wheel_hours">Horas</string>
+    <string name="time_wheel_minutes">Minutos</string>
 </resources>
