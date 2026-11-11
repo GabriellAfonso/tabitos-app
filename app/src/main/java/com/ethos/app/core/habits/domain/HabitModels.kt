@@ -52,6 +52,7 @@ sealed interface HabitAction {
         val partialTarget: Int? = null,
     ) : HabitAction
     data class Record(val id: String, val habitId: String, val date: LocalDate) : HabitAction
+    data class SetPractice(val id: String, val habitId: String, val date: LocalDate, val done: Boolean) : HabitAction
     data class Correct(val id: String, val date: LocalDate? = null, val delete: Boolean = false) : HabitAction
     data class Review(val key: String) : HabitAction
     data class Status(

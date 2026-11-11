@@ -37,6 +37,7 @@ class RoomAccountingRepository(
         val id = when (action) {
             is TaskAction.Resolve -> action.id
             is TaskAction.Undo -> action.id
+            is TaskAction.SetCompleted -> action.id
             else -> error("Not a financial task action")
         }
         val owner = "task:$id"
@@ -53,6 +54,7 @@ class RoomAccountingRepository(
             store.tasks().activeLists.map { it.id }.toSet())
         val id = when (action) {
             is HabitAction.Record -> action.habitId
+            is HabitAction.SetPractice -> action.habitId
             is HabitAction.Correct -> old.records.first { it.id == action.id }.habitId
             is HabitAction.Review -> source.audits.last().habitId
             is HabitAction.Save -> action.habit.id

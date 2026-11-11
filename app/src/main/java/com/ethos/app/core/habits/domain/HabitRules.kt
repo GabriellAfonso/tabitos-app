@@ -115,6 +115,19 @@ object HabitRules {
             check(active(s, h.id, date), HabitProblem.INACTIVE)
         }
         when (action) {
+            is HabitAction.SetPractice -> {
+                check(currentRule(s, action.habitId, action.date)?.type == HabitType.PRACTICE)
+                val records = s.records.filter {
+                    it.habitId == action.habitId && it.date == action.date && !it.deleted
+                }
+                // Explicit desired state makes retries idempotent, including legacy duplicate records.
+                return if (action.done) {
+                    if (records.isNotEmpty()) s else apply(s,
+                        HabitAction.Record(action.id, action.habitId, action.date), today, now, listIds)
+                } else records.fold(s) { snapshot, record ->
+                    apply(snapshot, HabitAction.Correct(record.id, delete = true), today, now, listIds)
+                }
+            }
             is HabitAction.Save -> {
                 val h = action.habit
                 check(h.name.isNotBlank() && h.color in 0..5 && h.icon in 0..5 &&

@@ -32,6 +32,7 @@ data class HabitsUiState(
     val lifecycle: HabitLifecycleDraft? = null, val preview: HabitPeriod? = null,
     val previewReady: Boolean = false,
     val financialPreview: FinancialPreview? = null, val recordExists: Boolean = false,
+    val lastPractice: HabitAction.SetPractice? = null,
 ) {
     val pendingCount: Int get() = periods.count { it.outcome == PeriodOutcome.PENDING }
 }
@@ -132,14 +133,30 @@ class HabitsViewModel @Inject constructor(
             execute(action)
         } catch (_: Exception) { mutable.update { it.copy(problem = HabitProblem.DATE) } }
     }
-    /** Confirmed duration objective: one practice on [date] through the normal financial preview, never twice. */
+    /** Confirmed duration objective: one practice on [date], never twice. */
     fun recordDuration(habitId: String, date: LocalDate) {
         detail(habitId)
         val exists = state.value.snapshot.records.any { it.habitId == habitId && it.date == date && !it.deleted }
         mutable.update { it.copy(recordExists = exists, recordDate = date.toString()) }
         if (!exists) execute(HabitAction.Record(UUID.randomUUID().toString(), habitId, date))
     }
+    /** Practice toggles today directly; unwanted occurrences keep financial confirmation. */
+    fun quickRecord(habitId: String) {
+        if (state.value.busy || state.value.loading || state.value.storageError) return
+        val today = clock.today()
+        val snapshot = state.value.snapshot
+        val practice = HabitRules.currentRule(snapshot, habitId, today)?.type == HabitType.PRACTICE
+        val existing = snapshot.records.firstOrNull { it.habitId == habitId && it.date == today && !it.deleted }
+        val action = if (practice) HabitAction.SetPractice(UUID.randomUUID().toString(), habitId, today, existing == null)
+            else HabitAction.Record(UUID.randomUUID().toString(), habitId, today)
+        execute(action)
+    }
     fun lifecycle(value: HabitLifecycleDraft?) { mutable.update { it.copy(lifecycle = value, problem = null) } }
+    fun dismissPracticeFeedback() { mutable.update { it.copy(lastPractice = null) } }
+    fun undoPractice() {
+        val last = state.value.lastPractice ?: return
+        if (!state.value.busy) execute(last.copy(id = UUID.randomUUID().toString(), done = !last.done))
+    }
     fun confirmLifecycle() {
         try {
             val d = state.value.lifecycle ?: return
@@ -157,7 +174,17 @@ class HabitsViewModel @Inject constructor(
     }
     private fun execute(action: HabitAction, close: Boolean = false, confirmed: Boolean = false) {
         if (state.value.busy) return
-        if (!confirmed && accounting != null && (action !is HabitAction.Status ||
+        val practiceRecord = when (action) {
+            is HabitAction.SetPractice -> true
+            is HabitAction.Record -> HabitRules.currentRule(state.value.snapshot, action.habitId, action.date)
+                ?.type == HabitType.PRACTICE
+            is HabitAction.Correct -> action.delete && state.value.snapshot.records
+                .firstOrNull { it.id == action.id }?.let {
+                    HabitRules.currentRule(state.value.snapshot, it.habitId, it.date)?.type == HabitType.PRACTICE
+                } == true
+            else -> false
+        }
+        if (!confirmed && !practiceRecord && accounting != null && (action !is HabitAction.Status ||
                 (action.status != HabitStatus.EXCLUDED && action.partialTarget != null))) {
             mutable.update { it.copy(busy = true, problem = null) }
             viewModelScope.launch {
@@ -185,9 +212,13 @@ class HabitsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.execute(action)
+                // Publish committed records before enabling another tap, even if observer delivery lags.
+                val committed = repository.observe().first()
+                mutable.update { derive(it.copy(snapshot = committed)) }
                 retryAction = null
                 if (close) draft(null)
                 mutable.update { it.copy(busy = false, storageError = readFailed,
+                    lastPractice = if (action is HabitAction.SetPractice) action else it.lastPractice,
                     lifecycle = if (close) null else it.lifecycle, correctionId = null) }
             } catch (e: CancellationException) { throw e
             } catch (e: HabitRuleException) {

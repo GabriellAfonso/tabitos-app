@@ -46,6 +46,7 @@ class RoomHabitRepository(private val database: TaskDatabase, private val clock:
                     before.overrides != s.overrides)) {
                 val id = when (action) {
                     is HabitAction.Record -> action.habitId
+                    is HabitAction.SetPractice -> action.habitId
                     is HabitAction.Correct -> before.records.first { it.id == action.id }.habitId
                     is HabitAction.Review -> s.audits.last().habitId
                     is HabitAction.Save -> action.habit.id

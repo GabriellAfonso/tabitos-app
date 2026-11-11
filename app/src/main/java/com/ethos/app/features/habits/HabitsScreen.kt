@@ -79,6 +79,7 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                         Text(stringResource(R.string.habit_old_best, best, oldLabel))
                     }
                 }
+                state.periods.lastOrNull { it.habitId == h.id }?.let { HabitProgress(it) }
                 Text(stringResource(R.string.habit_calendar))
                 val records = state.snapshot.records.filter { it.habitId == h.id && !it.deleted }
                     .sortedWith(compareByDescending<HabitRecord> { it.date }.thenBy { it.id })
