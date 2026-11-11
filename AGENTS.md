@@ -139,5 +139,12 @@ Formulário versionado; registros guardam versão, data de referência e momento
 Acompanhamentos nunca alteram moedas/XP/metas/registros do hábito; arquivar substitui remoção destrutiva.
 Lembrete ReminderKind.TRACKER: aviso neutro contínuo (dispensável no Android 14+), Preencher/Adiar, só do dia.
 Calendário substitui busca por data: filtros tipo/lista/hábito, "Sem dados", paridade com inDay das tarefas.
+Paleta Ameixa e modelo B de Hoje implementados: specs/010-ameixa-visual-refresh/spec.md (só interface).
+Moedas em âmbar (tertiary) com ◈; ocorrências evitar/limitar mantêm confirmação financeira.
+Spec011: prática marca/desmarca diretamente em Hoje, com estorno e Desfazer; sem barras/progresso semanal.
+Calendário e progresso nos detalhes; configuração debug restaura base fictícia com confirmação destrutiva.
+Restauração Room transacional preserva tema/permissões; bloqueada com cronômetro contando.
+Spec012: checkbox de tarefa conclui/desmarca direto; Concluídas expandida ao fim, com cartões discretos.
+Detalhes/notificações preservam confirmações; recorrência e estornos mantêm regras existentes.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->

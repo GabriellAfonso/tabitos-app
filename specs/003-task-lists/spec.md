@@ -1,5 +1,9 @@
 # Feature Specification: Lists, tasks and recurrence
 
+> Spec 012 updates the card checkbox: direct completion/reopening, without checklist/financial
+> confirmation. Completed tasks appear in an initially expanded Concluídas section at the end.
+> Detail/notification flows retain their confirmations and recurrence guards remain unchanged.
+
 **Feature Branch**: master (retained)
 **Created**: 2026-11-06
 **Status**: Implemented; clarifications approved on 2026-11-06; evidence/limitations in verification.md
@@ -88,6 +92,9 @@ List Hábitos tabs remain honest future/empty states. Never seed prototype data 
 
 ### Functional Requirements
 - **FR-001**: Create/edit/rename/reorder lists with name/color/icon and persistent ordering.
+  Open tasks in a selected list support long-press drag reorder with edge scrolling and persistent order;
+  expose equivalent accessibility actions. Commit one validated order on drop, preserve hidden slots,
+  and leave stored order unchanged on gesture cancellation or failed writes.
 - **FR-002**: Provide system Inbox, not a renameable/deletable user list; move tasks without changing history.
 - **FR-003**: Explicitly confirm list/content deletion, including future habits; no Inbox move or deletion
   penalty. Deletion must not reverse existing future financial transactions or destroy their provenance.
@@ -116,6 +123,10 @@ List Hábitos tabs remain honest future/empty states. Never seed prototype data 
 - **FR-016**: Monthly rules clamp to last day while preserving the original selected day for later months.
 - **FR-017**: Fixed-calendar cadence remains anchored regardless of completion; preserve every missed
   occurrence individually and prevent duplicates across launches/recalculation.
+  In the task-list screen, show only the earliest unresolved occurrence (by series ordinal) per recurring
+  task. Resolving or deleting it reveals the next unresolved occurrence, including a future one when no
+  earlier occurrence remains. Keep resolved history available in its existing section. This presentation
+  filter does not delete occurrences or change Hoje, review, calendar, reminders or recurrence generation.
 - **FR-018**: After-completion mode retains one unresolved occurrence; completion schedules actual date
   + X, Não será feita schedules planned due date + X, even if already overdue at late review.
 - **FR-019**: Series start date and endings Nunca/inclusive date/after-X scheduled occurrences are

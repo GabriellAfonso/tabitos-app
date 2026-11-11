@@ -122,6 +122,10 @@ Future redemption requires enough coins for full cost and cannot create debt; no
   operation's committed values and original-value reversals rather than repricing history.
 - **FR-016**: Show form estimates and explanation/table access, and disclose consequences in relevant
   confirmations, including effective clipping. Distinguish estimates from historical committed prices.
+  Spec 011 permits direct practice-day marking/removal without a confirmation modal; all committed
+  ledger values, linked reversals and floor rules still apply. Other confirmations remain unchanged.
+  Spec 012 additionally permits direct task-card completion/reopening with the same ledger rules.
+  Avoid/limit habit occurrences retain their confirmation as explicitly requested by the user.
 - **FR-017**: Hoje shows live coins/level/next-level progress in approved compact positions/routes.
 - **FR-018**: Financial history shows reason, actual date, entry/correction time, applied delta and
   resulting balance, with understandable original/correction links and provenance surviving source deletion.
