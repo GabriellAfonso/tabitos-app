@@ -59,6 +59,7 @@ class RoomAccountingRepository(
             is HabitAction.Review -> source.audits.last().habitId
             is HabitAction.Save -> action.habit.id
             is HabitAction.Status -> action.id
+            HabitAction.Settle -> error("Settling has no preview")
         }
         val owner = "habit:$id"
         val after = AccountingRules.reconcile(before,

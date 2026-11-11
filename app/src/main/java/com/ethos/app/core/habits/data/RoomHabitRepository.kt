@@ -42,7 +42,11 @@ class RoomHabitRepository(private val database: TaskDatabase, private val clock:
             dao.records(s.records.map { HabitRecordEntity(it) })
             dao.reviews(s.reviews.map { HabitReviewEntity(it) })
             dao.audits(s.audits.map { HabitAuditEntity(it) })
-            if (action !is HabitAction.Status || (action.status != HabitStatus.EXCLUDED &&
+            if (action == HabitAction.Settle) {
+                // Automatic closings (avoid/limit successes) reach the ledger without any user action.
+                val owners = s.habits.map { "habit:${it.id}" }.toSet()
+                accounting.reconcile(accounting.habitOutcomes(s).filter { it.owner in owners }, owners, emptyMap())
+            } else if (action !is HabitAction.Status || (action.status != HabitStatus.EXCLUDED &&
                     before.overrides != s.overrides)) {
                 val id = when (action) {
                     is HabitAction.Record -> action.habitId
@@ -51,6 +55,7 @@ class RoomHabitRepository(private val database: TaskDatabase, private val clock:
                     is HabitAction.Review -> s.audits.last().habitId
                     is HabitAction.Save -> action.habit.id
                     is HabitAction.Status -> action.id
+                    HabitAction.Settle -> return@withTransaction
                 }
                 // Presentation-only edits never create financial transitions.
                 if (action !is HabitAction.Save || before.rules != s.rules || before.overrides != s.overrides) {

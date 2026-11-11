@@ -41,14 +41,15 @@ object AccountingProjection {
                         result += FinancialOutcome("practice:${h.id}:$date", "habit:${h.id}", h.name,
                             date, true, h.difficulty, true)
                     }
+                // Missed habits cost nothing (spec 014); only penalties confirmed before it stay in history.
                 result += FinancialOutcome("period:${p.key}:failed", "habit:${h.id}", h.name, p.end,
-                    false, h.importance, p.outcome == PeriodOutcome.FAILURE)
+                    false, h.importance, p.outcome == PeriodOutcome.FAILURE && s.reviews.any {
+                        it.key == p.key && !it.invalidated && it.outcome == PeriodOutcome.FAILURE })
             } else {
                 records.forEach { r -> result += FinancialOutcome("event:${r.id}", "habit:${h.id}",
                     h.name, r.date, false, h.importance, r.id in p.excessIds) }
                 result += FinancialOutcome("period:${p.key}:success", "habit:${h.id}", h.name, p.end,
-                    true, h.difficulty, p.outcome == PeriodOutcome.SUCCESS && p.end < today &&
-                        s.reviews.any { it.key == p.key && !it.invalidated && it.outcome == PeriodOutcome.SUCCESS })
+                    true, h.difficulty, p.outcome == PeriodOutcome.SUCCESS && p.end < today)
             }
             result
         }

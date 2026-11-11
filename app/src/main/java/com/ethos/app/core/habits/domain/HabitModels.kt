@@ -54,7 +54,10 @@ sealed interface HabitAction {
     data class Record(val id: String, val habitId: String, val date: LocalDate) : HabitAction
     data class SetPractice(val id: String, val habitId: String, val date: LocalDate, val done: Boolean) : HabitAction
     data class Correct(val id: String, val date: LocalDate? = null, val delete: Boolean = false) : HabitAction
+    /** Legacy confirmation of a pending period; spec 014 no longer creates pending periods. */
     data class Review(val key: String) : HabitAction
+    /** Settles automatically closed periods in the ledger; never changes habit data. */
+    data object Settle : HabitAction
     data class Status(
         val id: String, val status: HabitStatus, val partialTarget: Int? = null,
         val listId: String? = null,

@@ -6,6 +6,10 @@ import java.time.temporal.TemporalAdjusters
 import java.util.UUID
 
 object HabitRules {
+    /** Days after a period's last day in which it still accepts records (spec 014). */
+    const val LATE_DAYS = 2L
+    /** A closed period is final: no records, corrections or outcome changes. */
+    fun closed(end: LocalDate, today: LocalDate): Boolean = today > end.plusDays(LATE_DAYS)
     fun start(date: LocalDate, unit: HabitUnit): LocalDate = when (unit) {
         HabitUnit.DAY -> date
         HabitUnit.WEEK -> date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
@@ -50,13 +54,12 @@ object HabitRules {
                     val count = if (rule.type == HabitType.PRACTICE) records.map { it.date }.distinct().size
                         else records.size
                     val raw = if (rule.type == HabitType.PRACTICE) count >= target else count <= target
-                    val review = s.reviews.firstOrNull { it.key == periodKey }
+                    // Habits never owe anything: a period closes by itself after the late window (spec 014).
                     val outcome = when {
-                        review?.invalidated == true -> PeriodOutcome.PENDING
                         rule.type == HabitType.PRACTICE && raw -> PeriodOutcome.SUCCESS
-                        to >= today -> PeriodOutcome.OPEN
-                        review != null -> if (raw) PeriodOutcome.SUCCESS else PeriodOutcome.FAILURE
-                        else -> PeriodOutcome.PENDING
+                        !closed(to, today) -> PeriodOutcome.OPEN
+                        raw -> PeriodOutcome.SUCCESS
+                        else -> PeriodOutcome.FAILURE
                     }
                     HabitPeriod(periodKey, id, rule, from, to, target, count, eligible.size, outcome,
                         if (rule.type == HabitType.PRACTICE) emptyList() else records.drop(target).map { it.id })
@@ -65,6 +68,17 @@ object HabitRules {
     }
     fun pending(s: HabitSnapshot, today: LocalDate) = s.habits.flatMap { periods(s, it.id, today) }
         .filter { it.outcome == PeriodOutcome.PENDING }
+
+    /** Percentage of successful closed periods among the last 30 days, 8 weeks or 6 months; null if none. */
+    fun successRate(s: HabitSnapshot, id: String, today: LocalDate): Int? {
+        val closedPeriods = periods(s, id, today).filter { closed(it.end, today) &&
+            (it.outcome == PeriodOutcome.SUCCESS || it.outcome == PeriodOutcome.FAILURE) }
+        val unit = closedPeriods.lastOrNull()?.rule?.unit ?: return null
+        val recent = closedPeriods.filter { it.rule.unit == unit }.takeLast(when (unit) {
+            HabitUnit.DAY -> 30; HabitUnit.WEEK -> 8; HabitUnit.MONTH -> 6
+        })
+        return recent.count { it.outcome == PeriodOutcome.SUCCESS } * 100 / recent.size
+    }
 
     fun streak(s: HabitSnapshot, id: String, today: LocalDate): HabitStreak {
         val periods = periods(s, id, today)
@@ -110,9 +124,20 @@ object HabitRules {
             val p = periods(s, rule.habitId, maxOf(today, date)).firstOrNull { it.key == k }
             if (rule.type == HabitType.PRACTICE && p != null) check(target <= p.activeDays, HabitProblem.CAPACITY)
         }
+        fun open(habitId: String, date: LocalDate) {
+            val unit = currentRule(s, habitId, date)?.unit ?: HabitUnit.DAY
+            check(!closed(end(date, unit), today), HabitProblem.DATE)
+        }
         fun dateAllowed(h: Habit, date: LocalDate) {
             check(date >= h.created && date <= today, HabitProblem.DATE)
             check(active(s, h.id, date), HabitProblem.INACTIVE)
+            open(h.id, date)
+        }
+        /** Without an explicit partial target, a practice period never asks more than its available days. */
+        fun defaultPartial(rule: HabitRule, date: LocalDate) {
+            if (rule.type != HabitType.PRACTICE) return
+            val p = periods(s, rule.habitId, maxOf(today, date)).firstOrNull { date in it.start..it.end } ?: return
+            if (p.target > p.activeDays) override(rule, date, maxOf(1, p.activeDays))
         }
         when (action) {
             is HabitAction.SetPractice -> {
@@ -162,9 +187,9 @@ object HabitRules {
                         rule.copy(effective = from))
                     val partial = effective != start(effective, rule.unit) &&
                         (old == null || changedKind || action.nextPeriod)
-                    check(!partial || action.partialTarget != null, HabitProblem.PARTIAL_REQUIRED)
                     override(rule, effective, action.partialTarget ?: if (old != null && effective == today &&
                         !changedKind) rule.target else null)
+                    if (partial && action.partialTarget == null) defaultPartial(rule, effective)
                     val p = periods(s, h.id, maxOf(today, effective)).lastOrNull()
                     if (rule.type == HabitType.PRACTICE && p != null)
                         check(p.target <= p.activeDays, HabitProblem.CAPACITY)
@@ -184,6 +209,7 @@ object HabitRules {
             }
             is HabitAction.Correct -> {
                 val record = s.records.firstOrNull { it.id == action.id } ?: fail(HabitProblem.INPUT)
+                open(record.habitId, record.date)
                 if (!action.delete && action.date != null && action.date != record.date)
                     dateAllowed(habit(record.habitId), action.date)
                 val replacement = record.copy(date = action.date ?: record.date, deleted = action.delete)
@@ -191,6 +217,7 @@ object HabitRules {
                 audit(record.habitId, record.id, if (action.delete) "DELETE_RECORD" else "CORRECT",
                     record.date.toString(), if (action.delete) "DELETED" else replacement.date.toString())
             }
+            HabitAction.Settle -> return s
             is HabitAction.Review -> {
                 val p = s.habits.asSequence().flatMap { periods(s, it.id, today).asSequence() }
                     .firstOrNull { it.key == action.key } ?: fail(HabitProblem.INPUT)
@@ -215,8 +242,8 @@ object HabitRules {
                 s = s.copy(habits = s.habits.map { if (it.id == h.id)
                     it.copy(status = action.status, listId = destination) else it })
                 if (rule.unit != HabitUnit.DAY && today != start(today, rule.unit)) {
-                    check(action.partialTarget != null, HabitProblem.PARTIAL_REQUIRED)
-                    override(rule, today, action.partialTarget)
+                    if (action.partialTarget != null) override(rule, today, action.partialTarget)
+                    else if (action.status == HabitStatus.ACTIVE) defaultPartial(rule, today)
                 }
                 audit(h.id, h.id, action.status.name)
             }
