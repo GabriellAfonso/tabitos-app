@@ -3,6 +3,10 @@
 > Spec 012 updates the card checkbox: direct completion/reopening, without checklist/financial
 > confirmation. Completed tasks appear in an initially expanded Concluídas section at the end.
 > Detail/notification flows retain their confirmations and recurrence guards remain unchanged.
+>
+> Spec 013 changes only the editor UI: full-screen quick capture with "Mais opções", date/time pickers
+> instead of typed ISO text, one pt-BR date wording, checklist edited as items, repetition grouped into
+> 5 options mapped onto the same 8 kinds, and the review confirmation shown only for overdue date changes.
 
 **Feature Branch**: master (retained)
 **Created**: 2026-11-06

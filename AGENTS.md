@@ -96,6 +96,9 @@
 - Não criar testes que apenas repitam a implementação nem usar retornos Android padrão para esconder falhas.
 - Não usar `clean`, `--rerun-tasks` ou `--no-daemon` rotineiramente; diagnosticar o erro primeiro.
 - Informar claramente verificações não executadas e limitações do ambiente.
+- Testes instrumentados (`connectedDebugAndroidTest`) e emulador só com autorização explícita do usuário
+  a cada vez; por padrão rodar apenas build, testes JVM e lint. Nunca rodar em aparelho físico conectado
+  sem autorização. Escrever os testes instrumentados normalmente e registrá-los como não executados.
 
 ## Git e publicação
 - Conventional Commits quando houver solicitação de commit.
@@ -146,5 +149,9 @@ Calendário e progresso nos detalhes; configuração debug restaura base fictíc
 Restauração Room transacional preserva tema/permissões; bloqueada com cronômetro contando.
 Spec012: checkbox de tarefa conclui/desmarca direto; Concluídas expandida ao fim, com cartões discretos.
 Detalhes/notificações preservam confirmações; recorrência e estornos mantêm regras existentes.
+Spec013: editor de tarefa em tela cheia, captura rápida + "Mais opções", seletores de data/hora (sem digitar).
+Datas pt-BR únicas (Hoje/Amanhã/Ontem, "10 nov", ano só se diferente); revisão só se vencida e data mudar.
+Checklist por itens; repetição em 5 opções mapeando os 8 RepeatKind; sem mudança de schema/regras.
+Verificação: specs/013-task-editor-pickers/verification.md; 132 JVM aprovados; instrumentados não executados.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->
