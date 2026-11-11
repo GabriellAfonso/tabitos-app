@@ -2,13 +2,15 @@ package com.ethos.app.features.tasks
 
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import com.ethos.app.core.ui.components.FilterRow
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.SavedStateHandle
 import com.ethos.app.R
+import com.ethos.app.core.ui.components.ContentFilter
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.ui.theme.EthosTheme
 import java.time.LocalDate
@@ -31,7 +33,7 @@ class TasksContentTest {
             val vm = remember { TasksViewModel(repo, clock, SavedStateHandle()) }
             EthosTheme {
                 TasksScreen(vm) { state ->
-                    TasksContent(state, TaskPage.LIST, 0, vm::newTask, vm::detail, vm::action,
+                    TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::newTask, vm::detail, vm::action,
                         { vm.manageLists(true) }, vm::retry, vm::dismissError)
                 }
             }
@@ -61,12 +63,11 @@ class TasksContentTest {
         s = TaskRules.apply(s, TaskAction.Create("week", TaskFields(title = "Semana",
             deadline = DeadlineKind.WEEK, date = day), RepeatRule(start = day)), day, 10)
         compose.setContent {
-            var filter by remember { mutableIntStateOf(0) }
+            var filter by remember { mutableStateOf(ContentFilter.ALL) }
             EthosTheme {
                 TasksContent(TasksUiState(s, day, loading = false), TaskPage.TODAY, filter,
                     {}, {}, {}, {}, {}, {}) {
-                    ChoiceRow(R.string.all, listOf(R.string.all, R.string.tasks, R.string.habits), filter) {
-                        filter = it }
+                    FilterRow(filter) { filter = it }
                 }
             }
         }

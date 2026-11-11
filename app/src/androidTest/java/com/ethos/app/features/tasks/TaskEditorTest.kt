@@ -1,5 +1,6 @@
 package com.ethos.app.features.tasks
 
+import com.ethos.app.core.ui.components.ContentFilter
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.*
@@ -29,7 +30,7 @@ class TaskEditorTest {
             val vm = remember { TasksViewModel(repo, clock, SavedStateHandle()).also { created = it } }
             EthosTheme {
                 TasksScreen(vm) { state ->
-                    TasksContent(state, TaskPage.LIST, 0, vm::newTask, vm::detail, vm::action,
+                    TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::newTask, vm::detail, vm::action,
                         {}, vm::retry, vm::dismissError)
                 }
             }

@@ -1,5 +1,6 @@
 package com.ethos.app.features.tasks
 
+import com.ethos.app.core.ui.components.ContentFilter
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
@@ -37,7 +38,7 @@ class DirectTaskCheckboxTest {
             compose.setContent {
                 val vm = remember { TasksViewModel(tasks, clock, SavedStateHandle(), wallet) }
                 EthosTheme { TasksScreen(vm) { state ->
-                    TasksContent(state, TaskPage.TODAY, 0, {}, vm::detail, vm::action, {}, vm::retry,
+                    TasksContent(state, TaskPage.TODAY, ContentFilter.ALL, {}, vm::detail, vm::action, {}, vm::retry,
                         vm::dismissError, extraItems = { item("habits-test") { Text("Hábitos do dia") } },
                         onComplete = vm::quickCheck)
                 } }

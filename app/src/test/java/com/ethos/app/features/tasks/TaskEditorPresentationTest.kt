@@ -70,8 +70,6 @@ class TaskEditorPresentationTest {
         assertEquals(listOf("a", "", "b", "c"), addChecklistItem(items, 0))
         assertEquals(listOf(""), addChecklistItem(emptyList()))
         assertEquals(listOf("a", "c"), removeChecklistItem(items, 1))
-        assertEquals(listOf("a", "c", "b"), moveChecklistItem(items, 2, -1))
-        assertEquals(items, moveChecklistItem(items, 0, -1))
     }
 
     @Test fun pickerMillisKeepTheCalendarDay() {

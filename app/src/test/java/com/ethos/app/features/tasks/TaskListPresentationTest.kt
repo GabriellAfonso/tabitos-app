@@ -2,10 +2,35 @@ package com.ethos.app.features.tasks
 
 import com.ethos.app.core.tasks.domain.*
 import java.time.LocalDate
+import com.ethos.app.core.ui.components.ContentFilter
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TaskListPresentationTest {
+    @Test fun sectionsSplitHojeAndFollowFilterAndListTab() {
+        val day = LocalDate.of(2026, 11, 10)
+        val dayTask = TaskOccurrence("d", "d", 1, TaskFields(title = "Dia", deadline = DeadlineKind.DAY),
+            day, day, day, position = 1)
+        val weekTask = TaskOccurrence("w", "w", 1, TaskFields(title = "Semana", deadline = DeadlineKind.WEEK),
+            day, day.minusDays(1), day.plusDays(5), position = 0)
+        val s = TaskSnapshot(occurrences = listOf(dayTask, weekTask))
+        val today = s.sections(TaskPage.TODAY, ContentFilter.ALL, day, null, habitsTab = false)
+        assertEquals(listOf("d"), today.pending.map { it.id })
+        assertEquals(listOf("w"), today.weekly.map { it.id })
+        assertTrue(today.showsHabits)
+        val habitsOnly = s.sections(TaskPage.TODAY, ContentFilter.HABITS, day, null, habitsTab = false)
+        assertTrue(habitsOnly.isEmpty)
+        assertFalse(habitsOnly.showsTasks)
+        assertFalse(s.sections(TaskPage.TODAY, ContentFilter.TASKS, day, null, false).showsHabits)
+        val list = s.sections(TaskPage.LIST, ContentFilter.ALL, day, null, habitsTab = false)
+        assertEquals(listOf("w", "d"), list.pending.map { it.id })
+        assertTrue(list.weekly.isEmpty())
+        assertTrue(s.sections(TaskPage.LIST, ContentFilter.ALL, day, null, habitsTab = true).isEmpty)
+        assertFalse(s.sections(TaskPage.REVIEW, ContentFilter.ALL, day, null, false).showsHabits)
+    }
+
     @Test fun completedSectionsRespectActualDayListAndReviewWithoutIncludingFailures() {
         val day = LocalDate.of(2026, 11, 10)
         val base = TaskOccurrence("done", "t", 1, TaskFields(title = "Done", listId = "a"),

@@ -1,5 +1,6 @@
 package com.ethos.app.features.tasks
 
+import com.ethos.app.core.ui.components.ContentFilter
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.*
 import androidx.compose.ui.geometry.Offset
@@ -27,7 +28,8 @@ class TaskDragTest {
         compose.setContent {
             var saved by remember { mutableStateOf(snapshot) }
             EthosTheme {
-                TasksContent(TasksUiState(saved, day, loading = false), TaskPage.LIST, 0, {}, { opened++ },
+                TasksContent(TasksUiState(saved, day, loading = false), TaskPage.LIST,
+                    ContentFilter.ALL, {}, { opened++ },
                     { action ->
                         committed.add(action)
                         snapshot = TaskRules.apply(snapshot, action, day, 1)

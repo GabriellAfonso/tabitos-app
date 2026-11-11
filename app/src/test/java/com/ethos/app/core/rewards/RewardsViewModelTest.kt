@@ -133,7 +133,7 @@ class RewardsViewModelTest {
             data.value = data.value.copy(rewards = listOf(reward))
         }
         override suspend fun refresh() { }
-        override suspend fun move(id: String, direction: Int) { }
+        override suspend fun order(ids: List<String>) { }
         override suspend fun delete(id: String) { }
         override suspend fun preview(id: String) { }
         var confirms = mutableListOf<Boolean>()

@@ -268,7 +268,7 @@ class RewardDatabaseTest {
             tasks.execute(TaskAction.Resolve(occurrence, false, day))
             repo.save(reward)
             repo.save(reward.copy(id = "second", name = "Segundo"))
-            repo.move("second", -1)
+            repo.order(listOf("second", "r"))
             assertEquals(listOf("second", "r"), repo.observe().first().rewards.map { it.id })
             repo.save(reward.copy(name = "Editado"))
             assertEquals(listOf("second", "r"), repo.observe().first().rewards.map { it.id })

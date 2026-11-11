@@ -11,6 +11,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
 import com.ethos.app.R
+import com.ethos.app.core.ui.components.ContentFilter
 import com.ethos.app.core.accounting.data.RoomAccountingRepository
 import com.ethos.app.core.tasks.data.*
 import com.ethos.app.core.tasks.domain.*
@@ -41,7 +42,7 @@ class AccountingUiTest {
             compose.setContent {
                 val vm = remember { TasksViewModel(tasks, clock, SavedStateHandle(), wallet) }
                 EthosTheme { TasksScreen(vm) { state ->
-                    TasksContent(state, TaskPage.LIST, 0, vm::newTask, vm::detail, vm::action,
+                    TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::newTask, vm::detail, vm::action,
                         {}, vm::retry, vm::dismissError)
                 } }
             }
