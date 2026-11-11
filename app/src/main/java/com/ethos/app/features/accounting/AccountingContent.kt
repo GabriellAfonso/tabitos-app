@@ -1,12 +1,15 @@
 package com.ethos.app.features.accounting
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,8 +37,8 @@ fun WalletTiles(state: AccountingUiState, rewards: () -> Unit, retry: () -> Unit
     AccountingStatus(state, retry)
     if (state.loading || state.error) return
     val s = state.snapshot
-    val shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
-    val border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    val shape = RoundedCornerShape(16.dp)
+    val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     val cardColors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
     // Model B wallet (spec 010): amber coin amount, link to rewards, level with XP bar.
     val balance: @Composable (Modifier) -> Unit = { modifier ->
@@ -55,7 +58,7 @@ fun WalletTiles(state: AccountingUiState, rewards: () -> Unit, retry: () -> Unit
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Eyebrow(stringResource(R.string.wallet_progress))
                 Text(stringResource(R.string.finance_level, s.progress.level), style = MaterialTheme.typography.titleLarge,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                    fontWeight = FontWeight.SemiBold)
                 val xpDescription = stringResource(R.string.finance_progress,
                     s.progress.within, s.progress.required, s.totalXp)
                 Text(stringResource(R.string.finance_progress_compact, s.progress.within, s.progress.required),
@@ -63,15 +66,16 @@ fun WalletTiles(state: AccountingUiState, rewards: () -> Unit, retry: () -> Unit
                     style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 LinearProgressIndicator(progress = { s.progress.within.toFloat() / s.progress.required.toFloat() },
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    trackColor = MaterialTheme.colorScheme.outlineVariant)
+                    trackColor = MaterialTheme.colorScheme.outlineVariant, drawStopIndicator = {})
             }
         }
     }
     BoxWithConstraints {
         if (maxWidth >= 300.dp && LocalDensity.current.fontScale < 1.5f) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                balance(Modifier.weight(1f))
-                level(Modifier.weight(1f))
+            // Same height side by side: the row takes the taller tile's height and both fill it.
+            Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                balance(Modifier.weight(1f).fillMaxHeight())
+                level(Modifier.weight(1f).fillMaxHeight())
             }
         } else Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             balance(Modifier.fillMaxWidth())
