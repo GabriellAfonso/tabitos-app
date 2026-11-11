@@ -26,6 +26,40 @@ class TasksViewModelTest {
     @Before fun setup() { Dispatchers.setMain(dispatcher) }
     @After fun teardown() { Dispatchers.resetMain() }
 
+    @Test fun quickCheckboxSkipsBothConfirmationsAndRetainsDirectRetryAfterFailure() = runTest(dispatcher) {
+        val repo = FakeRepository(clock)
+        repo.execute(TaskAction.Create("quick", TaskFields(title = "Quick", checklist = listOf("Pending")),
+            RepeatRule(start = clock.today())))
+        val accounting = object : AccountingRepository {
+            override fun observe() = MutableStateFlow(AccountingSnapshot())
+            override suspend fun savePrices(prices: List<Price>) = Unit
+            override suspend fun previewTask(action: TaskAction): FinancialPreview = error("Unexpected modal")
+            override suspend fun previewHabit(action: HabitAction): FinancialPreview = error("Unexpected habit")
+        }
+        val vm = TasksViewModel(repo, clock, SavedStateHandle(), accounting)
+        advanceUntilIdle()
+        vm.quickCheck("quick:1"); vm.quickCheck("quick:1")
+        advanceUntilIdle()
+        assertEquals(TaskStatus.DONE, vm.state.value.snapshot.occurrences.single().status)
+        assertNull(vm.state.value.uncheckedConfirmation)
+        assertNull(vm.state.value.financialPreview)
+        assertNull(vm.state.value.detailId)
+        assertFalse(vm.state.value.snapshot.occurrences.single().checks.single().checked)
+        repo.failWrite = true
+        vm.quickCheck("quick:1")
+        advanceUntilIdle()
+        assertTrue(vm.state.value.storageError)
+        assertEquals(TaskStatus.DONE, vm.state.value.snapshot.occurrences.single().status)
+        repo.failWrite = false
+        vm.retry()
+        advanceUntilIdle()
+        assertEquals(TaskStatus.OPEN, vm.state.value.snapshot.occurrences.single().status)
+        assertNull(vm.state.value.financialPreview)
+        assertFalse(vm.state.value.storageError)
+        assertEquals(1, repo.snapshot.value.history.count { it.kind == AuditKind.COMPLETED })
+        assertEquals(1, repo.snapshot.value.history.count { it.kind == AuditKind.UNDONE })
+    }
+
     @Test fun failedSaveKeepsDraftAndRetryCreatesExactlyOneTask() = runTest(dispatcher) {
         val repo = FakeRepository(clock)
         val vm = TasksViewModel(repo, clock, SavedStateHandle())

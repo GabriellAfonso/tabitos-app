@@ -41,7 +41,7 @@ class TasksContentTest {
         compose.onNodeWithText("Checklist (um item por linha)").performScrollTo().performTextInput("Chaves\nÁgua")
         compose.onNodeWithText("Salvar").performClick()
         compose.waitUntil(15_000) { repo.saved.value.activeOccurrences.size == 1 }
-        compose.onNodeWithText("Preparar mochila").performScrollTo().performClick()
+        compose.onNodeWithText("Preparar mochila", useUnmergedTree = true).performScrollTo().performClick()
         compose.onNodeWithText("Concluir tarefa").performScrollTo().performClick()
         compose.onNodeWithText("Restam 2 itens. Concluir mesmo assim?").assertIsDisplayed()
         compose.onNodeWithText("Concluir mesmo assim").performClick()
