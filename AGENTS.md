@@ -33,6 +33,34 @@
 - Código e identificadores em inglês; textos visíveis em português em `strings.xml`.
 - Considerar acessibilidade, descrição de ícones e escalonamento de fonte.
 
+## Qualidade de código
+- Código deve ser legível sem o histórico da conversa: nomes que dizem o que é, funções curtas com uma
+  responsabilidade, sem efeitos colaterais escondidos. Se precisar de um comentário para explicar *o quê*,
+  renomear ou extrair; comentários explicam *por quê* (regra de negócio, armadilha da plataforma).
+- Sem números/strings mágicos: usar enums, `const val` ou objetos nomeados. Nunca usar `ordinal` ou
+  índices (`filter == 2`) como regra de negócio ou contrato entre camadas.
+- Sem condições booleanas aninhadas difíceis de ler: extrair para função/propriedade com nome
+  (`showsEmptyState`, `isOverdue`) ou para um estado de tela calculado no ViewModel ou em função pura.
+- Composables não calculam regra: ordenação, filtros, agrupamentos e decisões de visibilidade ficam no
+  ViewModel ou em funções puras testáveis (`*Presentation.kt`). O Composable só desenha e chama callbacks.
+- Nunca usar `LocalDate.now()`/`Instant.now()`/`System.currentTimeMillis()` em Composables ou regras: a
+  data vem do relógio injetado (`TaskClock`) via estado; parâmetros padrão não podem ler o relógio.
+- Ponto de composição único e plano: `MainActivity` só trata `Intent`s e chama `setContent`; a montagem
+  do app fica em `EthosApp.kt` (pacote raiz), dividida em funções pequenas. Proibido aninhar wrappers
+  `XScreen { state -> YScreen { ... } }` para obter estado: coletar com `collectAsStateWithLifecycle()`.
+- Listas de parâmetros longas: usar argumentos nomeados nas chamadas e agrupar callbacks relacionados em
+  uma `data class` de ações quando passar de ~5 lambdas.
+- Sem nomes totalmente qualificados no meio do código (`com.ethos.app...X(...)`): importar. Evitar
+  imports com `*` em arquivos novos.
+- Sem código morto, placeholders ("em breve") ou ramos inalcançáveis: remover junto com strings e
+  previews que só existiam por eles.
+- Não duplicar componentes: antes de criar um, procurar em `core/ui/components`; reaproveitar ou mover para
+  lá quando duas features precisarem.
+- Reordenação de itens pelo usuário é por arrastar (com alternativa acessível por ações do TalkBack), não
+  por botões "Mover para cima/baixo".
+- Toda mudança deve deixar o código igual ou melhor do que estava nos arquivos tocados; não copiar padrões
+  ruins só porque já existem no arquivo.
+
 ## Dados e segurança
 - Hilt para injeção; KSP para Hilt e Room; Coroutines/Flow para assincronismo.
 - Nunca gravar segredos ou keystores no Git. `BuildConfig` não protege segredos de um APK.
@@ -157,5 +185,8 @@ Spec014: hábito não deixa pendência; período fecha sozinho 2 dias após o fi
 Hábito perdido não tira moedas; evitar/limitar sem evento = sucesso automático (HabitAction.Settle).
 Cartão com sequência e % de constância; editor com frequências simples; "+" com Tarefa/Hábito/Quebrar hábito.
 Verificação: specs/014-habits-without-debt/verification.md; 134 JVM aprovados; instrumentados não executados.
+Refatoração 2026-11-11: MainActivity só trata Intents; montagem em EthosApp.kt; shell sem placeholders.
+ContentFilter em core/ui/components; seções das páginas de tarefas em função pura (TaskListPresentation).
+Spec015: reordenar sempre por arrastar (core/ui/components/Reorder.kt), vizinhos deslizam; ações TalkBack.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->
