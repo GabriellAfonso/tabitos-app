@@ -42,7 +42,7 @@ fun HabitCalendar(records: List<HabitRecord>, today: LocalDate, onDate: (String)
             TextButton({ monthText = month.plusMonths(1).toString() }) {
                 Text(stringResource(R.string.habit_following_month)) }
         }
-        Text(monthText, style = MaterialTheme.typography.titleMedium)
+        Text(com.ethos.app.core.ui.format.EthosDates.monthTitle(month), style = MaterialTheme.typography.titleMedium)
         val offset = month.atDay(1).dayOfWeek.value - 1
         val cells = (0 until offset).map { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
         Column(Modifier.horizontalScroll(rememberScrollState())) {

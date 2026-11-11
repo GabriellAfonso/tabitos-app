@@ -24,7 +24,7 @@ data class TaskDraft(
     val id: String, val editing: Boolean = false, val fields: TaskFields = TaskFields(),
     val rule: RepeatRule = RepeatRule(), val dateText: String = "", val timeText: String = "",
     val startText: String = "", val untilText: String = "", val countText: String = "",
-    val intervalText: String = "1", val monthDayText: String = "1", val checklistText: String = "",
+    val intervalText: String = "1", val monthDayText: String = "1",
     val scope: ChangeScope = ChangeScope.ONLY_THIS, val reviewConfirmed: Boolean = false,
     val ending: Int = 0,
     val recurringOriginal: Boolean = false,
@@ -38,6 +38,7 @@ data class TasksUiState(
     val listDraft: TaskList? = null, val deleteListId: String? = null, val deleteTaskId: String? = null,
     val manageLists: Boolean = false, val selectedListId: String? = null,
     val financialPreview: FinancialPreview? = null,
+    val discardConfirmation: Boolean = false,
 )
 
 @HiltViewModel
@@ -103,13 +104,23 @@ class TasksViewModel @Inject constructor(
         updateDraft(TaskDraft(o.id, true, o.fields, rule, o.fields.date?.toString().orEmpty(),
             o.fields.minute?.let { LocalTime.of(it / 60, it % 60).toString() }.orEmpty(),
             rule.start.toString(), rule.until?.toString().orEmpty(), rule.count?.toString().orEmpty(),
-            rule.interval.toString(), rule.monthDay.toString(), o.fields.checklist.joinToString("\n"),
+            rule.interval.toString(), rule.monthDay.toString(),
             ending = if (rule.count != null) 2 else if (rule.until != null) 1 else 0,
             recurringOriginal = rule.kind != RepeatKind.NONE))
     }
     fun updateDraft(draft: TaskDraft?) {
         saved["taskDraft"] = draft
-        mutable.update { it.copy(draft = draft) }
+        if (draft == null || state.value.draft?.id != draft.id) saved["taskDraftOriginal"] = draft
+        mutable.update { it.copy(draft = draft, discardConfirmation = false) }
+    }
+    /** Closes the editor, asking first when the draft differs from what was opened (spec 013 FR-011). */
+    fun closeDraft() {
+        val draft = state.value.draft ?: return
+        if (draft == saved.get<TaskDraft>("taskDraftOriginal")) updateDraft(null)
+        else mutable.update { it.copy(discardConfirmation = true) }
+    }
+    fun confirmDiscard(discard: Boolean) {
+        if (discard) updateDraft(null) else mutable.update { it.copy(discardConfirmation = false) }
     }
     fun difficulty(value: Int) {
         val d = state.value.draft ?: return
@@ -117,8 +128,13 @@ class TasksViewModel @Inject constructor(
     }
     fun repeat(kind: RepeatKind) {
         val d = state.value.draft ?: return
-        updateDraft(d.copy(rule = d.rule.copy(kind = kind), fields = d.fields.copy(
-            deadline = if (kind != RepeatKind.NONE && d.fields.deadline == DeadlineKind.NONE)
+        repeatRule(d.rule.copy(kind = kind))
+    }
+    /** Applies a full repeat rule; repeating work always has a deadline, as before. */
+    fun repeatRule(rule: RepeatRule) {
+        val d = state.value.draft ?: return
+        updateDraft(d.copy(rule = rule, fields = d.fields.copy(
+            deadline = if (rule.kind != RepeatKind.NONE && d.fields.deadline == DeadlineKind.NONE)
                 DeadlineKind.DAY else d.fields.deadline)))
     }
     fun saveDraft() {
@@ -140,7 +156,7 @@ class TasksViewModel @Inject constructor(
                 until = if (d.ending == 1) LocalDate.parse(d.untilText) else null,
                 count = if (d.ending == 2) d.countText.toInt() else null,
             )
-            val fields = d.fields.copy(date = date, minute = time, checklist = d.checklistText.lines())
+            val fields = d.fields.copy(date = date, minute = time)
             val action = if (d.editing) TaskAction.Edit(d.id, fields, rule, d.scope, d.reviewConfirmed)
                 else TaskAction.Create(d.id, fields, rule)
             execute(action, closeDraft = true)

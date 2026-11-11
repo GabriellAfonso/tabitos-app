@@ -33,6 +33,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextDecoration
 import com.ethos.app.core.ui.components.RoundCheck
+import com.ethos.app.core.ui.format.EthosDates
+import com.ethos.app.core.ui.format.label
 import com.ethos.app.core.ui.components.ColorPicker
 import com.ethos.app.core.ui.components.itemColors
 import com.ethos.app.core.tasks.domain.*
@@ -43,8 +45,6 @@ import com.ethos.app.core.reminders.domain.ReminderKind
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 enum class TaskPage { LIST, TODAY, REVIEW }
 private val listSymbols = listOf("☰", "▣", "⌂", "▤", "♡", "☰")
@@ -240,13 +240,9 @@ fun TaskRow(
                     TaskStatus.NOT_DONE -> R.string.task_status_not_done
                     else -> R.string.task_status_open
                 }
-                val dateLabel = when (o.dueDate) {
-                    null -> stringResource(R.string.no_date)
-                    today -> stringResource(R.string.today)
-                    today.plusDays(1) -> stringResource(R.string.tomorrow)
-                    else -> o.dueDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                }
-                val parts = listOfNotNull(o.fields.minute?.let { "%02d:%02d".format(it / 60, it % 60) },
+                val dateLabel = o.dueDate?.let { EthosDates.short(it, today).label() }
+                    ?: stringResource(R.string.no_date)
+                val parts = listOfNotNull(o.fields.minute?.let(EthosDates::time),
                     dateLabel,
                     stringResource(status))
                 Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
@@ -269,8 +265,17 @@ fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
     }
     val error: @Composable () -> Unit = { TaskError(state, viewModel::retry, viewModel::dismissError) }
     state.draft?.let { draft ->
-        TaskEditor(draft, state.snapshot.activeLists, state.busy, error, viewModel::updateDraft,
-            viewModel::difficulty, viewModel::repeat, viewModel::saveDraft, { viewModel.updateDraft(null) })
+        TaskEditor(draft, state.snapshot.activeLists,
+            state.snapshot.activeOccurrences.firstOrNull { it.id == draft.id }.takeIf { draft.editing },
+            state.today, state.busy, error, viewModel::updateDraft, viewModel::difficulty, viewModel::repeatRule,
+            viewModel::saveDraft, viewModel::closeDraft)
+        if (state.discardConfirmation) AlertDialog(onDismissRequest = { viewModel.confirmDiscard(false) },
+            title = { Text(stringResource(R.string.discard_title)) },
+            text = { Text(stringResource(R.string.discard_body)) },
+            confirmButton = { TextButton({ viewModel.confirmDiscard(true) }) {
+                Text(stringResource(R.string.discard)) } },
+            dismissButton = { TextButton({ viewModel.confirmDiscard(false) }) {
+                Text(stringResource(R.string.keep_editing)) } })
     }
     val detail = state.snapshot.activeOccurrences.firstOrNull { it.id == state.detailId }
     if (detail != null && state.draft == null && state.deleteTaskId == null) {
@@ -317,7 +322,8 @@ private fun TaskDetail(
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             error()
             if (o.fields.description.isNotEmpty()) Text(o.fields.description)
-            Text(o.dueDate?.toString() ?: stringResource(R.string.no_date))
+            Text(listOfNotNull(o.dueDate?.let { EthosDates.long(it, state.today).label() }
+                ?: stringResource(R.string.no_date), o.fields.minute?.let(EthosDates::time)).joinToString(" · "))
             o.checks.forEachIndexed { i, c -> Row {
                 Checkbox(c.checked, { action(TaskAction.Check(o.id, i, it)) },
                     enabled = !state.busy && o.status == TaskStatus.OPEN,
@@ -331,7 +337,8 @@ private fun TaskDetail(
                 val reminders = LocalOpenReminders.current
                 TextButton({ reminders(ReminderKind.TASK, o.id) }, enabled = !state.busy) {
                     Text(stringResource(R.string.reminders)) }
-                Input(R.string.actual_completion, state.completionText, !state.busy, change = date)
+                DateField(R.string.actual_completion, state.completionText, state.today, !state.busy, date,
+                    max = state.today)
                 Button({ resolve(true) }, enabled = !state.busy) { Text(stringResource(R.string.complete_task)) }
                 TextButton({ resolve(false) }, enabled = !state.busy) { Text(stringResource(R.string.not_done)) }
                 TextButton(edit, enabled = !state.busy) { Text(stringResource(R.string.edit)) }
@@ -345,12 +352,14 @@ private fun TaskDetail(
                 R.string.audit_undone, R.string.audit_missed, R.string.audit_edited, R.string.audit_deleted,
                 R.string.audit_checked)
             state.snapshot.history.filter { it.occurrenceId == o.id }.asReversed().forEach { record ->
-                val time = Instant.ofEpochMilli(record.recordedAt).atZone(ZoneId.systemDefault())
-                    .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm", Locale.forLanguageTag("pt-BR")))
+                val moment = Instant.ofEpochMilli(record.recordedAt).atZone(ZoneId.systemDefault())
+                val time = EthosDates.shortPlain(moment.toLocalDate(), state.today) + " " +
+                    EthosDates.time(moment.hour * 60 + moment.minute)
                 Text(stringResource(R.string.audit_line, stringResource(auditLabels[record.kind.ordinal]), time))
-                record.actualDate?.let { Text(stringResource(R.string.actual_date_line, it.toString())) }
+                record.actualDate?.let { Text(stringResource(R.string.actual_date_line,
+                    EthosDates.shortPlain(it, state.today))) }
                 if (record.kind == AuditKind.MISSED_DEADLINE) Text(stringResource(R.string.original_deadline_line,
-                    record.originalDeadline.toString()))
+                    record.originalDeadline?.let { EthosDates.shortPlain(it, state.today) }.orEmpty()))
             }
         }
     }, confirmButton = { TextButton(close, enabled = !state.busy) { Text(stringResource(R.string.close)) } })
