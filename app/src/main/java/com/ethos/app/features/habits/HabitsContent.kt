@@ -31,7 +31,10 @@ import java.time.LocalDate
 import java.time.YearMonth
 
 @Composable
-fun HabitCalendar(records: List<HabitRecord>, today: LocalDate, onDate: (String) -> Unit) {
+fun HabitCalendar(
+    records: List<HabitRecord>, today: LocalDate, onDate: (String) -> Unit,
+    dayOutcome: (LocalDate) -> PeriodOutcome? = { null },
+) {
     var monthText by rememberSaveable { mutableStateOf(YearMonth.from(today).toString()) }
     val month = YearMonth.parse(monthText)
     val calendarWidth = 364.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
@@ -50,10 +53,24 @@ fun HabitCalendar(records: List<HabitRecord>, today: LocalDate, onDate: (String)
             week.forEach { date ->
                 if (date == null) Spacer(Modifier.weight(1f)) else {
                     val count = records.count { it.date == date }
-                    val label = stringResource(R.string.habit_calendar_day, date.toString(), count)
+                    val outcome = dayOutcome(date)
+                    val dayText = com.ethos.app.core.ui.format.EthosDates.shortPlain(date, today)
+                    // Marks never rely on color alone: symbol plus spoken state (spec 014).
+                    val label = when (outcome) {
+                        PeriodOutcome.SUCCESS -> stringResource(R.string.habit_day_done, dayText)
+                        PeriodOutcome.FAILURE -> stringResource(R.string.habit_day_missed, dayText)
+                        PeriodOutcome.OPEN -> stringResource(R.string.habit_day_open, dayText)
+                        else -> stringResource(R.string.habit_calendar_day, dayText, count)
+                    }
+                    val mark = when {
+                        outcome == PeriodOutcome.SUCCESS -> "✓"
+                        outcome == PeriodOutcome.FAILURE -> "✕"
+                        count > 0 -> "•"
+                        else -> ""
+                    }
                     TextButton({ onDate(date.toString()) },
                         Modifier.weight(1f).semantics { contentDescription = label }) {
-                        Text(if (count > 0) "${date.dayOfMonth}•" else date.dayOfMonth.toString())
+                        Text("${date.dayOfMonth}$mark")
                     }
                 }
             }
@@ -99,21 +116,28 @@ fun HabitProgress(p: HabitPeriod) {
     Text(stringResource(label, p.count, p.target))
     Text(stringResource(R.string.habit_period_range, p.start.toString(), p.end.toString()),
         style = MaterialTheme.typography.bodySmall)
-    Text(stringResource(when (p.outcome) {
-        PeriodOutcome.SUCCESS -> R.string.habit_success
-        PeriodOutcome.FAILURE -> R.string.habit_failure
-        PeriodOutcome.PENDING -> R.string.habit_pending
-        else -> R.string.habit_in_progress
-    }))
+    Text(stringResource(outcomeLabel(p, LocalDate.now())))
     if (p.excessIds.isNotEmpty()) Text(stringResource(R.string.habit_excess, p.excessIds.size))
+}
+
+/** Habits are chances, never debts: closed periods read "Feito"/"Perdido", the late window stays open. */
+fun outcomeLabel(p: HabitPeriod, today: LocalDate): Int = when {
+    p.outcome == PeriodOutcome.SUCCESS -> R.string.habit_success
+    p.outcome == PeriodOutcome.FAILURE -> R.string.habit_failure
+    p.end < today -> R.string.habit_late_window
+    else -> R.string.habit_in_progress
 }
 
 fun LazyListScope.habitItems(
     state: HabitsUiState, page: HabitPage, listId: String?, new: () -> Unit,
     open: (String) -> Unit, retry: () -> Unit, record: ((String) -> Unit)? = null,
+    newBreaking: (() -> Unit)? = null,
 ) {
+    // Revisão is for tasks only (spec 014).
+    if (page == HabitPage.REVIEW) return
     val row: @Composable (Habit, HabitPeriod?) -> Unit = { h, period ->
-        HabitRow(h, period, state.busy, { open(h.id) },
+        HabitRow(h, period, state.busy, { open(h.id) }, today = state.today,
+            consistency = state.streaks[h.id]?.current?.let { it to state.rates[h.id] },
             quick = record?.let { r -> quickAction(state, h, period) { r(h.id) } },
             week = if (page == HabitPage.TODAY) null else weekHits(state, h),
             todayCount = if (page == HabitPage.TODAY) state.snapshot.records.count {
@@ -123,25 +147,22 @@ fun LazyListScope.habitItems(
         HabitPage.HISTORY -> true
         HabitPage.LIST -> h.status != HabitStatus.EXCLUDED && h.listId == listId
         HabitPage.TODAY -> h.status == HabitStatus.ACTIVE
-        HabitPage.REVIEW -> state.periods.any { it.habitId == h.id && it.outcome == PeriodOutcome.PENDING }
+        HabitPage.REVIEW -> false
         else -> h.status != HabitStatus.EXCLUDED
     } }
     item("habit-errors") { HabitError(state, retry) }
     if (state.loading) item("habit-loading") { Text(stringResource(R.string.habit_loading)) }
     if (page != HabitPage.TODAY && page != HabitPage.REVIEW && page != HabitPage.HISTORY) item("new-habit") {
-        Button(new, enabled = !state.busy && !state.loading) { Text(stringResource(R.string.new_habit)) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(new, enabled = !state.busy && !state.loading) { Text(stringResource(R.string.new_habit)) }
+            newBreaking?.let { OutlinedButton(it, enabled = !state.busy && !state.loading) {
+                Text(stringResource(R.string.break_habit)) } }
+        }
     }
     if (!state.loading && habits.isEmpty()) item("habit-empty") {
         Text(stringResource(R.string.habit_empty_real))
     }
-    if (page == HabitPage.REVIEW) {
-        val ids = habits.map { it.id }.toSet()
-        items(state.periods.filter { it.habitId in ids && it.outcome == PeriodOutcome.PENDING },
-            key = { "habit-review:${it.key}" }) { period ->
-            val h = habits.first { it.id == period.habitId }
-            row(h, period)
-        }
-    } else {
+    run {
         val visible = habits.filter { h -> page != HabitPage.TODAY || state.periods.any {
             it.habitId == h.id && state.today in it.start..it.end
         } }
@@ -189,7 +210,8 @@ private val habitIcons = listOf("❧", "▤", "⌂", "▣", "♡", "☆")
 @Composable
 fun HabitRow(
     habit: Habit, period: HabitPeriod?, busy: Boolean, open: () -> Unit, quick: HabitQuick? = null,
-    week: List<Boolean>? = null, todayCount: Int? = null,
+    week: List<Boolean>? = null, todayCount: Int? = null, today: LocalDate = LocalDate.now(),
+    consistency: Pair<Int, Int?>? = null,
 ) {
     val warm = period?.rule?.type?.let { it != HabitType.PRACTICE } == true
     val colors = MaterialTheme.colorScheme
@@ -232,14 +254,15 @@ fun HabitRow(
                         contentPadding = PaddingValues(horizontal = 12.dp)) { Text(stringResource(q.label)) }
                 }
             }
-            if (todayCount == null) period?.let { p ->
-                Text(stringResource(when (p.outcome) {
-                    PeriodOutcome.SUCCESS -> R.string.habit_success
-                    PeriodOutcome.FAILURE -> R.string.habit_failure
-                    PeriodOutcome.PENDING -> R.string.habit_pending
-                    else -> R.string.habit_in_progress
-                }), Modifier.padding(start = 46.dp), style = MaterialTheme.typography.labelSmall,
+            consistency?.let { (streak, rate) ->
+                Text(if (rate == null) stringResource(R.string.habit_consistency_streak, streak)
+                    else stringResource(R.string.habit_consistency, streak, rate),
+                    Modifier.padding(start = 46.dp), style = MaterialTheme.typography.labelSmall,
                     color = colors.onSurfaceVariant)
+            }
+            if (todayCount == null) period?.let { p ->
+                Text(stringResource(outcomeLabel(p, today)), Modifier.padding(start = 46.dp),
+                    style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
                 if (p.excessIds.isNotEmpty()) Text(stringResource(R.string.habit_excess, p.excessIds.size),
                     Modifier.padding(start = 46.dp), style = MaterialTheme.typography.labelSmall,
                     color = colors.onSurfaceVariant)
@@ -255,11 +278,11 @@ fun HabitRow(
 @Composable
 fun HabitsContent(
     state: HabitsUiState, page: HabitPage, new: () -> Unit, open: (String) -> Unit, retry: () -> Unit,
-    record: ((String) -> Unit)? = null,
+    record: ((String) -> Unit)? = null, newBreaking: (() -> Unit)? = null,
 ) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        habitItems(state, page, null, new, open, retry, record)
+        habitItems(state, page, null, new, open, retry, record, newBreaking)
     }
 }
 

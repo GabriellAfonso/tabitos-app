@@ -59,38 +59,9 @@ fun HabitEditor(state: HabitsUiState, lists: List<TaskList>, actions: HabitEdito
                         actions.change(d.copy(habit = d.habit.copy(name = it))) }
                     HabitInput(R.string.habit_description, d.habit.description, !state.busy) {
                         actions.change(d.copy(habit = d.habit.copy(description = it))) }
-                    HabitChoices(R.string.habit_type, listOf(R.string.habit_practice, R.string.habit_avoid,
-                        R.string.habit_limit), d.rule.type.ordinal, !state.busy) { index ->
-                        actions.change(d.copy(rule = d.rule.copy(type = HabitType.entries[index],
-                            unit = if (index == 1) HabitUnit.DAY else d.rule.unit),
-                            target = if (index == 1) "0" else "1")) }
+                    if (d.rule.type == HabitType.PRACTICE) PracticeFrequency(d, !state.busy, actions.change)
+                    else BreakingRule(d, !state.busy, actions.change)
                     if (d.editing) Text(stringResource(R.string.habit_future_type_hint))
-                    if (d.rule.type != HabitType.AVOID) {
-                        HabitChoices(R.string.habit_period, listOf(R.string.habit_day, R.string.habit_week,
-                            R.string.habit_month), d.rule.unit.ordinal, !state.busy) {
-                            actions.change(d.copy(rule = d.rule.copy(unit = HabitUnit.entries[it]), target = "1")) }
-                        if (d.rule.type != HabitType.PRACTICE || d.rule.unit != HabitUnit.DAY) {
-                            HabitInput(if (d.rule.type == HabitType.PRACTICE) R.string.habit_distinct_target
-                                else R.string.habit_occurrence_limit, d.target, !state.busy) {
-                                actions.change(d.copy(target = it)) }
-                        }
-                    }
-                    if (d.rule.type == HabitType.PRACTICE && d.rule.unit == HabitUnit.DAY) {
-                        Text(stringResource(R.string.habit_weekdays))
-                        val days = listOf(R.string.habit_mon, R.string.habit_tue, R.string.habit_wed,
-                            R.string.habit_thu, R.string.habit_fri, R.string.habit_sat, R.string.habit_sun)
-                        days.forEachIndexed { index, label -> Row {
-                            Checkbox(d.rule.weekdays and (1 shl index) != 0, {
-                                actions.change(d.copy(rule = d.rule.copy(weekdays = d.rule.weekdays xor (1 shl index))))
-                            }, enabled = !state.busy)
-                            Text(stringResource(label), Modifier.padding(top = 12.dp))
-                        } }
-                    }
-                    if (d.rule.unit != HabitUnit.DAY) {
-                        HabitInput(R.string.habit_partial_target, d.partial, !state.busy) {
-                            actions.change(d.copy(partial = it)) }
-                        Text(stringResource(R.string.habit_partial_hint))
-                    }
                     if (d.editing) HabitChoices(R.string.habit_goal_effect,
                         listOf(R.string.habit_current_period, R.string.habit_next_period),
                         if (d.nextPeriod) 1 else 0, !state.busy) { actions.change(d.copy(nextPeriod = it == 1)) }
@@ -112,7 +83,7 @@ fun HabitEditor(state: HabitsUiState, lists: List<TaskList>, actions: HabitEdito
                     TextButton({ actions.change(null) }, enabled = !state.busy) {
                         Text(stringResource(R.string.cancel)) }
                     Button(actions.save, enabled = !state.busy) {
-                        Text(stringResource(R.string.habit_preview)) }
+                        Text(stringResource(R.string.save)) }
                 }
             }
         }
@@ -124,3 +95,57 @@ data class HabitEditorActions(
     val change: (HabitDraft?) -> Unit, val difficulty: (Int) -> Unit,
     val save: () -> Unit, val retry: () -> Unit,
 )
+
+/** Practice frequency in plain words, mapped onto the existing day/weekday/week/month rules (spec 014). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PracticeFrequency(d: HabitDraft, enabled: Boolean, change: (HabitDraft?) -> Unit) {
+    val r = d.rule
+    val selected = when {
+        r.unit == HabitUnit.DAY && r.weekdays == 127 -> 0
+        r.unit == HabitUnit.DAY -> 1
+        r.unit == HabitUnit.WEEK -> 2
+        else -> 3
+    }
+    HabitChoices(R.string.habit_frequency, listOf(R.string.habit_every_day, R.string.habit_chosen_days,
+        R.string.habit_times_week, R.string.habit_times_month), selected, enabled) { index ->
+        if (index == selected) return@HabitChoices
+        change(when (index) {
+            0 -> d.copy(rule = r.copy(unit = HabitUnit.DAY, weekdays = 127), target = "1")
+            1 -> d.copy(rule = r.copy(unit = HabitUnit.DAY, weekdays = 0b0011111), target = "1")
+            2 -> d.copy(rule = r.copy(unit = HabitUnit.WEEK, weekdays = 127), target = "3")
+            else -> d.copy(rule = r.copy(unit = HabitUnit.MONTH, weekdays = 127), target = "10")
+        })
+    }
+    if (selected == 1) {
+        Text(stringResource(R.string.habit_weekdays), style = MaterialTheme.typography.labelLarge)
+        val days = listOf(R.string.habit_mon, R.string.habit_tue, R.string.habit_wed,
+            R.string.habit_thu, R.string.habit_fri, R.string.habit_sat, R.string.habit_sun)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            days.forEachIndexed { index, label ->
+                FilterChip(r.weekdays and (1 shl index) != 0, {
+                    val bits = r.weekdays xor (1 shl index)
+                    if (bits != 0) change(d.copy(rule = r.copy(weekdays = bits)))
+                }, enabled = enabled, label = { Text(stringResource(label)) })
+            }
+        }
+    }
+    if (selected >= 2) HabitInput(R.string.habit_times, d.target, enabled) { change(d.copy(target = it)) }
+}
+
+/** "Quebrar hábito": avoid entirely or limit how often, never mixed with practice. */
+@Composable
+private fun BreakingRule(d: HabitDraft, enabled: Boolean, change: (HabitDraft?) -> Unit) {
+    val r = d.rule
+    HabitChoices(R.string.habit_type, listOf(R.string.habit_avoid, R.string.habit_limit),
+        if (r.type == HabitType.AVOID) 0 else 1, enabled) { index ->
+        change(if (index == 0) d.copy(rule = r.copy(type = HabitType.AVOID, unit = HabitUnit.DAY), target = "0")
+            else d.copy(rule = r.copy(type = HabitType.LIMIT), target = "1"))
+    }
+    if (r.type == HabitType.LIMIT) {
+        HabitChoices(R.string.habit_period, listOf(R.string.habit_day, R.string.habit_week,
+            R.string.habit_month), r.unit.ordinal, enabled) {
+            change(d.copy(rule = r.copy(unit = HabitUnit.entries[it]))) }
+        HabitInput(R.string.habit_occurrence_limit, d.target, enabled) { change(d.copy(target = it)) }
+    }
+}

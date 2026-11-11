@@ -192,8 +192,8 @@ class MainActivity : ComponentActivity() {
                             habitsViewModel.listIds(tasks.snapshot.activeLists.map { it.id }.toSet())
                         }
                         HabitDialogs(habits, tasks.snapshot.activeLists, habitsViewModel)
-                        val pending = tasks.snapshot.activeOccurrences.count { it.needsReview(tasks.today) } +
-                            habits.pendingCount
+                        // Revisão counts tasks only: habits never become pending (spec 014).
+                        val pending = tasks.snapshot.activeOccurrences.count { it.needsReview(tasks.today) }
                         EthosShell(
                             snackbarContent = {
                                 HabitPracticeFeedback(habits, habitsViewModel::undoPractice,
@@ -202,6 +202,7 @@ class MainActivity : ComponentActivity() {
                             pendingCount = pending,
                             onNewTask = tasksViewModel::newTask,
                             onNewHabit = { habitsViewModel.newHabit(tasks.selectedListId) },
+                            onBreakHabit = { habitsViewModel.newHabit(tasks.selectedListId, breaking = true) },
                             taskCreationEnabled = !tasks.loading && !tasks.busy,
                             habitCreationEnabled = !habits.loading && !habits.busy,
                             drawerLists = { navigate ->
@@ -214,7 +215,8 @@ class MainActivity : ComponentActivity() {
                                     trackerViewModel::fill, trackerViewModel::editEntry)
                               } else if (destination == ShellDestination.HABITS) {
                                 HabitsContent(habits, HabitPage.ALL, { habitsViewModel.newHabit(null) },
-                                    habitsViewModel::detail, habitsViewModel::retry, habitsViewModel::quickRecord)
+                                    habitsViewModel::detail, habitsViewModel::retry, habitsViewModel::quickRecord,
+                                    { habitsViewModel.newHabit(null, breaking = true) })
                               } else {
                                 val page = when (destination) {
                                     ShellDestination.TODAY -> TaskPage.TODAY
@@ -253,9 +255,7 @@ class MainActivity : ComponentActivity() {
                                                 onReview, urgent = true)
                                         }
                                         if (page == TaskPage.REVIEW) Text(stringResource(R.string.review_hint))
-                                        if (page == TaskPage.TODAY || page == TaskPage.REVIEW) {
-                                            FilterRow(filter, onFilter)
-                                        }
+                                        if (page == TaskPage.TODAY) FilterRow(filter, onFilter)
                                     }
                                 }
                               }

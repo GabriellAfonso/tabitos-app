@@ -155,7 +155,7 @@ fun TasksContent(
             Button(onNew, enabled = !state.loading && !state.busy) { Text(stringResource(R.string.new_task)) }
         }
         if (!state.loading && visible.isEmpty() && completed.isEmpty() && !(extraItems != null &&
-                (habits || filter == 2 || page == TaskPage.REVIEW || page == TaskPage.TODAY))) item {
+                (habits || filter == 2 || page == TaskPage.TODAY))) item {
             Text(stringResource(if ((page == TaskPage.LIST && habits) || filter == 2)
                 R.string.habits_empty_detail else if (page == TaskPage.REVIEW)
                 R.string.review_empty_detail else R.string.task_empty_real))

@@ -26,6 +26,7 @@ data class HabitLifecycleDraft(val id: String, val status: HabitStatus, val part
 data class HabitsUiState(
     val snapshot: HabitSnapshot = HabitSnapshot(), val today: LocalDate = LocalDate.now(),
     val periods: List<HabitPeriod> = emptyList(), val streaks: Map<String, HabitStreak> = emptyMap(),
+    val rates: Map<String, Int?> = emptyMap(),
     val loading: Boolean = true, val busy: Boolean = false, val storageError: Boolean = false,
     val problem: HabitProblem? = null, val draft: HabitDraft? = null, val detail: String? = null,
     val recordDate: String = "", val correctionId: String? = null,
@@ -33,9 +34,7 @@ data class HabitsUiState(
     val previewReady: Boolean = false,
     val financialPreview: FinancialPreview? = null, val recordExists: Boolean = false,
     val lastPractice: HabitAction.SetPractice? = null,
-) {
-    val pendingCount: Int get() = periods.count { it.outcome == PeriodOutcome.PENDING }
-}
+)
 
 @HiltViewModel
 class HabitsViewModel @Inject constructor(
@@ -61,7 +60,17 @@ class HabitsViewModel @Inject constructor(
     private fun derive(s: HabitsUiState): HabitsUiState = s.copy(
         periods = s.snapshot.habits.flatMap { HabitRules.periods(s.snapshot, it.id, s.today) },
         streaks = s.snapshot.habits.associate { it.id to HabitRules.streak(s.snapshot, it.id, s.today) },
+        rates = s.snapshot.habits.associate { it.id to HabitRules.successRate(s.snapshot, it.id, s.today) },
     )
+    private var settled = false
+    /** Lets periods that closed by themselves reach the ledger (avoid/limit successes, spec 014). */
+    private fun settle() {
+        viewModelScope.launch {
+            try { repository.execute(HabitAction.Settle)
+            } catch (e: CancellationException) { throw e
+            } catch (_: Exception) { settled = false }
+        }
+    }
     private fun observe() {
         observer?.cancel()
         observer = viewModelScope.launch {
@@ -70,6 +79,7 @@ class HabitsViewModel @Inject constructor(
                     readFailed = false
                     mutable.update { derive(it.copy(snapshot = snapshot, loading = false,
                         storageError = retryAction != null)) }
+                    if (!settled) { settled = true; settle() }
                 }
             } catch (e: CancellationException) { throw e
             } catch (_: Exception) {
@@ -78,16 +88,24 @@ class HabitsViewModel @Inject constructor(
             }
         }
     }
-    fun refresh() { mutable.update { derive(it.copy(today = clock.today())) } }
+    fun refresh() {
+        val day = clock.today()
+        val changed = day != state.value.today
+        mutable.update { derive(it.copy(today = day)) }
+        if (changed && !state.value.loading) settle()
+    }
     fun listIds(ids: Set<String>) { lists = ids }
     fun draft(value: HabitDraft?) {
         saved["habitDraft"] = value
         mutable.update { it.copy(draft = value, preview = null, previewReady = false, problem = null) }
     }
-    fun newHabit(listId: String?) {
+    /** [breaking] opens the "Quebrar hábito" group (avoid/limit) instead of practice (spec 014). */
+    fun newHabit(listId: String?, breaking: Boolean = false) {
         val id = UUID.randomUUID().toString()
         draft(HabitDraft(Habit(id, clock.today(), "", listId = listId),
-            HabitRule(UUID.randomUUID().toString(), id, clock.today())))
+            HabitRule(UUID.randomUUID().toString(), id, clock.today(),
+                type = if (breaking) HabitType.AVOID else HabitType.PRACTICE),
+            target = if (breaking) "0" else "1"))
     }
     fun edit(h: Habit) {
         val r = HabitRules.currentRule(state.value.snapshot, h.id, clock.today()) ?: return
@@ -115,7 +133,6 @@ class HabitsViewModel @Inject constructor(
     }
     fun save() {
         try {
-            if (!state.value.previewReady) { preview(); return }
             execute(saveAction(), close = true)
         } catch (_: Exception) { mutable.update { it.copy(problem = HabitProblem.INPUT) } }
     }

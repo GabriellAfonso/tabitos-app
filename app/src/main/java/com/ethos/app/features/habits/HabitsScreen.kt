@@ -43,18 +43,6 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
     }
     if (state.draft != null) HabitEditor(state, lists,
         HabitEditorActions(vm::draft, vm::difficulty, vm::save, vm::retry))
-    if (state.draft != null && state.previewReady) AlertDialog(
-        onDismissRequest = { if (!state.busy) vm.draft(state.draft) },
-        title = { Text(stringResource(R.string.habit_preview)) },
-        text = { Column(Modifier.verticalScroll(rememberScrollState())) {
-            HabitError(state, vm::retry)
-            state.preview?.let { HabitProgress(it) }
-        } },
-        confirmButton = { TextButton(vm::save, enabled = !state.busy) {
-            Text(stringResource(R.string.save)) } },
-        dismissButton = { TextButton({ vm.draft(state.draft) }, enabled = !state.busy) {
-            Text(stringResource(R.string.cancel)) } },
-    )
     val h = state.snapshot.habits.firstOrNull { it.id == state.detail }
     if (h != null && state.draft == null && state.lifecycle == null) {
         AlertDialog(onDismissRequest = { if (!state.busy) vm.detail(null) }, title = { Text(h.name) }, text = {
@@ -69,7 +57,8 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                         HabitUnit.MONTH -> R.string.habit_month
                     })
                     Text(stringResource(R.string.habit_streak, streak.current, streak.best, unit))
-                    if (streak.uncertain) Text(stringResource(R.string.habit_streak_pending))
+                    state.rates[h.id]?.let { rate ->
+                        Text(stringResource(R.string.habit_consistency, streak.current, rate)) }
                     streak.historicalBest.filterKeys { it != streak.unit }.forEach { (oldUnit, best) ->
                         val oldLabel = stringResource(when (oldUnit) {
                             HabitUnit.DAY -> R.string.habit_day
@@ -83,7 +72,10 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                 Text(stringResource(R.string.habit_calendar))
                 val records = state.snapshot.records.filter { it.habitId == h.id && !it.deleted }
                     .sortedWith(compareByDescending<HabitRecord> { it.date }.thenBy { it.id })
-                HabitCalendar(records, state.today, vm::date)
+                val days = state.periods.filter { it.habitId == h.id && it.rule.unit == HabitUnit.DAY }
+                    .associateBy { it.start }
+                HabitCalendar(records, state.today, vm::date) { day -> days[day]?.outcome }
+                Text(stringResource(R.string.habit_closed_hint), style = MaterialTheme.typography.bodySmall)
                 // Calendar grouped by actual date, followed by individually correctable event records.
                 records.groupBy { it.date }.forEach { (day, entries) ->
                     Text(stringResource(R.string.habit_calendar_day, day.toString(), entries.size))
@@ -111,12 +103,6 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                 Text(stringResource(R.string.habit_history_periods))
                 state.periods.filter { it.habitId == h.id }.reversed().forEach { p ->
                     HabitProgress(p)
-                    if (p.outcome == PeriodOutcome.PENDING) {
-                        Text(stringResource(if (p.rule.type == HabitType.PRACTICE) R.string.habit_review_practice
-                            else R.string.habit_review_completeness))
-                        Button({ vm.action(HabitAction.Review(p.key)) }, enabled = !state.busy) {
-                            Text(stringResource(R.string.habit_confirm_review)) }
-                    }
                 }
                 val timer = LocalOpenTimer.current
                 TextButton({ timer(TimerKind.HABIT, h.id) }, enabled = !state.busy) {
@@ -149,8 +135,6 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 HabitError(state, vm::retry)
                 Text(stringResource(R.string.habit_lifecycle_hint))
-                HabitInput(R.string.habit_partial_target, d.partial, !state.busy) {
-                    vm.lifecycle(d.copy(partial = it)) }
                 if (d.status == HabitStatus.ACTIVE) HabitLists(lists, d.listId, !state.busy) {
                     vm.lifecycle(d.copy(listId = it, destinationChosen = true)) }
             }

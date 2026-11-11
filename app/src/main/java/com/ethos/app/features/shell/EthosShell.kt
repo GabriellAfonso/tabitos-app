@@ -71,6 +71,7 @@ fun EthosShell(
     rewardsContent: (@Composable () -> Unit)? = null,
     onNewTask: (() -> Unit)? = null,
     onNewHabit: (() -> Unit)? = null,
+    onBreakHabit: () -> Unit = {},
     taskCreationEnabled: Boolean = true,
     habitCreationEnabled: Boolean = true,
     snackbarContent: @Composable () -> Unit = {},
@@ -139,7 +140,7 @@ fun EthosShell(
             snackbarHost = snackbarContent,
             floatingActionButton = {
                 if (current == ShellDestination.TODAY && onNewTask != null && onNewHabit != null) {
-                    TodayCreateButton(taskCreationEnabled, habitCreationEnabled, onNewTask, onNewHabit)
+                    TodayCreateButton(taskCreationEnabled, habitCreationEnabled, onNewTask, onNewHabit, onBreakHabit)
                 }
             },
             topBar = {

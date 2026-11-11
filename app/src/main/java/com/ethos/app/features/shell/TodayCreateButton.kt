@@ -22,6 +22,7 @@ import com.ethos.app.core.ui.theme.EthosTheme
 @Composable
 fun TodayCreateButton(
     taskEnabled: Boolean, habitEnabled: Boolean, onNewTask: () -> Unit, onNewHabit: () -> Unit,
+    onBreakHabit: () -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
     val description = stringResource(R.string.create_item)
@@ -35,6 +36,9 @@ fun TodayCreateButton(
                 onClick = { expanded = false; onNewTask() })
             DropdownMenuItem(text = { Text(stringResource(R.string.new_habit)) }, enabled = habitEnabled,
                 onClick = { expanded = false; onNewHabit() })
+            // Explicit choice of what is being created (spec 014): task, habit or habit to break.
+            DropdownMenuItem(text = { Text(stringResource(R.string.break_habit)) }, enabled = habitEnabled,
+                onClick = { expanded = false; onBreakHabit() })
         }
     }
 }
