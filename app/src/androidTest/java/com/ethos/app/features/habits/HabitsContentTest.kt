@@ -57,6 +57,26 @@ class HabitsContentTest {
         compose.onNodeWithText("Evitar").assertExists()
         assertEquals(1, periods.count { it.outcome == PeriodOutcome.PENDING })
     }
+    @Test fun todayKeepsCompletedHabitVisibleAndOnlyShowsToday() {
+        val repo = FakeRepository()
+        repo.snapshot.value = HabitRules.apply(HabitSnapshot(),
+            HabitAction.Save(Habit("h", clock.today(), "Ler hoje"),
+                HabitRule("r", "h", clock.today(), unit = HabitUnit.WEEK, target = 1), partialTarget = 1),
+            clock.today(), 1, emptySet())
+        compose.setContent {
+            val vm = remember { HabitsViewModel(repo, clock, SavedStateHandle()) }
+            EthosTheme { HabitsScreen(vm) { state ->
+                HabitsContent(state, HabitPage.TODAY, {}, vm::detail, vm::retry, vm::quickRecord)
+            } }
+        }
+        compose.onNodeWithText("Marcar").performClick()
+        compose.onNodeWithText("✓ Feito hoje").assertExists().performClick()
+        compose.onNodeWithText("Marcar").assertExists()
+        compose.onNodeWithText("Ler hoje").assertExists()
+        compose.onAllNodes(hasText("Dias distintos:", substring = true)).assertCountEquals(0)
+        compose.onAllNodes(hasContentDescription("Semana atual:", substring = true)).assertCountEquals(0)
+        compose.onAllNodes(hasText("Metas cumpridas", substring = true)).assertCountEquals(0)
+    }
     private inner class FakeRepository : HabitRepository {
         val snapshot = MutableStateFlow(HabitSnapshot())
         override fun observe() = snapshot

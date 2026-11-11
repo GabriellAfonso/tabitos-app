@@ -25,6 +25,66 @@ class HabitsViewModelTest {
     @Before fun setup() { Dispatchers.setMain(dispatcher) }
     @After fun teardown() { Dispatchers.resetMain() }
 
+    @Test fun unwantedHabitStillRequiresConfirmationAndCancelNeverWrites() = runTest(dispatcher) {
+        val repo = FakeRepository()
+        repo.execute(HabitAction.Save(Habit("h", clock.today(), "Evitar"),
+            HabitRule("r", "h", clock.today(), HabitType.AVOID, target = 0)))
+        val accounting = object : com.ethos.app.core.accounting.domain.AccountingRepository {
+            override fun observe() = MutableStateFlow(com.ethos.app.core.accounting.domain.AccountingSnapshot())
+            override suspend fun savePrices(prices: List<com.ethos.app.core.accounting.domain.Price>) = Unit
+            override suspend fun previewTask(action: com.ethos.app.core.tasks.domain.TaskAction):
+                com.ethos.app.core.accounting.domain.FinancialPreview = error("Unexpected task")
+            override suspend fun previewHabit(action: HabitAction) =
+                com.ethos.app.core.accounting.domain.FinancialPreview(emptyList(), -10, 0)
+        }
+        val vm = HabitsViewModel(repo, clock, SavedStateHandle(), accounting)
+        advanceUntilIdle()
+        vm.quickRecord("h")
+        advanceUntilIdle()
+        assertNotNull(vm.state.value.financialPreview)
+        assertTrue(repo.snapshot.value.records.isEmpty())
+        vm.confirmFinancial(false)
+        advanceUntilIdle()
+        assertTrue(repo.snapshot.value.records.isEmpty())
+        vm.quickRecord("h")
+        advanceUntilIdle()
+        vm.confirmFinancial(true)
+        advanceUntilIdle()
+        assertEquals(1, repo.snapshot.value.records.size)
+    }
+
+    @Test fun quickPracticeTogglesWithoutConfirmationAndIgnoresConcurrentTap() = runTest(dispatcher) {
+        val repo = FakeRepository()
+        repo.execute(HabitAction.Save(Habit("h", clock.today(), "Ler"), HabitRule("r", "h", clock.today())))
+        val accounting = object : com.ethos.app.core.accounting.domain.AccountingRepository {
+            override fun observe() = flow<com.ethos.app.core.accounting.domain.AccountingSnapshot> { }
+            override suspend fun savePrices(prices: List<com.ethos.app.core.accounting.domain.Price>) = Unit
+            override suspend fun previewTask(action: com.ethos.app.core.tasks.domain.TaskAction):
+                com.ethos.app.core.accounting.domain.FinancialPreview = error("Unexpected task preview")
+            override suspend fun previewHabit(action: HabitAction):
+                com.ethos.app.core.accounting.domain.FinancialPreview = error("Practice must not ask confirmation")
+        }
+        val vm = HabitsViewModel(repo, clock, SavedStateHandle(), accounting)
+        advanceUntilIdle()
+        vm.quickRecord("h"); vm.quickRecord("h")
+        advanceUntilIdle()
+        assertEquals(1, vm.state.value.snapshot.records.count { !it.deleted })
+        assertNull(vm.state.value.financialPreview)
+        assertFalse(vm.state.value.storageError)
+        repo.failWrite = true
+        vm.quickRecord("h")
+        advanceUntilIdle()
+        assertTrue(vm.state.value.storageError)
+        assertEquals(1, vm.state.value.snapshot.records.count { !it.deleted })
+        repo.failWrite = false
+        vm.retry()
+        advanceUntilIdle()
+        assertEquals(0, vm.state.value.snapshot.records.count { !it.deleted })
+        vm.quickRecord("h")
+        advanceUntilIdle()
+        assertEquals(1, vm.state.value.snapshot.records.count { !it.deleted })
+    }
+
     @Test fun failedSaveRetainsInputAndStableRetryCreatesOneHabit() = runTest(dispatcher) {
         val repo = FakeRepository()
         val vm = HabitsViewModel(repo, clock, SavedStateHandle())

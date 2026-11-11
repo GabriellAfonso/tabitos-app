@@ -48,7 +48,7 @@ class AccountingUiTest {
             compose.waitUntil(15000) {
                 compose.onAllNodesWithText("Preparar café").fetchSemanticsNodes().isNotEmpty()
             }
-            compose.onNodeWithText("Preparar café").performClick()
+            compose.onNodeWithText("Preparar café", useUnmergedTree = true).performClick()
             compose.onNodeWithText("Concluir tarefa").performScrollTo().performClick()
             compose.onNodeWithText("Confirmar efeito financeiro").assertIsDisplayed()
             assertTrue(runBlocking { wallet.observe().first().entries.isEmpty() })
