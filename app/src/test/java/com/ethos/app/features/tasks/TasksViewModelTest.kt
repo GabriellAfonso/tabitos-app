@@ -26,6 +26,53 @@ class TasksViewModelTest {
     @Before fun setup() { Dispatchers.setMain(dispatcher) }
     @After fun teardown() { Dispatchers.resetMain() }
 
+    @Test fun closingUnchangedDraftClosesAndChangedDraftAsksFirst() = runTest(dispatcher) {
+        val vm = TasksViewModel(FakeRepository(clock), clock, SavedStateHandle())
+        advanceUntilIdle()
+        vm.newTask()
+        vm.closeDraft()
+        assertNull(vm.state.value.draft)
+        vm.newTask()
+        val draft = vm.state.value.draft!!
+        vm.updateDraft(draft.copy(fields = draft.fields.copy(title = "Comprar pão")))
+        vm.closeDraft()
+        assertTrue(vm.state.value.discardConfirmation)
+        vm.confirmDiscard(false)
+        assertFalse(vm.state.value.discardConfirmation)
+        assertEquals("Comprar pão", vm.state.value.draft!!.fields.title)
+        vm.closeDraft(); vm.confirmDiscard(true)
+        assertNull(vm.state.value.draft)
+        assertFalse(vm.state.value.discardConfirmation)
+    }
+
+    @Test fun editorRoundTripKeepsEveryRecurrenceKindAndChecklist() = runTest(dispatcher) {
+        val repo = FakeRepository(clock)
+        val day = clock.today()
+        val rules = RepeatKind.entries.map { kind -> RepeatRule(kind = kind, start = day,
+            weekdays = if (kind == RepeatKind.CUSTOM) 0b0010101 else 1 shl (day.dayOfWeek.value - 1),
+            monthDay = 6, interval = 3, count = if (kind == RepeatKind.MONTHLY) 4 else null) }
+        rules.forEachIndexed { i, rule ->
+            repo.execute(TaskAction.Create("t$i", TaskFields(title = "T$i", deadline = DeadlineKind.DAY, date = day,
+                checklist = listOf("a", "b")), rule))
+        }
+        val vm = TasksViewModel(repo, clock, SavedStateHandle())
+        advanceUntilIdle()
+        rules.indices.forEach { i ->
+            vm.edit(vm.state.value.snapshot.activeOccurrences.first { it.taskId == "t$i" })
+            assertFalse(needsReviewConfirmation(vm.state.value.draft!!,
+                vm.state.value.snapshot.activeOccurrences.first { it.taskId == "t$i" }, day))
+            vm.saveDraft()
+            advanceUntilIdle()
+            assertNull(vm.state.value.error)
+            val definition = repo.snapshot.value.definitions.first { it.id == "t$i" }
+            // Non-recurring rules are normalized on save; their unused parameters never mattered.
+            val expected = if (rules[i].kind == RepeatKind.NONE) RepeatRule(start = definition.rule.start)
+                else rules[i].copy(start = definition.rule.start)
+            assertEquals(expected, definition.rule)
+            assertEquals(listOf("a", "b"), definition.fields.checklist)
+        }
+    }
+
     @Test fun quickCheckboxSkipsBothConfirmationsAndRetainsDirectRetryAfterFailure() = runTest(dispatcher) {
         val repo = FakeRepository(clock)
         repo.execute(TaskAction.Create("quick", TaskFields(title = "Quick", checklist = listOf("Pending")),

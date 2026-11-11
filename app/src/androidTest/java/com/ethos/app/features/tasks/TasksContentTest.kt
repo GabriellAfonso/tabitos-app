@@ -38,7 +38,11 @@ class TasksContentTest {
         }
         compose.onNodeWithText("Nova tarefa").performClick()
         compose.onNodeWithText("Título").performTextInput("Preparar mochila")
-        compose.onNodeWithText("Checklist (um item por linha)").performScrollTo().performTextInput("Chaves\nÁgua")
+        compose.onNodeWithTag("more-options").performClick()
+        compose.onNodeWithText("+ Adicionar item").performScrollTo().performClick()
+        compose.onNodeWithTag("checklist:0").performTextInput("Chaves")
+        compose.onNodeWithText("+ Adicionar item").performScrollTo().performClick()
+        compose.onNodeWithTag("checklist:1").performTextInput("Água")
         compose.onNodeWithText("Salvar").performClick()
         compose.waitUntil(15_000) { repo.saved.value.activeOccurrences.size == 1 }
         compose.onNodeWithText("Preparar mochila", useUnmergedTree = true).performScrollTo().performClick()
