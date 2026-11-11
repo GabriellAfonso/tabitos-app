@@ -105,21 +105,17 @@ class AccountingDatabaseTest {
             assertEquals(1, wallet.observe().first().entries.size)
             habits.execute(HabitAction.Correct("a", delete = true))
             assertEquals(0L, wallet.observe().first().balance)
-            day = day.plusWeeks(1)
-            val key = HabitRules.pending(habits.observe().first(), day).first().key
-            habits.execute(HabitAction.Review(key))
+            // Spec 014: the week closes by itself after the 2-day late window and is rewarded once.
+            day = day.plusWeeks(1).plusDays(2)
+            habits.execute(HabitAction.Settle)
             assertEquals(10L, wallet.observe().first().balance)
             assertEquals(20L, wallet.observe().first().totalXp)
             val size = wallet.observe().first().entries.size
-            try { habits.execute(HabitAction.Review(key)); fail("Review must not duplicate")
-            } catch (_: HabitRuleException) { }
+            habits.execute(HabitAction.Settle)
             assertEquals(size, wallet.observe().first().entries.size)
-            habits.execute(HabitAction.Record("forgotten", "h", day.minusWeeks(1)))
-            assertEquals(-10L, wallet.observe().first().balance)
-            assertEquals(0L, wallet.observe().first().totalXp)
-            assertTrue(habits.observe().first().reviews.single().invalidated)
-            habits.execute(HabitAction.Review(key))
-            assertEquals(-10L, wallet.observe().first().balance)
+            try { habits.execute(HabitAction.Record("forgotten", "h", day.minusWeeks(1))); fail("closed period")
+            } catch (_: HabitRuleException) { }
+            assertEquals(10L, wallet.observe().first().balance)
         } finally { db.close() }
     }
 

@@ -35,15 +35,19 @@ class AccountingProjectionTest {
         assertEquals(1, AccountingProjection.habits(resumed, day.plusDays(1)).count { it.active })
     }
 
-    @Test fun confirmedIncompletePracticeKeepsDayAwardAndOnePeriodPenalty() {
-        var s = habit(HabitType.PRACTICE, 3, listOf(HabitRecord("a", "h", day, 1)))
-        val review = HabitRules.pending(s, day.plusWeeks(1)).first()
-        s = HabitRules.apply(s, HabitAction.Review(review.key), day.plusWeeks(1), 2, emptySet())
-        val outcomes = AccountingProjection.habits(s, day.plusWeeks(1)).filter { it.active }
-        assertEquals(2, outcomes.size)
+    @Test fun missedPracticeKeepsDayAwardWithoutAnyPenalty() {
+        val s = habit(HabitType.PRACTICE, 3, listOf(HabitRecord("a", "h", day, 1)))
+        val outcomes = AccountingProjection.habits(s, day.plusWeeks(2)).filter { it.active }
+        assertEquals(listOf("practice:h:$day"), outcomes.map { it.key })
         val wallet = AccountingRules.reconcile(AccountingSnapshot(), outcomes, setOf("habit:h"), 3)
-        assertEquals(0L, wallet.balance)
-        assertEquals(20L, wallet.totalXp)
+        assertEquals(10L, wallet.balance)
+    }
+
+    @Test fun penaltyConfirmedBeforeSpec014StaysInHistory() {
+        val s = habit(HabitType.PRACTICE, 3, listOf(HabitRecord("a", "h", day, 1)))
+        val key = HabitRules.periods(s, "h", day.plusWeeks(2)).first().key
+        val legacy = s.copy(reviews = listOf(HabitReview(key, PeriodOutcome.FAILURE)))
+        assertTrue(AccountingProjection.habits(legacy, day.plusWeeks(2)).any { it.active && !it.reward })
     }
 
     @Test fun limitUsesStableChronologyAndNoExtraClosingPenalty() {
@@ -54,12 +58,11 @@ class AccountingProjectionTest {
         assertTrue(result.all { !it.reward })
     }
 
-    @Test fun noEventsDoesNotAutomaticallyAwardNegativePeriod() {
+    @Test fun limitWithinTargetIsRewardedOnlyAfterClosing() {
         val s = habit(HabitType.LIMIT, 1)
-        assertTrue(AccountingProjection.habits(s, day.plusWeeks(1)).none { it.active })
-        val review = HabitRules.pending(s, day.plusWeeks(1)).first()
-        val confirmed = HabitRules.apply(s, HabitAction.Review(review.key), day.plusWeeks(1), 2, emptySet())
-        assertEquals(1, AccountingProjection.habits(confirmed, day.plusWeeks(1)).count { it.active })
+        // Sunday + 2 days is still the late window.
+        assertTrue(AccountingProjection.habits(s, day.plusDays(8)).none { it.active })
+        assertEquals(1, AccountingProjection.habits(s, day.plusDays(9)).count { it.active && it.reward })
     }
 
     @Test fun reconciliationPreservesHistoricalPricesAndNoDoubleRefund() {

@@ -55,7 +55,8 @@ class HabitsContentTest {
         }
         compose.onNodeWithText("Hábitos excluídos").assertExists()
         compose.onNodeWithText("Evitar").assertExists()
-        assertEquals(1, periods.count { it.outcome == PeriodOutcome.PENDING })
+        // Spec 014: habits never become pending, even right after exclusion.
+        assertEquals(0, periods.count { it.outcome == PeriodOutcome.PENDING })
     }
     @Test fun todayKeepsCompletedHabitVisibleAndOnlyShowsToday() {
         val repo = FakeRepository()

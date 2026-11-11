@@ -22,10 +22,13 @@ class HabitRulesTest {
         s = record(s, "d", monday.plusDays(2))
         assertEquals(PeriodOutcome.SUCCESS, HabitRules.periods(s, "h", monday.plusDays(2)).single().outcome)
     }
-    @Test fun incompleteWeekCreatesOnePendingPeriod() {
+    @Test fun incompleteWeekStaysOpenInLateWindowThenClosesAsMissed() {
         val s = record(initial(), "a", monday)
-        assertEquals(1, HabitRules.pending(s, monday.plusDays(7)).size)
-        assertEquals(PeriodOutcome.PENDING, HabitRules.pending(s, monday.plusDays(7)).single().outcome)
+        // Sunday + 2 days: still accepts records, nothing pending anywhere.
+        assertEquals(PeriodOutcome.OPEN, HabitRules.periods(s, "h", monday.plusDays(8)).first().outcome)
+        assertTrue(HabitRules.pending(s, monday.plusDays(8)).isEmpty())
+        assertEquals(PeriodOutcome.FAILURE, HabitRules.periods(s, "h", monday.plusDays(9)).first().outcome)
+        assertTrue(HabitRules.pending(s, monday.plusDays(9)).isEmpty())
     }
     @Test fun limitCountsEventsAndIdentifiesEachExcess() {
         val s = record(record(initial(HabitType.LIMIT, target = 1), "a", monday), "b", monday)
@@ -33,19 +36,24 @@ class HabitRulesTest {
         assertEquals(2, p.count)
         assertEquals(listOf("b"), p.excessIds)
     }
-    @Test fun avoidZeroRecordsStillNeedsDailyConfirmation() {
+    @Test fun avoidWithoutEventsSucceedsByItselfAfterWindow() {
         val s = initial(HabitType.AVOID, HabitUnit.DAY, 0)
-        val p = HabitRules.pending(s, monday.plusDays(1)).single()
-        val reviewed = HabitRules.apply(s, HabitAction.Review(p.key), monday.plusDays(1), 3, emptySet())
-        assertTrue(HabitRules.pending(reviewed, monday.plusDays(1)).isEmpty())
+        assertEquals(PeriodOutcome.OPEN, HabitRules.periods(s, "h", monday.plusDays(2)).first().outcome)
+        assertEquals(PeriodOutcome.SUCCESS, HabitRules.periods(s, "h", monday.plusDays(3)).first().outcome)
+        assertTrue(HabitRules.pending(s, monday.plusDays(3)).isEmpty())
     }
-    @Test fun correctionReopensChangedReviewedOutcomeOnlyOnce() {
+    @Test fun lateRecordChangesOutcomeOnlyInsideWindow() {
         var s = initial(HabitType.AVOID, HabitUnit.DAY, 0)
-        val p = HabitRules.pending(s, monday.plusDays(1)).single()
-        s = HabitRules.apply(s, HabitAction.Review(p.key), monday.plusDays(1), 3, emptySet())
-        s = HabitRules.apply(s, HabitAction.Record("forgotten", "h", monday), monday.plusDays(1), 4, emptySet())
-        assertEquals(1, HabitRules.pending(s, monday.plusDays(1)).size)
-        assertTrue(s.reviews.single().invalidated)
+        s = HabitRules.apply(s, HabitAction.Record("late", "h", monday), monday.plusDays(2), 4, emptySet())
+        assertEquals(PeriodOutcome.FAILURE, HabitRules.periods(s, "h", monday.plusDays(3)).first().outcome)
+        try {
+            HabitRules.apply(s, HabitAction.Record("closed", "h", monday), monday.plusDays(3), 5, emptySet())
+            fail("closed period accepted a record")
+        } catch (e: HabitRuleException) { assertEquals(HabitProblem.DATE, e.reason) }
+        try {
+            HabitRules.apply(s, HabitAction.Correct("late", delete = true), monday.plusDays(3), 6, emptySet())
+            fail("closed period accepted a correction")
+        } catch (e: HabitRuleException) { assertEquals(HabitProblem.DATE, e.reason) }
     }
     @Test fun pauseBlocksNewRecordsButAllowsOldDateCorrection() {
         var s = record(initial(), "a", monday)
@@ -80,22 +88,23 @@ class HabitRulesTest {
         val h = Habit("h", monday, "Teste")
         val s = HabitRules.apply(HabitSnapshot(), HabitAction.Save(h,
             HabitRule("r", "h", monday, weekdays = 1)), monday, 1, emptySet())
-        val changed = record(s, "tuesday", monday.plusDays(1))
-        assertEquals(1, HabitRules.pending(changed, monday.plusDays(2)).size)
-        assertEquals(monday, HabitRules.pending(changed, monday.plusDays(2)).single().start)
+        val periods = HabitRules.periods(s, "h", monday.plusDays(3))
+        assertEquals(listOf(monday), periods.map { it.start })
+        assertEquals(PeriodOutcome.FAILURE, periods.single().outcome)
     }
     @Test fun leapMonthAndCalendarWeekBoundaries() {
         val feb = LocalDate.of(2028, 2, 28)
         assertEquals(LocalDate.of(2028, 2, 29), HabitRules.end(feb, HabitUnit.MONTH))
         assertEquals(monday, HabitRules.start(monday.plusDays(6), HabitUnit.WEEK))
     }
-    @Test fun pendingGapDoesNotClaimConfirmedContinuity() {
+    @Test fun openWindowNeitherBreaksNorCountsStreak() {
         var s = initial(HabitType.PRACTICE, HabitUnit.DAY, 1)
         s = record(s, "a", monday)
         s = record(s, "c", monday.plusDays(2))
         val streak = HabitRules.streak(s, "h", monday.plusDays(2))
-        assertTrue(streak.uncertain)
-        assertEquals(1, streak.current)
+        assertFalse(streak.uncertain)
+        assertEquals(2, streak.current)
+        assertEquals(1, HabitRules.streak(s, "h", monday.plusDays(4)).current)
     }
     @Test fun pauseSameDayRetainsAlreadyEnteredHistoryAndCorrections() {
         var s = record(initial(HabitType.PRACTICE, HabitUnit.DAY, 1), "a", monday)
@@ -122,13 +131,18 @@ class HabitRulesTest {
         val periods = HabitRules.periods(s, "h", monday.plusDays(7))
         assertEquals(listOf(2, 4), periods.map { it.target })
     }
-    @Test fun sameOutcomeCorrectionDoesNotReopenReview() {
-        var s = initial(HabitType.LIMIT, HabitUnit.DAY, 3)
+    @Test fun partialPracticeTargetDefaultsToAvailableDays() {
+        val saturday = LocalDate.of(2026, 11, 7)
+        val s = HabitRules.apply(HabitSnapshot(), HabitAction.Save(Habit("h", saturday, "Correr"),
+            HabitRule("r", "h", saturday, unit = HabitUnit.WEEK, target = 5)), saturday, 1, emptySet())
+        assertEquals(2, HabitRules.periods(s, "h", saturday).single().target)
+        assertEquals(5, HabitRules.periods(s, "h", saturday.plusDays(2)).last().target)
+    }
+    @Test fun successRateUsesClosedPeriodsOnly() {
+        var s = initial(HabitType.PRACTICE, HabitUnit.DAY, 1)
         s = record(s, "a", monday)
-        val p = HabitRules.pending(s, monday.plusDays(1)).single()
-        s = HabitRules.apply(s, HabitAction.Review(p.key), monday.plusDays(1), 3, emptySet())
-        s = HabitRules.apply(s, HabitAction.Record("b", "h", monday), monday.plusDays(1), 4, emptySet())
-        assertFalse(s.reviews.single().invalidated)
+        assertNull(HabitRules.successRate(s, "h", monday.plusDays(2)))
+        assertEquals(50, HabitRules.successRate(s, "h", monday.plusDays(4)))
     }
     @Test fun retroactiveBoundsAndRepeatedRecordId() {
         var s = record(initial(), "a", monday)
@@ -141,12 +155,10 @@ class HabitRulesTest {
             } catch (e: HabitRuleException) { assertEquals(HabitProblem.DATE, e.reason) }
         }
     }
-    @Test fun confirmedFailureBreaksStreakButRetainsBest() {
+    @Test fun missedDayBreaksStreakButRetainsBest() {
         var s = initial(HabitType.PRACTICE, HabitUnit.DAY, 1)
         s = record(record(s, "a", monday), "b", monday.plusDays(1))
-        val p = HabitRules.pending(s, monday.plusDays(3)).single()
-        s = HabitRules.apply(s, HabitAction.Review(p.key), monday.plusDays(3), 4, emptySet())
-        val streak = HabitRules.streak(s, "h", monday.plusDays(3))
+        val streak = HabitRules.streak(s, "h", monday.plusDays(5))
         assertEquals(0, streak.current)
         assertEquals(2, streak.best)
     }
