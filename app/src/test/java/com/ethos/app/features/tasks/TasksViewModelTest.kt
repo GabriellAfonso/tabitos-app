@@ -177,6 +177,16 @@ class TasksViewModelTest {
         assertEquals(TaskStatus.DONE, repo.snapshot.value.occurrences.single().status)
     }
 
+    @Test fun backgroundRefreshStaysSilentAndDoesNotDropUserAction() = runTest(dispatcher) {
+        val repo = FakeRepository(clock)
+        val vm = TasksViewModel(repo, clock, SavedStateHandle())
+        assertFalse(vm.state.value.busy)
+        vm.action(TaskAction.Create("new", TaskFields(title = "Nova"), RepeatRule(start = clock.today())))
+        advanceUntilIdle()
+        assertFalse(vm.state.value.busy)
+        assertTrue(repo.snapshot.value.definitions.any { it.id == "new" })
+    }
+
     @Test fun changedDraftAfterWriteFailureDoesNotRetryStaleInput() = runTest(dispatcher) {
         val repo = FakeRepository(clock)
         val vm = TasksViewModel(repo, clock, SavedStateHandle())

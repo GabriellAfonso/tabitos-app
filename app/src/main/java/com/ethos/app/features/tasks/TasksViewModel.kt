@@ -70,6 +70,7 @@ class TasksViewModel @Inject constructor(
     private var pendingGoal: Pair<String, Int?>? = null
     val state: StateFlow<TasksUiState> = mutable.asStateFlow()
     private var observer: Job? = null
+    private var backgroundRefresh: Job? = null
     private var readFailed = false
     private var retryAction: TaskAction? = null
     private var retryClose: Boolean = false
@@ -122,9 +123,20 @@ class TasksViewModel @Inject constructor(
             }
         }
     }
+    /**
+     * Regenerating recurrences is routine background work, so it neither shows progress nor blocks user actions;
+     * Room transactions already serialize it with concurrent writes.
+     */
     fun refresh() {
         mutable.update { it.copy(today = clock.today()) }
-        if (!mutable.value.busy && !mutable.value.storageError) execute(TaskAction.Refresh)
+        if (backgroundRefresh?.isActive == true || mutable.value.storageError) return
+        backgroundRefresh = viewModelScope.launch {
+            try { repository.execute(TaskAction.Refresh)
+            } catch (e: CancellationException) { throw e
+            } catch (_: Exception) {
+                mutable.update { it.copy(storageError = true) }
+            }
+        }
     }
     fun retry() {
         mutable.update { it.copy(error = null, storageError = false) }
