@@ -188,5 +188,7 @@ Verificação: specs/014-habits-without-debt/verification.md; 134 JVM aprovados;
 Refatoração 2026-11-11: MainActivity só trata Intents; montagem em EthosApp.kt; shell sem placeholders.
 ContentFilter em core/ui/components; seções das páginas de tarefas em função pura (TaskListPresentation).
 Spec015: reordenar sempre por arrastar (core/ui/components/Reorder.kt), vizinhos deslizam; ações TalkBack.
+Spec016: tarefa/hábito "Com cronômetro" escolhido ao criar (sem checklist); ▶ no cartão; ao zerar conclui sozinho
+(Desfazer), alarme global opcional; concluir manual pede confirmação; cronômetro livre removido.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->

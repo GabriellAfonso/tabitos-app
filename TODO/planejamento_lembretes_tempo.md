@@ -42,3 +42,9 @@ Não autoriza implementação nem amplia automaticamente o escopo do ponto 3.
 - Recompensa temporal: resgate versus início de uso, sessões parciais, saldo de minutos,
   vencimento e eventual cancelamento/estorno.
 - Tempo esgotado: aviso e registro; não assumir punição ou bloqueio não combinados.
+
+## Ideia futura: registro de tempo (2026-11-11)
+
+Na spec 016 o cronômetro livre (contar para cima em tarefa/hábito normal) foi removido: ele é um
+registro de tempo, não uma tarefa nem um hábito. Ideia pendente: uma funcionalidade própria de
+"registro de tempo" (cronometrar uma atividade qualquer e ver o histórico), a discutir antes de virar spec.

@@ -167,7 +167,7 @@ the stored kind and parameters are identical to those produced by the current ed
 
 **Acceptance Scenarios**:
 
-1. **Given** the repetition section, **When** shown, **Then** the first-level options are: Não repete,
+1. **Given** the repetition section, **When** shown, **Then** the first-level options are (renamed 2026-11-11 to Diário/Semanal/Mensal): Não repete,
    Todo dia, Toda semana, Todo mês, A cada X dias.
 2. **Given** "Todo dia", **When** chosen, **Then** a secondary choice offers "Todos os dias" (daily) and
    "Dias úteis (seg a sex)" (weekdays).

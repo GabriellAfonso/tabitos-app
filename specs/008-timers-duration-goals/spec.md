@@ -1,5 +1,9 @@
 # Feature Specification: Cronômetros, metas de tempo e recompensas temporizadas
 
+> Spec 016 supersedes the entry points here: the timer is a variant chosen when creating a task or practice
+> habit ("Com cronômetro"), started from the card; reaching the duration completes automatically (undoable),
+> with an optional alarm. The free count-up stopwatch and goal editing inside the timer sheet were removed.
+
 **Feature Branch**: existing working branch; no branch creation requested
 **Created**: 2026-11-07
 **Status**: Implemented 2026-11-07; evidence and limits in verification.md.
