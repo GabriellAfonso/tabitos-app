@@ -191,4 +191,8 @@ Spec015: reordenar sempre por arrastar (core/ui/components/Reorder.kt), vizinhos
 Spec016: tarefa/hábito "Com cronômetro" escolhido ao criar (sem checklist); ▶ no cartão; ao zerar conclui sozinho
 (Desfazer), alarme global opcional; concluir manual pede confirmação; cronômetro livre removido.
 Constituição: .specify/memory/constitution.md v1.0.0.
+Spec017: "Modo jogo" no topo de Configurações (DataStore game_mode, padrão ligado); desligar pede confirmação.
+Desligado: esconde Recompensas/Histórico, carteira, preços, dificuldade/estimativa e confirmações financeiras.
+Resultados gravados desligado ficam isentos sem lançamento (nunca pagos depois); desfazer pago ainda estorna.
+Repositórios leem o modo antes da transação; troca bloqueada com cronômetro de recompensa contando.
 <!-- SPECKIT END -->
