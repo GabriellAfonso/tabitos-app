@@ -31,6 +31,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.ethos.app.R
 import androidx.compose.foundation.background
 import com.ethos.app.core.rewards.domain.*
+import com.ethos.app.core.ui.components.IconOption
+import com.ethos.app.core.ui.components.IconPicker
 import com.ethos.app.core.ui.rewards.rewardSymbol
 import kotlinx.coroutines.delay
 
@@ -40,6 +42,16 @@ data class RewardActions(
     val preview: (String) -> Unit = {}, val confirm: () -> Unit = {}, val close: () -> Unit = {},
     val retry: () -> Unit = {}, val confirmPause: () -> Unit = {}, val cancelPause: () -> Unit = {},
 )
+
+// Same order as RewardRules.icons, whose keys are what gets persisted.
+private val rewardIconOptions = RewardRules.icons.map { key ->
+    IconOption(rewardSymbol(key), when (key) {
+        "GAME" -> R.string.reward_game
+        "FOOD" -> R.string.reward_food
+        "REST" -> R.string.reward_rest
+        else -> R.string.reward_gift
+    })
+}
 
 @Composable
 fun RewardsScreen(viewModel: RewardsViewModel, sessions: @Composable () -> Unit = {}) {
@@ -191,13 +203,8 @@ private fun RewardEditor(state: RewardsUiState, draft: List<String>, actions: Re
                         label = { Text(stringResource(label)) }, modifier = Modifier.fillMaxWidth(),
                         singleLine = index != 2)
                 }
-                Text(stringResource(R.string.reward_icon))
-                RewardRules.icons.forEachIndexed { index, icon ->
-                    val labels = listOf(R.string.reward_gift, R.string.reward_game,
-                        R.string.reward_food, R.string.reward_rest)
-                    FilterChip(selected = draft[3] == icon, onClick = { field(3, icon) }, enabled = !state.busy,
-                        label = { Text("${rewardSymbol(icon)} ${stringResource(labels[index])}") })
-                }
+                IconPicker(R.string.reward_icon, rewardIconOptions, RewardRules.icons.indexOf(draft[3]),
+                    !state.busy) { field(3, RewardRules.icons[it]) }
                 Text(stringResource(R.string.reward_period))
                 RewardRules.periods.forEach { period ->
                     FilterChip(selected = draft[6] == period, onClick = { field(6, period) },

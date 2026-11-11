@@ -208,7 +208,6 @@ fun weekHits(state: HabitsUiState, h: Habit): List<Boolean>? {
 }
 
 private val habitColors = listOf(0xFF54745C, 0xFF426B96, 0xFF79568E, 0xFFA45B25, 0xFFA04D68, 0xFF657078)
-private val habitIcons = listOf("❧", "▤", "⌂", "▣", "♡", "☆")
 
 /** Model B habit card (spec 010). Avoid and limit habits use the warm amber container. */
 @Composable
@@ -226,7 +225,7 @@ fun HabitRow(
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Color(habitColors[habit.color])),
-                    contentAlignment = Alignment.Center) { Text(habitIcons[habit.icon], color = Color.White) }
+                    contentAlignment = Alignment.Center) { Text(habitIcons[habit.icon].symbol, color = Color.White) }
                 Column(Modifier.weight(1f)) {
                     Text(habit.name, style = MaterialTheme.typography.titleSmall)
                     if (habit.status == HabitStatus.PAUSED) Text(stringResource(R.string.habit_paused),

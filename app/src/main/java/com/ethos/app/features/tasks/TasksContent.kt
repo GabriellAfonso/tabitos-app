@@ -48,6 +48,7 @@ import com.ethos.app.core.ui.components.RoundCheck
 import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.format.label
 import com.ethos.app.core.ui.components.ColorPicker
+import com.ethos.app.core.ui.components.IconPicker
 import com.ethos.app.core.ui.components.itemColors
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.ui.reminders.LocalOpenReminders
@@ -59,8 +60,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 enum class TaskPage { LIST, TODAY, REVIEW }
-private val listSymbols = listOf("☰", "▣", "⌂", "▤", "♡", "☰")
-
 @Composable
 fun TaskError(state: TasksUiState, retry: () -> Unit, dismiss: () -> Unit) {
     val resource = when {
@@ -99,7 +98,7 @@ fun TaskDrawer(
     state.snapshot.activeLists.forEach { list ->
         NavigationDrawerItem(
             label = { Text(list.name) },
-            icon = { Text(listSymbols[list.icon], color = itemColors[list.color]) },
+            icon = { Text(listIcons[list.icon].symbol, color = itemColors[list.color]) },
             selected = highlighted && state.selectedListId == list.id,
             onClick = { ifIdle { onSelect(list.id) } },
         )
@@ -154,7 +153,7 @@ fun TasksContent(
             item {
                 val selectedList = state.snapshot.activeLists.firstOrNull { it.id == state.selectedListId }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    selectedList?.let { Text(listSymbols[it.icon], color = itemColors[it.color]) }
+                    selectedList?.let { Text(listIcons[it.icon].symbol, color = itemColors[it.color]) }
                     Text(selectedList?.name ?: stringResource(R.string.inbox),
                         style = MaterialTheme.typography.headlineSmall)
                 }
@@ -391,7 +390,7 @@ private fun ListManager(
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         DragHandle(handle)
-                        Text(listSymbols[list.icon], color = itemColors[list.color],
+                        Text(listIcons[list.icon].symbol, color = itemColors[list.color],
                             modifier = Modifier.padding(end = 10.dp))
                         Text(list.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
                     }
@@ -417,7 +416,8 @@ private fun ListEditor(
             error()
             Input(R.string.list_name, list.name, !busy) { change(list.copy(name = it)) }
             ColorPicker(list.color, !busy) { change(list.copy(color = it)) }
-            ChoiceRow(R.string.icon_label, iconLabels, list.icon, !busy) { change(list.copy(icon = it)) }
+            IconPicker(R.string.icon_label, listIcons, list.icon, !busy, tint = itemColors[list.color]) {
+                change(list.copy(icon = it)) }
         } }, confirmButton = { TextButton(save, enabled = !busy) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(close, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
 }

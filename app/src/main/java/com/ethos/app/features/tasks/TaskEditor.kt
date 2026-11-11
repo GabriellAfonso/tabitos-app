@@ -33,14 +33,17 @@ import com.ethos.app.R
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.ui.accounting.FinancialEstimate
 import com.ethos.app.core.ui.components.DragHandle
+import com.ethos.app.core.ui.components.IconOption
 import com.ethos.app.core.ui.components.NumberStepper
 import com.ethos.app.core.ui.components.ReorderableColumn
 import com.ethos.app.core.ui.format.EthosDates
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-val iconLabels = listOf(R.string.icon_list, R.string.icon_work, R.string.icon_home,
-    R.string.icon_study, R.string.icon_health, R.string.icon_star)
+// Index is the persisted TaskList.icon value; keep the order stable.
+val listIcons = listOf(IconOption("☰", R.string.icon_list), IconOption("▣", R.string.icon_work),
+    IconOption("⌂", R.string.icon_home), IconOption("▤", R.string.icon_study),
+    IconOption("♡", R.string.icon_health), IconOption("☆", R.string.icon_star))
 private val weekdayLabels = listOf(R.string.monday, R.string.tuesday, R.string.wednesday,
     R.string.thursday, R.string.friday, R.string.saturday, R.string.sunday)
 private val repeatChoiceLabels = listOf(R.string.no_repeat, R.string.repeat_every_day,

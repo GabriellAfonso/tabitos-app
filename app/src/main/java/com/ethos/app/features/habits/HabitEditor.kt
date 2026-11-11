@@ -16,6 +16,15 @@ import com.ethos.app.R
 import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskList
 import com.ethos.app.core.ui.components.ColorPicker
+import com.ethos.app.core.ui.components.IconOption
+import com.ethos.app.core.ui.components.IconPicker
+import com.ethos.app.core.ui.components.itemColors
+
+// Index is the persisted Habit.icon value; keep the order stable.
+internal val habitIcons = listOf(IconOption("❧", R.string.habit_icon_leaf),
+    IconOption("▤", R.string.habit_icon_book), IconOption("⌂", R.string.habit_icon_home),
+    IconOption("▣", R.string.habit_icon_work), IconOption("♡", R.string.habit_icon_heart),
+    IconOption("☆", R.string.habit_icon_star))
 
 @Composable
 fun HabitInput(label: Int, value: String, enabled: Boolean = true, change: (String) -> Unit) {
@@ -84,9 +93,8 @@ fun HabitEditor(state: HabitsUiState, lists: List<TaskList>, actions: HabitEdito
                         actions.change(d.copy(habit = d.habit.copy(importance = it, importanceManual = true))) }
                     ColorPicker(d.habit.color, !state.busy) {
                         actions.change(d.copy(habit = d.habit.copy(color = it))) }
-                    HabitChoices(R.string.habit_icon, listOf(R.string.habit_icon_leaf, R.string.habit_icon_book,
-                        R.string.habit_icon_home, R.string.habit_icon_work, R.string.habit_icon_heart,
-                        R.string.habit_icon_star), d.habit.icon, !state.busy) {
+                    IconPicker(R.string.habit_icon, habitIcons, d.habit.icon, !state.busy,
+                        tint = itemColors[d.habit.color]) {
                         actions.change(d.copy(habit = d.habit.copy(icon = it))) }
                     HabitLists(lists, d.habit.listId, !state.busy) {
                         actions.change(d.copy(habit = d.habit.copy(listId = it))) }
