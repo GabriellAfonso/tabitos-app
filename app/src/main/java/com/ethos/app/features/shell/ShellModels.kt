@@ -12,25 +12,10 @@ enum class ShellDestination(val route: String, @param:StringRes val title: Int, 
     REWARDS("rewards", R.string.rewards, "◇"),
     HISTORY("history", R.string.history, "↔"),
     SETTINGS("settings", R.string.settings, "⚙"),
+    ;
+
+    companion object {
+        val bottomBar = listOf(TODAY, TASKS, HABITS, CALENDAR)
+        val drawer = listOf(TODAY, REVIEW, REWARDS, HISTORY)
+    }
 }
-
-enum class ContentFilter(@param:StringRes val title: Int) {
-    ALL(R.string.all), TASKS(R.string.tasks), HABITS(R.string.habits),
-}
-
-data class ShellItem(
-    val id: String,
-    val type: ContentFilter,
-    @param:StringRes val title: Int,
-    @param:StringRes val detail: Int,
-)
-
-data class ShellPresentation(
-    val todayItems: List<ShellItem> = emptyList(),
-    val pendingItems: List<ShellItem> = emptyList(),
-    @param:StringRes val balance: Int = R.string.unavailable,
-    @param:StringRes val level: Int = R.string.unavailable,
-)
-
-fun List<ShellItem>.matching(filter: ContentFilter): List<ShellItem> =
-    if (filter == ContentFilter.ALL) this else filter { it.type == filter }

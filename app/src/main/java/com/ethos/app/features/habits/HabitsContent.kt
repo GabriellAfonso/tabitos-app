@@ -1,5 +1,7 @@
 package com.ethos.app.features.habits
 
+import com.ethos.app.core.ui.format.EthosDates
+import com.ethos.app.core.ui.theme.EthosTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -45,7 +47,7 @@ fun HabitCalendar(
             TextButton({ monthText = month.plusMonths(1).toString() }) {
                 Text(stringResource(R.string.habit_following_month)) }
         }
-        Text(com.ethos.app.core.ui.format.EthosDates.monthTitle(month), style = MaterialTheme.typography.titleMedium)
+        Text(EthosDates.monthTitle(month), style = MaterialTheme.typography.titleMedium)
         val offset = month.atDay(1).dayOfWeek.value - 1
         val cells = (0 until offset).map { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
         Column(Modifier.horizontalScroll(rememberScrollState())) {
@@ -54,7 +56,7 @@ fun HabitCalendar(
                 if (date == null) Spacer(Modifier.weight(1f)) else {
                     val count = records.count { it.date == date }
                     val outcome = dayOutcome(date)
-                    val dayText = com.ethos.app.core.ui.format.EthosDates.shortPlain(date, today)
+                    val dayText = EthosDates.shortPlain(date, today)
                     // Marks never rely on color alone: symbol plus spoken state (spec 014).
                     val label = when (outcome) {
                         PeriodOutcome.SUCCESS -> stringResource(R.string.habit_day_done, dayText)
@@ -111,12 +113,12 @@ fun HabitError(state: HabitsUiState, retry: () -> Unit) {
 }
 
 @Composable
-fun HabitProgress(p: HabitPeriod) {
+fun HabitProgress(p: HabitPeriod, today: LocalDate) {
     val label = if (p.rule.type == HabitType.PRACTICE) R.string.habit_days_progress else R.string.habit_events_progress
     Text(stringResource(label, p.count, p.target))
     Text(stringResource(R.string.habit_period_range, p.start.toString(), p.end.toString()),
         style = MaterialTheme.typography.bodySmall)
-    Text(stringResource(outcomeLabel(p, LocalDate.now())))
+    Text(stringResource(outcomeLabel(p, today)))
     if (p.excessIds.isNotEmpty()) Text(stringResource(R.string.habit_excess, p.excessIds.size))
 }
 
@@ -210,7 +212,7 @@ private val habitIcons = listOf("❧", "▤", "⌂", "▣", "♡", "☆")
 @Composable
 fun HabitRow(
     habit: Habit, period: HabitPeriod?, busy: Boolean, open: () -> Unit, quick: HabitQuick? = null,
-    week: List<Boolean>? = null, todayCount: Int? = null, today: LocalDate = LocalDate.now(),
+    week: List<Boolean>? = null, todayCount: Int? = null, today: LocalDate,
     consistency: Pair<Int, Int?>? = null,
 ) {
     val warm = period?.rule?.type?.let { it != HabitType.PRACTICE } == true
@@ -289,9 +291,9 @@ fun HabitsContent(
 @Preview
 @Composable
 private fun HabitRowPreview() {
-    com.ethos.app.core.ui.theme.EthosTheme(darkTheme = false) {
+    EthosTheme(darkTheme = false) {
         HabitRow(Habit("preview", LocalDate.of(2026, 11, 6), "Ler algumas páginas", color = 1, icon = 1), null,
             false, {}, HabitQuick(R.string.habit_quick_record, R.string.habit_quick_record_description, false) {},
-            listOf(true, true, false, true, false, false, false))
+            listOf(true, true, false, true, false, false, false), today = LocalDate.of(2026, 11, 6))
     }
 }

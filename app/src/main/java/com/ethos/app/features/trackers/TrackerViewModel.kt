@@ -35,7 +35,7 @@ data class TrackerEntryDraft(
 
 data class TrackerUiState(
     val snapshot: TrackerSnapshot = TrackerSnapshot(), val habits: HabitSnapshot = HabitSnapshot(),
-    val reminderMinutes: Map<String, Int> = emptyMap(), val today: LocalDate = LocalDate.now(),
+    val reminderMinutes: Map<String, Int> = emptyMap(), val today: LocalDate,
     val loading: Boolean = true, val busy: Boolean = false, val storageError: Boolean = false,
     val problem: TrackerProblem? = null, val problemQuestion: String? = null, val hubHabitId: String? = null,
     val form: TrackerFormDraft? = null, val entry: TrackerEntryDraft? = null, val deleteEntryId: String? = null,

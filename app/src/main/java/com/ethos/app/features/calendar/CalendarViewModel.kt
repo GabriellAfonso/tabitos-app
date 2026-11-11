@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 data class CalendarUiState(
-    val sources: CalendarSources = CalendarSources(), val today: LocalDate = LocalDate.now(),
+    val sources: CalendarSources = CalendarSources(), val today: LocalDate,
     val view: CalendarView = CalendarView.MONTH, val anchor: LocalDate = today,
     val filters: CalendarFilters = CalendarFilters(), val loading: Boolean = true, val error: Boolean = false,
     val cells: List<CalendarCell> = emptyList(), val selected: CalendarDay? = null,
@@ -44,7 +44,9 @@ class CalendarViewModel @Inject constructor(
         observer = viewModelScope.launch {
             combine(tasks.observe(), habits.observe(), trackers.observe()) { t, h, r -> CalendarSources(t, h, r) }
                 .catch { mutable.update { it.copy(loading = false, error = true) } }
-                .collect { sources -> mutable.update { derive(it.copy(sources = sources, loading = false, error = false)) } }
+                .collect { sources ->
+                    mutable.update { derive(it.copy(sources = sources, loading = false, error = false)) }
+                }
         }
     }
 

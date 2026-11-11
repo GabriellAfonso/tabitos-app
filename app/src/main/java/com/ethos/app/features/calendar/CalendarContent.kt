@@ -1,5 +1,7 @@
 package com.ethos.app.features.calendar
 
+import com.ethos.app.core.habits.domain.HabitSnapshot
+import com.ethos.app.core.tasks.domain.DeadlineKind
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -171,7 +173,8 @@ private fun Grid(state: CalendarUiState, actions: CalendarActions) {
                     val description = if (selected) "$base · $selectedLabel" else base
                     val shape = RoundedCornerShape(12.dp)
                     Column(Modifier.weight(1f).heightIn(min = 52.dp)
-                        .then(if (selected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, shape) else Modifier)
+                        .then(if (selected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, shape)
+                            else Modifier)
                         .background(if (d.date == state.today) MaterialTheme.colorScheme.secondaryContainer
                             else MaterialTheme.colorScheme.background, shape)
                         .clickable(role = Role.Button) { actions.select(d.date) }
@@ -239,8 +242,8 @@ private fun DayDetails(day: CalendarDay, filters: CalendarFilters, actions: Cale
 private fun CalendarPreview() {
     val today = LocalDate.of(2026, 11, 7)
     val sources = CalendarSources(TaskSnapshot(occurrences = listOf(TaskOccurrence("o", "t", 1,
-        TaskFields(title = "Revisar orçamento", deadline = com.ethos.app.core.tasks.domain.DeadlineKind.DAY),
-        today, today, today))), com.ethos.app.core.habits.domain.HabitSnapshot(habits = listOf(
+        TaskFields(title = "Revisar orçamento", deadline = DeadlineKind.DAY),
+        today, today, today))), HabitSnapshot(habits = listOf(
         Habit("h", today, "Caminhar"))))
     val f = CalendarFilters()
     EthosTheme {

@@ -19,11 +19,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.ethos.app.R
 import com.ethos.app.core.ui.theme.EthosTheme
 
+/** The "+" on Hoje: the user chooses explicitly between task, habit and habit to break (spec 014). */
+data class CreateActions(
+    val taskEnabled: Boolean,
+    val habitEnabled: Boolean,
+    val onNewTask: () -> Unit,
+    val onNewHabit: () -> Unit,
+    val onBreakHabit: () -> Unit,
+)
+
 @Composable
-fun TodayCreateButton(
-    taskEnabled: Boolean, habitEnabled: Boolean, onNewTask: () -> Unit, onNewHabit: () -> Unit,
-    onBreakHabit: () -> Unit = {},
-) {
+fun TodayCreateButton(actions: CreateActions) {
     var expanded by remember { mutableStateOf(false) }
     val description = stringResource(R.string.create_item)
     Box {
@@ -32,13 +38,12 @@ fun TodayCreateButton(
             Text(stringResource(R.string.create_plus), style = MaterialTheme.typography.headlineMedium)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            DropdownMenuItem(text = { Text(stringResource(R.string.new_task)) }, enabled = taskEnabled,
-                onClick = { expanded = false; onNewTask() })
-            DropdownMenuItem(text = { Text(stringResource(R.string.new_habit)) }, enabled = habitEnabled,
-                onClick = { expanded = false; onNewHabit() })
-            // Explicit choice of what is being created (spec 014): task, habit or habit to break.
-            DropdownMenuItem(text = { Text(stringResource(R.string.break_habit)) }, enabled = habitEnabled,
-                onClick = { expanded = false; onBreakHabit() })
+            DropdownMenuItem(text = { Text(stringResource(R.string.new_task)) }, enabled = actions.taskEnabled,
+                onClick = { expanded = false; actions.onNewTask() })
+            DropdownMenuItem(text = { Text(stringResource(R.string.new_habit)) }, enabled = actions.habitEnabled,
+                onClick = { expanded = false; actions.onNewHabit() })
+            DropdownMenuItem(text = { Text(stringResource(R.string.break_habit)) }, enabled = actions.habitEnabled,
+                onClick = { expanded = false; actions.onBreakHabit() })
         }
     }
 }
@@ -46,5 +51,5 @@ fun TodayCreateButton(
 @Preview
 @Composable
 private fun TodayCreateButtonPreview() {
-    EthosTheme { TodayCreateButton(taskEnabled = true, habitEnabled = true, onNewTask = {}, onNewHabit = {}) }
+    EthosTheme { TodayCreateButton(CreateActions(taskEnabled = true, habitEnabled = true, {}, {}, {})) }
 }

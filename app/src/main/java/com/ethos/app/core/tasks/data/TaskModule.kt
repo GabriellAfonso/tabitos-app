@@ -1,5 +1,7 @@
 package com.ethos.app.core.tasks.data
 
+import com.ethos.app.core.demo.data.RoomDemoRepository
+import com.ethos.app.core.demo.domain.DemoRepository
 import android.content.Context
 import androidx.room.Room
 import com.ethos.app.core.accounting.data.*
@@ -33,8 +35,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object TaskModule {
     @Provides @Singleton
-    fun demo(repository: com.ethos.app.core.demo.data.RoomDemoRepository):
-        com.ethos.app.core.demo.domain.DemoRepository = repository
+    fun demo(repository: RoomDemoRepository):
+        DemoRepository = repository
     @Provides @Singleton fun clock(): TaskClock = object : TaskClock {
         override fun today(): LocalDate = LocalDate.now()
         override fun nowMillis(): Long = System.currentTimeMillis()

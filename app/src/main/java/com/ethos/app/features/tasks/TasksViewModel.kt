@@ -31,7 +31,7 @@ data class TaskDraft(
 ) : java.io.Serializable
 
 data class TasksUiState(
-    val snapshot: TaskSnapshot = TaskSnapshot(), val today: LocalDate = LocalDate.now(),
+    val snapshot: TaskSnapshot = TaskSnapshot(), val today: LocalDate,
     val loading: Boolean = true, val busy: Boolean = false, val error: TaskProblem? = null,
     val storageError: Boolean = false, val draft: TaskDraft? = null, val detailId: String? = null,
     val completionText: String = "", val uncheckedConfirmation: Int? = null,

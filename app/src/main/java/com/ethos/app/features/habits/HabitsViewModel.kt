@@ -24,7 +24,7 @@ data class HabitLifecycleDraft(val id: String, val status: HabitStatus, val part
     val listId: String? = null, val requiresDestination: Boolean = false,
     val destinationChosen: Boolean = false) : java.io.Serializable
 data class HabitsUiState(
-    val snapshot: HabitSnapshot = HabitSnapshot(), val today: LocalDate = LocalDate.now(),
+    val snapshot: HabitSnapshot = HabitSnapshot(), val today: LocalDate,
     val periods: List<HabitPeriod> = emptyList(), val streaks: Map<String, HabitStreak> = emptyMap(),
     val rates: Map<String, Int?> = emptyMap(),
     val loading: Boolean = true, val busy: Boolean = false, val storageError: Boolean = false,
@@ -164,8 +164,9 @@ class HabitsViewModel @Inject constructor(
         val snapshot = state.value.snapshot
         val practice = HabitRules.currentRule(snapshot, habitId, today)?.type == HabitType.PRACTICE
         val existing = snapshot.records.firstOrNull { it.habitId == habitId && it.date == today && !it.deleted }
-        val action = if (practice) HabitAction.SetPractice(UUID.randomUUID().toString(), habitId, today, existing == null)
-            else HabitAction.Record(UUID.randomUUID().toString(), habitId, today)
+        val id = UUID.randomUUID().toString()
+        val action = if (practice) HabitAction.SetPractice(id, habitId, today, existing == null)
+            else HabitAction.Record(id, habitId, today)
         execute(action)
     }
     fun lifecycle(value: HabitLifecycleDraft?) { mutable.update { it.copy(lifecycle = value, problem = null) } }

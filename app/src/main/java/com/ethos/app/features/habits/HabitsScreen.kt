@@ -1,5 +1,6 @@
 package com.ethos.app.features.habits
 
+import com.ethos.app.core.ui.accounting.FinancialConfirmation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -25,19 +26,25 @@ import kotlinx.coroutines.delay
 @Composable
 fun HabitsScreen(viewModel: HabitsViewModel, content: @Composable (HabitsUiState) -> Unit) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    HabitsRefreshEffect(viewModel)
+    content(state)
+}
+
+/** Keeps periods current while visible; a day change also settles closed periods (spec 014). */
+@Composable
+fun HabitsRefreshEffect(viewModel: HabitsViewModel) {
     val owner = LocalLifecycleOwner.current
     LaunchedEffect(owner) {
         owner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             while (true) { viewModel.refresh(); delay(60_000) }
         }
     }
-    content(state)
 }
 
 @Composable
 fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewModel) {
     state.financialPreview?.let { preview ->
-        com.ethos.app.core.ui.accounting.FinancialConfirmation(preview, state.busy,
+        FinancialConfirmation(preview, state.busy,
             { vm.confirmFinancial(true) }, { vm.confirmFinancial(false) })
         return
     }
@@ -68,7 +75,7 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                         Text(stringResource(R.string.habit_old_best, best, oldLabel))
                     }
                 }
-                state.periods.lastOrNull { it.habitId == h.id }?.let { HabitProgress(it) }
+                state.periods.lastOrNull { it.habitId == h.id }?.let { HabitProgress(it, state.today) }
                 Text(stringResource(R.string.habit_calendar))
                 val records = state.snapshot.records.filter { it.habitId == h.id && !it.deleted }
                     .sortedWith(compareByDescending<HabitRecord> { it.date }.thenBy { it.id })
@@ -102,7 +109,7 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                 }
                 Text(stringResource(R.string.habit_history_periods))
                 state.periods.filter { it.habitId == h.id }.reversed().forEach { p ->
-                    HabitProgress(p)
+                    HabitProgress(p, state.today)
                 }
                 val timer = LocalOpenTimer.current
                 TextButton({ timer(TimerKind.HABIT, h.id) }, enabled = !state.busy) {

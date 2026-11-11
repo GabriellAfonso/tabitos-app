@@ -1,6 +1,7 @@
 package com.ethos.app.features.reminders
 
 import android.Manifest
+import android.content.pm.PackageManager
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
@@ -30,17 +31,21 @@ import com.ethos.app.core.reminders.platform.ReminderPlatform
 import com.ethos.app.core.ui.theme.EthosTheme
 import java.time.LocalTime
 
+/**
+ * Returns the in-context notification permission request and refreshes reminder capability on resume.
+ * Asking only happens when a feature that needs it is configured (AGENTS: permissions).
+ */
 @Composable
-fun ReminderPermissionControls(state: ReminderUiState, refresh: () -> Unit, content: @Composable (() -> Unit) -> Unit) {
+fun rememberNotificationPermissionRequest(refresh: () -> Unit): () -> Unit {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refresh() }
     val lifecycle = LocalLifecycleOwner.current
     LaunchedEffect(lifecycle) {
         lifecycle.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { refresh() }
     }
-    content {
+    return {
         if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-            android.content.pm.PackageManager.PERMISSION_GRANTED)
+            PackageManager.PERMISSION_GRANTED)
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }
