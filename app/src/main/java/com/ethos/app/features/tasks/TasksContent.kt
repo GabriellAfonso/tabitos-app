@@ -35,6 +35,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextDecoration
 import com.ethos.app.core.ui.components.ContentFilter
+import com.ethos.app.core.ui.timers.TimerChip
+import com.ethos.app.core.ui.timers.TimerChipButton
 import com.ethos.app.core.ui.components.DragHandle
 import com.ethos.app.core.ui.components.LazyReorderState
 import com.ethos.app.core.ui.components.ReorderableColumn
@@ -83,19 +85,29 @@ fun TaskError(state: TasksUiState, retry: () -> Unit, dismiss: () -> Unit) {
     }
 }
 
+/**
+ * Lists section of the drawer. Items use the same full-width drawer rows as the destinations above, so the
+ * whole row is the touch target. [highlighted] marks the open list while the tasks page is showing.
+ */
 @Composable
 fun TaskDrawer(
-    state: TasksUiState, onSelect: (String?) -> Unit, onNew: () -> Unit, onManage: () -> Unit,
+    state: TasksUiState, highlighted: Boolean, onSelect: (String?) -> Unit, onNew: () -> Unit, onManage: () -> Unit,
 ) {
-    TextButton({ onSelect(null) }, enabled = !state.busy) { Text(stringResource(R.string.inbox)) }
+    fun ifIdle(action: () -> Unit) { if (!state.busy) action() }
+    NavigationDrawerItem(label = { Text(stringResource(R.string.inbox)) },
+        selected = highlighted && state.selectedListId == null, onClick = { ifIdle { onSelect(null) } })
     state.snapshot.activeLists.forEach { list ->
-        TextButton({ onSelect(list.id) }, enabled = !state.busy) {
-            Text(listSymbols[list.icon], color = itemColors[list.color], modifier = Modifier.padding(end = 8.dp))
-            Text(list.name)
-        }
+        NavigationDrawerItem(
+            label = { Text(list.name) },
+            icon = { Text(listSymbols[list.icon], color = itemColors[list.color]) },
+            selected = highlighted && state.selectedListId == list.id,
+            onClick = { ifIdle { onSelect(list.id) } },
+        )
     }
-    TextButton(onNew, enabled = !state.busy) { Text(stringResource(R.string.new_list)) }
-    TextButton(onManage, enabled = !state.busy) { Text(stringResource(R.string.manage_lists)) }
+    NavigationDrawerItem(label = { Text(stringResource(R.string.new_list)) }, icon = { Text("+") },
+        selected = false, onClick = { ifIdle(onNew) })
+    NavigationDrawerItem(label = { Text(stringResource(R.string.manage_lists)) }, icon = { Text("✎") },
+        selected = false, onClick = { ifIdle(onManage) })
 }
 
 @Composable
@@ -104,6 +116,7 @@ fun TasksContent(
     onAction: (TaskAction) -> Unit, onManage: () -> Unit, onRetry: () -> Unit, onDismissError: () -> Unit,
     extraItems: (LazyListScope.() -> Unit)? = null,
     onComplete: (String) -> Unit = {},
+    timerChip: (TaskOccurrence) -> TimerChip? = { null },
     header: @Composable () -> Unit = {},
 ) {
     val recurring = state.snapshot.definitions.filter { it.rule.kind != RepeatKind.NONE }.map { it.id }.toSet()
@@ -167,13 +180,14 @@ fun TasksContent(
                     onAction(TaskAction.Order(ids.moved(index, to)))
                 }
             } else Modifier
-            TaskRow(o, state.busy, { onOpen(o.id) }, state.today, placement, o.taskId in recurring) {
-                onComplete(o.id) }
+            TaskRow(o, state.busy, { onOpen(o.id) }, state.today, placement, o.taskId in recurring,
+                timerChip(o)) { onComplete(o.id) }
         }
         if (sections.weekly.isNotEmpty()) {
             item { Text(stringResource(R.string.weekly_section), style = MaterialTheme.typography.titleMedium) }
             items(sections.weekly, key = { it.id }) { o ->
-                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, recurring = o.taskId in recurring) {
+                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, recurring = o.taskId in recurring,
+                    timer = timerChip(o)) {
                     onComplete(o.id) }
             }
         }
@@ -199,7 +213,8 @@ fun TasksContent(
 @Composable
 fun TaskRow(
     o: TaskOccurrence, busy: Boolean, onOpen: () -> Unit, today: LocalDate,
-    modifier: Modifier = Modifier, recurring: Boolean = false, onComplete: () -> Unit = onOpen,
+    modifier: Modifier = Modifier, recurring: Boolean = false, timer: TimerChip? = null,
+    onComplete: () -> Unit = onOpen,
 ) {
     OutlinedCard(onClick = onOpen, modifier = modifier.fillMaxWidth().testTag("task:${o.id}"), enabled = !busy,
         shape = RoundedCornerShape(14.dp),
@@ -234,6 +249,7 @@ fun TaskRow(
                 Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
+            if (timer != null && o.status == TaskStatus.OPEN) TimerChipButton(timer, o.fields.title, !busy)
             if (recurring) Icon(painterResource(R.drawable.ic_task_repeat),
                 contentDescription = stringResource(R.string.task_repeats),
                 modifier = Modifier.size(24.dp),
@@ -254,7 +270,7 @@ fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
         TaskEditor(draft, state.snapshot.activeLists,
             state.snapshot.activeOccurrences.firstOrNull { it.id == draft.id }.takeIf { draft.editing },
             state.today, state.busy, error, viewModel::updateDraft, viewModel::difficulty, viewModel::repeatRule,
-            viewModel::saveDraft, viewModel::closeDraft)
+            viewModel::saveDraft, viewModel::closeDraft, viewModel::newListForDraft)
         if (state.discardConfirmation) AlertDialog(onDismissRequest = { viewModel.confirmDiscard(false) },
             title = { Text(stringResource(R.string.discard_title)) },
             text = { Text(stringResource(R.string.discard_body)) },
@@ -269,6 +285,13 @@ fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
             { viewModel.complete(detail, it) }, viewModel::completionDate,
             { viewModel.action(it) }, { viewModel.requestDeleteTask(detail.id) })
     }
+    if (state.timedConfirmation != null) AlertDialog(
+        onDismissRequest = { viewModel.confirmTimed(false) },
+        title = { Text(stringResource(R.string.timed_confirm_title)) },
+        text = { Text(stringResource(R.string.timed_confirm_body)) },
+        confirmButton = { TextButton({ viewModel.confirmTimed(true) }, enabled = !state.busy) {
+            Text(stringResource(R.string.timed_confirm_action)) } },
+        dismissButton = { TextButton({ viewModel.confirmTimed(false) }) { Text(stringResource(R.string.cancel)) } })
     if (state.uncheckedConfirmation != null) AlertDialog(
         onDismissRequest = { viewModel.confirmCompletion(false) },
         text = { Text(pluralStringResource(R.plurals.unchecked_confirm,
@@ -316,9 +339,12 @@ private fun TaskDetail(
                     modifier = Modifier.semantics { contentDescription = c.label })
                 Text(c.label, Modifier.padding(top = 12.dp))
             } }
-            val timer = LocalOpenTimer.current
-            TextButton({ timer(TimerKind.TASK, o.id) }, enabled = !state.busy) {
-                Text(stringResource(R.string.timer_button)) }
+            // Only timed tasks have a timer; a free stopwatch is not part of tasks (spec 016).
+            if (state.isTimed(o)) {
+                val timer = LocalOpenTimer.current
+                TextButton({ timer(TimerKind.TASK, o.id) }, enabled = !state.busy) {
+                    Text(stringResource(R.string.timer_button)) }
+            }
             if (o.status == TaskStatus.OPEN) {
                 val reminders = LocalOpenReminders.current
                 TextButton({ reminders(ReminderKind.TASK, o.id) }, enabled = !state.busy) {
@@ -417,4 +443,13 @@ private fun TaskRowPreview() {
         TaskRow(TaskOccurrence("preview:1", "preview", 1, TaskFields(title = "Organizar a próxima semana"),
             null, null, null), false, {}, LocalDate.of(2026, 11, 11))
     }
+}
+
+/** "Concluída pelo cronômetro · Desfazer" after a timed task completes by itself (spec 016). */
+@Composable
+fun TimerDoneFeedback(undo: () -> Unit, dismiss: () -> Unit) {
+    Snackbar(Modifier.padding(12.dp),
+        action = { TextButton(undo) { Text(stringResource(R.string.undo)) } },
+        dismissAction = { TextButton(dismiss) { Text(stringResource(R.string.close)) } },
+    ) { Text(stringResource(R.string.task_timer_done)) }
 }

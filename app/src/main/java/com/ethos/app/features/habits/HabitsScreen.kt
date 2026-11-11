@@ -48,6 +48,13 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
             { vm.confirmFinancial(true) }, { vm.confirmFinancial(false) })
         return
     }
+    if (state.timedConfirmation != null) AlertDialog(
+        onDismissRequest = { vm.confirmTimed(false) },
+        title = { Text(stringResource(R.string.timed_confirm_title)) },
+        text = { Text(stringResource(R.string.timed_confirm_body)) },
+        confirmButton = { TextButton({ vm.confirmTimed(true) }, enabled = !state.busy) {
+            Text(stringResource(R.string.timed_confirm_action)) } },
+        dismissButton = { TextButton({ vm.confirmTimed(false) }) { Text(stringResource(R.string.cancel)) } })
     if (state.draft != null) HabitEditor(state, lists,
         HabitEditorActions(vm::draft, vm::difficulty, vm::save, vm::retry))
     val h = state.snapshot.habits.firstOrNull { it.id == state.detail }
@@ -55,7 +62,6 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
         AlertDialog(onDismissRequest = { if (!state.busy) vm.detail(null) }, title = { Text(h.name) }, text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 HabitError(state, vm::retry)
-                if (state.recordExists) Text(stringResource(R.string.timer_habit_record_exists))
                 if (h.description.isNotBlank()) Text(h.description)
                 state.streaks[h.id]?.let { streak ->
                     val unit = stringResource(when (streak.unit) {
@@ -111,9 +117,12 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                 state.periods.filter { it.habitId == h.id }.reversed().forEach { p ->
                     HabitProgress(p, state.today)
                 }
-                val timer = LocalOpenTimer.current
-                TextButton({ timer(TimerKind.HABIT, h.id) }, enabled = !state.busy) {
-                    Text(stringResource(R.string.timer_button)) }
+                // Only timed habits have a timer; a free stopwatch is not part of habits (spec 016).
+                if (h.id in state.durations) {
+                    val timer = LocalOpenTimer.current
+                    TextButton({ timer(TimerKind.HABIT, h.id) }, enabled = !state.busy) {
+                        Text(stringResource(R.string.timer_button)) }
+                }
                 val tracker = LocalOpenTracker.current
                 TextButton({ tracker(h.id) }, enabled = !state.busy) { Text(stringResource(R.string.tracker)) }
                 if (h.status != HabitStatus.EXCLUDED) {

@@ -22,16 +22,16 @@ data class TimerTarget(
 
 data class ManualDraft(val segmentId: String?, val date: String, val start: String, val end: String)
 
-/** A user-confirmed request to run an existing completion flow; consumed explicitly by the host. */
+/** A reached duration to complete through the owning feature; consumed explicitly by the host (spec 016). */
 data class TimerCompletion(val kind: TimerKind, val sourceId: String, val date: LocalDate, val token: Long)
 
 data class TimerUiState(
     val snapshot: TimerSnapshot = TimerSnapshot(), val now: TimerNow = TimerNow(0, 0, null),
     val loading: Boolean = true, val error: Boolean = false, val busy: Boolean = false,
     val problem: TimerProblem? = null, val target: TimerTarget? = null, val conflict: TimerStart? = null,
-    val countdown: Boolean = true, val goalText: String = "", val manual: ManualDraft? = null,
+    val manual: ManualDraft? = null,
     val completion: TimerCompletion? = null, val notificationsVisible: Boolean = true,
-    val serviceBlocked: Boolean = false, val reachedPrompt: String? = null, val unavailable: Boolean = false,
+    val serviceBlocked: Boolean = false, val unavailable: Boolean = false,
 )
 
 @HiltViewModel
@@ -42,7 +42,8 @@ class TimerViewModel @Inject constructor(
     val state = mutable.asStateFlow()
     private var observer: Job? = null
     private var failed: (() -> Unit)? = null
-    private val prompted = mutableSetOf<String>()
+    /** Reached audits already handed to the host in this process; the CONFIRMED audit covers restarts. */
+    private val handled = mutableSetOf<String>()
     val zone get() = clock.zone()
 
     init {
@@ -57,12 +58,9 @@ class TimerViewModel @Inject constructor(
         observer = viewModelScope.launch {
             try {
                 repository.observe().collect { snapshot ->
-                    // Offer confirmation once per newly reached objective audit, never for reward exhaustion.
-                    val reached = snapshot.audits.lastOrNull { it.kind == TimerAuditKind.REACHED && it.id !in prompted }
-                    snapshot.audits.forEach { prompted += it.id }
                     mutable.update { it.copy(snapshot = snapshot, loading = false, error = failed != null,
-                        now = clock.now(), reachedPrompt = if (it.loading) it.reachedPrompt
-                            else reached?.sessionId ?: it.reachedPrompt) }
+                        now = clock.now()) }
+                    completeNextReached(snapshot)
                 }
             } catch (e: CancellationException) { throw e
             } catch (_: Exception) { mutable.update { it.copy(loading = false, error = true) } }
@@ -80,12 +78,9 @@ class TimerViewModel @Inject constructor(
     }
 
     fun open(target: TimerTarget?) {
-        val goal = target?.start?.goalKey?.let { state.value.snapshot.goal(it) }
-        mutable.update { it.copy(target = target, problem = null, manual = null, unavailable = false,
-            goalText = goal?.minutes?.toString().orEmpty()) }
+        mutable.update { it.copy(target = target, problem = null, manual = null, unavailable = false) }
     }
 
-    fun countdown(value: Boolean) { mutable.update { it.copy(countdown = value) } }
 
     fun start(request: TimerStart, pauseOther: Boolean = false): Unit = write({ start(request, pauseOther) }) {
         when (repository.start(request, pauseOther)) {
@@ -100,29 +95,34 @@ class TimerViewModel @Inject constructor(
     fun pause(id: String): Unit = write({ pause(id) }) { coordinator.pause(id) }
     fun finish(id: String): Unit = write({ finish(id) }) { repository.finish(id); coordinator.request() }
 
-    fun goal(text: String) { mutable.update { it.copy(goalText = text.filter(Char::isDigit).take(4)) } }
-    fun saveGoal() {
-        val key = state.value.target?.start?.goalKey ?: return
-        val minutes = state.value.goalText.takeIf { it.isNotEmpty() }?.toIntOrNull()
-        if (minutes != null && minutes !in 1..1440) {
-            mutable.update { it.copy(problem = TimerProblem.TOO_LONG) }; return
-        }
-        write(::saveGoal) { repository.saveGoal(key, minutes) }
+    /** Duration goals are edited with the task/habit itself (spec 016); null removes the goal. */
+    fun saveGoal(sourceKey: String, minutes: Int?): Unit = write({ saveGoal(sourceKey, minutes) }) {
+        repository.saveGoal(sourceKey, minutes)
     }
 
-    /** Owner confirmed reaching an objective: audit, then hand the existing completion flow to the host. */
-    fun confirm(kind: TimerKind, sourceId: String, sessionId: String?) {
-        write({ confirm(kind, sourceId, sessionId) }) {
-            sessionId?.let { repository.confirmed(it) }
-            val date = Instant.ofEpochMilli(clock.wallMillis()).atZone(clock.zone()).toLocalDate()
-            mutable.update { it.copy(completion = TimerCompletion(kind, sourceId, date, System.nanoTime()),
-                reachedPrompt = null, target = null) }
+    /**
+     * Reaching the duration completes the task/habit by itself (spec 016), one at a time, dated when the time
+     * was reached. Even if the app was closed then, the next sync still completes it exactly once.
+     */
+    private fun completeNextReached(snapshot: TimerSnapshot) {
+        if (state.value.completion != null) return
+        val reached = TimerRules.unconfirmedReached(snapshot).firstOrNull { it.id !in handled } ?: return
+        val session = snapshot.sessions.firstOrNull { it.id == reached.sessionId } ?: return
+        handled += reached.id
+        viewModelScope.launch {
+            try {
+                repository.confirmed(session.id)
+                val date = Instant.ofEpochMilli(reached.at).atZone(clock.zone()).toLocalDate()
+                mutable.update { it.copy(completion = TimerCompletion(session.kind, session.sourceId, date,
+                    System.nanoTime())) }
+            } catch (e: CancellationException) { throw e
+            } catch (_: Exception) { handled -= reached.id }
         }
     }
     fun consumeCompletion(token: Long) {
         mutable.update { if (it.completion?.token == token) it.copy(completion = null) else it }
+        completeNextReached(state.value.snapshot)
     }
-    fun dismissReached() { mutable.update { it.copy(reachedPrompt = null) } }
 
     fun manual(draft: ManualDraft?) { mutable.update { it.copy(manual = draft, problem = null) } }
     fun newManual() {

@@ -1,5 +1,7 @@
 package com.ethos.app.features.habits
 
+import com.ethos.app.core.ui.timers.TimerChip
+import com.ethos.app.core.ui.timers.TimerChipButton
 import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.theme.EthosTheme
 import androidx.compose.foundation.layout.*
@@ -133,13 +135,13 @@ fun outcomeLabel(p: HabitPeriod, today: LocalDate): Int = when {
 fun LazyListScope.habitItems(
     state: HabitsUiState, page: HabitPage, listId: String?, new: () -> Unit,
     open: (String) -> Unit, retry: () -> Unit, record: ((String) -> Unit)? = null,
-    newBreaking: (() -> Unit)? = null,
+    newBreaking: (() -> Unit)? = null, timerChip: (Habit) -> TimerChip? = { null },
 ) {
     // Revisão is for tasks only (spec 014).
     if (page == HabitPage.REVIEW) return
     val row: @Composable (Habit, HabitPeriod?) -> Unit = { h, period ->
         HabitRow(h, period, state.busy, { open(h.id) }, today = state.today,
-            consistency = state.streaks[h.id]?.current?.let { it to state.rates[h.id] },
+            consistency = state.streaks[h.id]?.current?.let { it to state.rates[h.id] }, timer = timerChip(h),
             quick = record?.let { r -> quickAction(state, h, period) { r(h.id) } },
             week = if (page == HabitPage.TODAY) null else weekHits(state, h),
             todayCount = if (page == HabitPage.TODAY) state.snapshot.records.count {
@@ -213,7 +215,7 @@ private val habitIcons = listOf("❧", "▤", "⌂", "▣", "♡", "☆")
 fun HabitRow(
     habit: Habit, period: HabitPeriod?, busy: Boolean, open: () -> Unit, quick: HabitQuick? = null,
     week: List<Boolean>? = null, todayCount: Int? = null, today: LocalDate,
-    consistency: Pair<Int, Int?>? = null,
+    consistency: Pair<Int, Int?>? = null, timer: TimerChip? = null,
 ) {
     val warm = period?.rule?.type?.let { it != HabitType.PRACTICE } == true
     val colors = MaterialTheme.colorScheme
@@ -239,6 +241,7 @@ fun HabitRow(
                             color = colors.onSurfaceVariant)
                     }
                 }
+                if (timer != null && quick?.done != true) TimerChipButton(timer, habit.name, !busy)
                 quick?.let { q ->
                     val description = stringResource(q.description, habit.name)
                     val accent = if (warm) colors.tertiary else colors.primary
@@ -281,10 +284,11 @@ fun HabitRow(
 fun HabitsContent(
     state: HabitsUiState, page: HabitPage, new: () -> Unit, open: (String) -> Unit, retry: () -> Unit,
     record: ((String) -> Unit)? = null, newBreaking: (() -> Unit)? = null,
+    timerChip: (Habit) -> TimerChip? = { null },
 ) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        habitItems(state, page, null, new, open, retry, record, newBreaking)
+        habitItems(state, page, null, new, open, retry, record, newBreaking, timerChip)
     }
 }
 

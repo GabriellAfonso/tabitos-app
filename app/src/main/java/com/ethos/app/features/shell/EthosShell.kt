@@ -54,6 +54,9 @@ import kotlinx.coroutines.launch
 
 private val headerDate = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale.forLanguageTag("pt-BR"))
 
+/** What the drawer's lists section can do: open a list page or just close the drawer before a dialog. */
+data class DrawerListActions(val openTasks: () -> Unit, val close: () -> Unit, val tasksOpen: Boolean)
+
 /**
  * App frame: header, drawer, bottom bar and navigation. Each destination's content comes from [page];
  * the shell owns no feature state. [today] comes from the injected clock, never from the system clock.
@@ -63,7 +66,7 @@ fun EthosShell(
     today: LocalDate,
     pendingCount: Int,
     createActions: CreateActions,
-    drawerLists: @Composable (openTasks: () -> Unit) -> Unit,
+    drawerLists: @Composable (lists: DrawerListActions) -> Unit,
     snackbar: @Composable () -> Unit = {},
     page: @Composable (destination: ShellDestination, navigate: (ShellDestination) -> Unit) -> Unit,
 ) {
@@ -83,7 +86,11 @@ fun EthosShell(
     fun navigateFromDrawer(destination: ShellDestination) = scope.launch { drawer.close(); navigate(destination) }
     ModalNavigationDrawer(drawerState = drawer, drawerContent = {
         ShellDrawer(current, pendingCount, ::navigateFromDrawer) {
-            drawerLists { navigateFromDrawer(ShellDestination.TASKS) }
+            drawerLists(DrawerListActions(
+                openTasks = { navigateFromDrawer(ShellDestination.TASKS) },
+                close = { scope.launch { drawer.close() } },
+                tasksOpen = current == ShellDestination.TASKS,
+            ))
         }
     }) {
         Scaffold(

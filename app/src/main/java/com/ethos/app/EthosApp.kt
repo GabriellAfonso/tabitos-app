@@ -28,6 +28,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ethos.app.core.preferences.AppearanceMode
 import com.ethos.app.core.reminders.domain.ReminderKind
 import com.ethos.app.core.timers.domain.TimerKind
+import com.ethos.app.core.timers.domain.TimerRules
+import com.ethos.app.core.timers.domain.TimerState
+import com.ethos.app.core.ui.timers.TimerChip
+import com.ethos.app.features.timers.clockText
 import com.ethos.app.core.ui.accounting.LocalFinancialPrices
 import com.ethos.app.core.ui.components.ActionBanner
 import com.ethos.app.core.ui.components.ContentFilter
@@ -62,11 +66,13 @@ import com.ethos.app.features.settings.AppearanceViewModel
 import com.ethos.app.features.settings.DemoSettingsScreen
 import com.ethos.app.features.settings.DemoViewModel
 import com.ethos.app.features.settings.SettingsContent
+import com.ethos.app.features.settings.TimerAlarmSetting
 import com.ethos.app.features.shell.CreateActions
 import com.ethos.app.features.shell.EthosShell
 import com.ethos.app.features.shell.ShellDestination
 import com.ethos.app.features.tasks.TaskDialogs
 import com.ethos.app.features.tasks.TaskDrawer
+import com.ethos.app.features.tasks.TimerDoneFeedback
 import com.ethos.app.features.tasks.TaskPage
 import com.ethos.app.features.tasks.TasksContent
 import com.ethos.app.features.tasks.TasksRefreshEffect
@@ -167,6 +173,7 @@ fun EthosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
             HabitDialogs(habits, tasks.snapshot.activeLists, vm.habits)
             AppShell(vm, app) {
                 SettingsContent(appearance, appearanceViewModel::select, appearanceViewModel::retry)
+                TimerAlarmSetting(appearance.timerAlarm, appearanceViewModel::setTimerAlarm)
             }
             TrackerDialogs(trackers, vm.trackers, requestPermission)
             TimerDialogs(timers, vm.timers, { kind, id ->
@@ -192,11 +199,16 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
             onNewHabit = { vm.habits.newHabit(tasks.selectedListId) },
             onBreakHabit = { vm.habits.newHabit(tasks.selectedListId, breaking = true) },
         ),
-        drawerLists = { openTasks ->
-            TaskDrawer(tasks, { vm.tasks.selectList(it); openTasks() }, vm.tasks::newList,
-                { vm.tasks.manageLists(true) })
+        drawerLists = { drawer ->
+            TaskDrawer(tasks, drawer.tasksOpen,
+                onSelect = { vm.tasks.selectList(it); drawer.openTasks() },
+                onNew = { drawer.close(); vm.tasks.newList() },
+                onManage = { drawer.close(); vm.tasks.manageLists(true) })
         },
-        snackbar = { HabitPracticeFeedback(habits, vm.habits::undoPractice, vm.habits::dismissPracticeFeedback) },
+        snackbar = {
+            if (tasks.timerDone != null) TimerDoneFeedback(vm.tasks::undoTimerDone, vm.tasks::dismissTimerDone)
+            else HabitPracticeFeedback(habits, vm.habits::undoPractice, vm.habits::dismissPracticeFeedback)
+        },
     ) { destination, navigate ->
         when (destination) {
             ShellDestination.TODAY -> TaskDestination(vm, app, TaskPage.TODAY, navigate)
@@ -204,7 +216,8 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
             ShellDestination.REVIEW -> TaskDestination(vm, app, TaskPage.REVIEW, navigate)
             ShellDestination.HABITS -> HabitsContent(habits, HabitPage.ALL, { vm.habits.newHabit(null) },
                 vm.habits::detail, vm.habits::retry, vm.habits::quickRecord,
-                newBreaking = { vm.habits.newHabit(null, breaking = true) })
+                newBreaking = { vm.habits.newHabit(null, breaking = true) },
+                timerChip = { app.timerChip(vm, TimerKind.HABIT, it.id, habits.durations[it.id]) })
             ShellDestination.CALENDAR -> CalendarScreen(vm.calendar, vm.tasks::detail, vm.habits::detail,
                 vm.trackers::fill, vm.trackers::editEntry)
             ShellDestination.REWARDS -> RewardsScreen(vm.rewards) { RewardSessions(vm, app) }
@@ -240,9 +253,11 @@ private fun TaskDestination(
         onNew = vm.tasks::newTask, onOpen = vm.tasks::detail, onAction = vm.tasks::action,
         onManage = { vm.tasks.manageLists(true) }, onRetry = vm.tasks::retry,
         onDismissError = vm.tasks::dismissError, onComplete = vm.tasks::quickCheck,
+        timerChip = { app.timerChip(vm, TimerKind.TASK, it.id, tasks.durations[it.taskId]) },
         extraItems = {
             habitItems(app.habits, habitPage, tasks.selectedListId, { vm.habits.newHabit(tasks.selectedListId) },
-                vm.habits::detail, vm.habits::retry, vm.habits::quickRecord)
+                vm.habits::detail, vm.habits::retry, vm.habits::quickRecord,
+                timerChip = { app.timerChip(vm, TimerKind.HABIT, it.id, app.habits.durations[it.id]) })
         },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -283,6 +298,25 @@ private fun RewardSessions(vm: AppViewModels, app: AppState) {
     }
     TimerSessionCards(app.timers, sessions, vm.timers.zone, app.timerCards)
 }
+
+/** Countdown on a timed task/habit card (spec 016); null for the normal variant. */
+private fun AppState.timerChip(vm: AppViewModels, kind: TimerKind, sourceId: String, minutes: Int?): TimerChip? {
+    if (minutes == null) return null
+    val zone = vm.timers.zone
+    val target = timerTarget(kind, sourceId, tasks.snapshot, habits.snapshot, timers.snapshot, tasks.today, zone)
+        ?: return null
+    val session = timers.snapshot.open(kind, sourceId)
+    val progress = TimerRules.progress(timers.snapshot, kind, sourceId, target.start.period, tasks.today,
+        timers.now, zone)
+    val remaining = session?.let { TimerRules.remaining(timers.snapshot, it, timers.now, zone) }
+        ?: (minutes * MILLIS_PER_MINUTE - progress).coerceAtLeast(0)
+    val running = session?.state == TimerState.RUNNING
+    return TimerChip(clockText(remaining), running) {
+        if (running && session != null) vm.timers.pause(session.id) else vm.timers.start(target.start)
+    }
+}
+
+private const val MILLIS_PER_MINUTE = 60_000L
 
 private fun AppState.visibleTimerSessions(vm: AppViewModels) =
     visibleSessions(tasks.snapshot, habits.snapshot, timers, vm.timers.zone)
@@ -338,8 +372,8 @@ private fun NotificationRouting(requests: AppRequests, vm: AppViewModels, app: A
     LaunchedEffect(timers.completion) {
         val completion = timers.completion ?: return@LaunchedEffect
         when (completion.kind) {
-            TimerKind.TASK -> vm.tasks.notification(completion.sourceId, true)
-            TimerKind.HABIT -> vm.habits.recordDuration(completion.sourceId, completion.date)
+            TimerKind.TASK -> vm.tasks.timerCompleted(completion.sourceId, completion.date)
+            TimerKind.HABIT -> vm.habits.timerCompleted(completion.sourceId, completion.date)
             TimerKind.REWARD -> Unit
         }
         vm.timers.consumeCompletion(completion.token)

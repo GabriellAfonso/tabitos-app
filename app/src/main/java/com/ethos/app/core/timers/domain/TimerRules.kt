@@ -7,6 +7,13 @@ import java.time.ZoneId
 import java.time.temporal.TemporalAdjusters
 
 object TimerRules {
+    /** Reached objectives whose session has no later confirmation audit yet, oldest first. */
+    fun unconfirmedReached(snapshot: TimerSnapshot): List<TimerAudit> = snapshot.audits
+        .filter { it.kind == TimerAuditKind.REACHED }
+        .filter { reached -> snapshot.audits.none {
+            it.sessionId == reached.sessionId && it.kind == TimerAuditKind.CONFIRMED && it.at >= reached.at } }
+        .sortedBy { it.at }
+
     const val MAX_MANUAL_MILLIS = 24L * 60 * 60 * 1000
     const val CHECKPOINT_MILLIS = 10_000L
 

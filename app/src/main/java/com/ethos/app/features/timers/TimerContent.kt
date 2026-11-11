@@ -131,18 +131,6 @@ fun TimerDialogs(
         return
     }
     state.manual?.let { draft -> ManualEditor(state, draft, vm); return }
-    state.reachedPrompt?.let { id ->
-        val session = state.snapshot.sessions.firstOrNull { it.id == id }
-        if (session != null && state.target == null) {
-            AlertDialog(onDismissRequest = vm::dismissReached,
-                title = { Text(stringResource(R.string.timer_reached)) },
-                text = { Text(stringResource(R.string.timer_reached_body, session.title)) },
-                confirmButton = { TextButton({ vm.confirm(session.kind, session.sourceId, session.id) },
-                    enabled = !state.busy) { Text(stringResource(R.string.timer_confirm_complete)) } },
-                dismissButton = { TextButton(vm::dismissReached) { Text(stringResource(R.string.timer_not_now)) } })
-            return
-        }
-    }
     val target = state.target ?: return
     val request = target.start
     val session = state.snapshot.open(request.kind, request.sourceId)
@@ -156,19 +144,13 @@ fun TimerDialogs(
     AlertDialog(onDismissRequest = { if (!state.busy) vm.open(null) }, title = { Text(request.title) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             TimerError(state, vm::retry)
-            val showRemaining = remaining != null && (state.countdown || request.kind == TimerKind.REWARD)
+            // Timed tasks/habits always count down (spec 016); reward time counts down its purchase.
+            val showRemaining = remaining != null
             Text(stringResource(if (showRemaining) R.string.timer_remaining else R.string.timer_elapsed),
                 style = MaterialTheme.typography.labelLarge)
             Text(clockText(if (showRemaining) remaining!! else if (goal != null) progress else total),
                 style = MaterialTheme.typography.displaySmall,
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
-            if (remaining != null && request.kind != TimerKind.REWARD) Row {
-                FilterChip(state.countdown, { vm.countdown(true) },
-                    label = { Text(stringResource(R.string.timer_mode_countdown)) })
-                Spacer(Modifier.width(8.dp))
-                FilterChip(!state.countdown, { vm.countdown(false) },
-                    label = { Text(stringResource(R.string.timer_mode_countup)) })
-            }
             if (goal != null) Text(stringResource(when (request.period) {
                 TimerPeriod.DAY -> R.string.timer_progress_day
                 TimerPeriod.WEEK -> R.string.timer_progress_week
@@ -177,11 +159,8 @@ fun TimerDialogs(
             when {
                 session?.state == TimerState.RUNNING -> Button({ vm.pause(session.id) }, enabled = !state.busy) {
                     Text(stringResource(R.string.timer_pause)) }
-                remaining == 0L -> if (request.kind != TimerKind.REWARD && target.canStart && !target.sourceDone) {
-                    Text(stringResource(R.string.timer_reached))
-                    Button({ vm.confirm(request.kind, request.sourceId, session?.id) }, enabled = !state.busy) {
-                        Text(stringResource(R.string.timer_confirm_complete)) }
-                } else if (request.kind == TimerKind.REWARD) Text(stringResource(R.string.timer_exhausted))
+                remaining == 0L -> Text(stringResource(if (request.kind == TimerKind.REWARD) R.string.timer_exhausted
+                    else R.string.timer_completed))
                 target.canStart -> Button({ vm.start(request) }, enabled = !state.busy) {
                     Text(stringResource(if (session != null) R.string.timer_resume else R.string.timer_start)) }
                 else -> Text(stringResource(R.string.timer_source_closed))
@@ -200,15 +179,6 @@ fun TimerDialogs(
                 Text(stringResource(R.string.timer_below_goal), color = MaterialTheme.colorScheme.error)
                 TextButton({ vm.open(null); openSource(request.kind, request.sourceId) }) {
                     Text(stringResource(R.string.timer_open_source)) }
-            }
-            if (target.goalAllowed && request.goalKey != null) {
-                HorizontalDivider()
-                OutlinedTextField(state.goalText, vm::goal, enabled = !state.busy, singleLine = true,
-                    label = { Text(stringResource(if (request.period == TimerPeriod.WEEK) R.string.timer_goal_week
-                        else if (request.period == TimerPeriod.DAY) R.string.timer_goal_day
-                        else R.string.timer_goal)) },
-                    modifier = Modifier.fillMaxWidth())
-                TextButton(vm::saveGoal, enabled = !state.busy) { Text(stringResource(R.string.timer_goal_save)) }
             }
             val segments = TimerRules.sourceSegments(state.snapshot, request.kind, request.sourceId)
             if (request.period != TimerPeriod.TOTAL && segments.isNotEmpty()) {

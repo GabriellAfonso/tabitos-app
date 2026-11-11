@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.accounting.domain.AccountingRepository
 import com.ethos.app.core.accounting.domain.FinancialPreview
+import com.ethos.app.core.timers.domain.TimerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.time.LocalTime
@@ -28,6 +29,11 @@ data class TaskDraft(
     val scope: ChangeScope = ChangeScope.ONLY_THIS, val reviewConfirmed: Boolean = false,
     val ending: Int = 0,
     val recurringOriginal: Boolean = false,
+    /** Series id the duration goal belongs to; equals [id] for a new task. */
+    val taskId: String = id,
+    /** Minutes of a timed task (spec 016); blank means the normal variant. */
+    val durationText: String = "",
+    val timed: Boolean = false,
 ) : java.io.Serializable
 
 data class TasksUiState(
@@ -39,14 +45,25 @@ data class TasksUiState(
     val manageLists: Boolean = false, val selectedListId: String? = null,
     val financialPreview: FinancialPreview? = null,
     val discardConfirmation: Boolean = false,
-)
+    /** Occurrence just completed by its timer, offered for undo (spec 016). */
+    val timerDone: String? = null,
+    /** Duration goal in minutes per task series; a task with a goal is the timed variant. */
+    val durations: Map<String, Int> = emptyMap(),
+    /** Timed occurrence waiting for "Concluir sem completar o tempo?". */
+    val timedConfirmation: String? = null,
+) {
+    fun isTimed(o: TaskOccurrence): Boolean = o.taskId in durations
+}
 
 @HiltViewModel
 class TasksViewModel @Inject constructor(
     private val repository: TaskRepository, private val clock: TaskClock, private val saved: SavedStateHandle,
     private val accounting: AccountingRepository? = null,
+    private val timers: TimerRepository? = null,
 ) : ViewModel() {
     private val mutable = MutableStateFlow(TasksUiState(today = clock.today(), draft = saved["taskDraft"]))
+    /** Goal to store once the task itself is saved; null minutes removes it (normal variant). */
+    private var pendingGoal: Pair<String, Int?>? = null
     val state: StateFlow<TasksUiState> = mutable.asStateFlow()
     private var observer: Job? = null
     private var readFailed = false
@@ -63,7 +80,20 @@ class TasksViewModel @Inject constructor(
         if (confirm && action != null) execute(action, confirmed = true)
     }
 
-    init { observe(); refresh() }
+    init {
+        observe(); refresh()
+        timers?.let { repository ->
+            viewModelScope.launch {
+                try {
+                    repository.observe().collect { snapshot ->
+                        mutable.update { it.copy(durations = snapshot.goals.filter { g -> g.sourceKey.startsWith(GOAL) }
+                            .associate { g -> g.sourceKey.removePrefix(GOAL) to g.minutes }) }
+                    }
+                } catch (e: CancellationException) { throw e
+                } catch (_: Exception) { }
+            }
+        }
+    }
     private fun observe() {
         observer?.cancel()
         observer = viewModelScope.launch {
@@ -106,7 +136,9 @@ class TasksViewModel @Inject constructor(
             rule.start.toString(), rule.until?.toString().orEmpty(), rule.count?.toString().orEmpty(),
             rule.interval.toString(), rule.monthDay.toString(),
             ending = if (rule.count != null) 2 else if (rule.until != null) 1 else 0,
-            recurringOriginal = rule.kind != RepeatKind.NONE))
+            recurringOriginal = rule.kind != RepeatKind.NONE, taskId = o.taskId,
+            durationText = state.value.durations[o.taskId]?.toString().orEmpty(),
+            timed = o.taskId in state.value.durations))
     }
     fun updateDraft(draft: TaskDraft?) {
         saved["taskDraft"] = draft
@@ -156,7 +188,11 @@ class TasksViewModel @Inject constructor(
                 until = if (d.ending == 1) LocalDate.parse(d.untilText) else null,
                 count = if (d.ending == 2) d.countText.toInt() else null,
             )
-            val fields = d.fields.copy(date = date, minute = time)
+            val minutes = if (d.timed) d.durationText.toInt().also { require(it in 1..MAX_MINUTES) } else null
+            // A timed task never has a checklist (spec 016).
+            val fields = d.fields.copy(date = date, minute = time,
+                checklist = if (d.timed) emptyList() else d.fields.checklist)
+            pendingGoal = "$GOAL${d.taskId}" to minutes
             val action = if (d.editing) TaskAction.Edit(d.id, fields, rule, d.scope, d.reviewConfirmed)
                 else TaskAction.Create(d.id, fields, rule)
             execute(action, closeDraft = true)
@@ -183,12 +219,34 @@ class TasksViewModel @Inject constructor(
             } catch (_: Exception) { mutable.update { it.copy(storageError = true) } }
         }
     }
+    /** The task's duration was reached: complete it once, dated when the time ended (spec 016). */
+    fun timerCompleted(id: String, date: LocalDate) {
+        val o = state.value.snapshot.occurrences.firstOrNull { it.id == id } ?: return
+        if (o.status != TaskStatus.OPEN) return
+        mutable.update { it.copy(timerDone = id) }
+        execute(TaskAction.SetCompleted(id, true, date), confirmed = true)
+    }
+    fun undoTimerDone() {
+        val id = state.value.timerDone ?: return
+        mutable.update { it.copy(timerDone = null) }
+        execute(TaskAction.SetCompleted(id, false, clock.today()), confirmed = true)
+    }
+    fun dismissTimerDone() { mutable.update { it.copy(timerDone = null) } }
+    /** Manual completion of a timed task, after the user accepted not finishing the time. */
+    fun confirmTimed(confirm: Boolean) {
+        val id = state.value.timedConfirmation ?: return
+        mutable.update { it.copy(timedConfirmation = null) }
+        if (confirm) execute(TaskAction.SetCompleted(id, true, clock.today()), confirmed = true)
+    }
     fun completionDate(text: String) { mutable.update { it.copy(completionText = text) } }
     fun quickCheck(id: String) {
         val s = state.value
         if (s.busy || s.loading || s.storageError) return
         val o = s.snapshot.occurrences.firstOrNull { it.id == id } ?: return
         if (o.status != TaskStatus.OPEN && o.status != TaskStatus.DONE) return
+        if (o.status == TaskStatus.OPEN && s.isTimed(o)) {
+            mutable.update { it.copy(timedConfirmation = id) }; return
+        }
         execute(TaskAction.SetCompleted(id, o.status == TaskStatus.OPEN, clock.today()), confirmed = true)
     }
     fun complete(o: TaskOccurrence, done: Boolean, confirmed: Boolean = false) {
@@ -210,8 +268,14 @@ class TasksViewModel @Inject constructor(
         completionAction = null
     }
     fun manageLists(show: Boolean) { mutable.update { it.copy(manageLists = show) } }
-    fun listDraft(list: TaskList?) { mutable.update { it.copy(listDraft = list) } }
+    fun listDraft(list: TaskList?) {
+        if (list == null) listForDraft = false
+        mutable.update { it.copy(listDraft = list) }
+    }
     fun newList() = listDraft(TaskList(UUID.randomUUID().toString(), ""))
+    /** List created from inside the task editor: once saved, the task being edited goes into it. */
+    private var listForDraft = false
+    fun newListForDraft() { listForDraft = true; newList() }
     fun saveList() { state.value.listDraft?.let { execute(TaskAction.SaveList(it)) } }
     fun requestDeleteList(id: String?) { mutable.update { it.copy(deleteListId = id) } }
     fun requestDeleteTask(id: String?) { mutable.update { it.copy(deleteTaskId = id) } }
@@ -242,10 +306,18 @@ class TasksViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.execute(action)
+                if (action is TaskAction.Create || action is TaskAction.Edit) {
+                    pendingGoal?.let { (key, minutes) -> timers?.saveGoal(key, minutes) }
+                    pendingGoal = null
+                }
                 val committed = repository.observe().first()
                 mutable.update { it.copy(snapshot = committed) }
                 retryAction = null
                 if (closeDraft) updateDraft(null)
+                if (action is TaskAction.SaveList && listForDraft) {
+                    listForDraft = false
+                    state.value.draft?.let { d -> updateDraft(d.copy(fields = d.fields.copy(listId = action.list.id))) }
+                }
                 mutable.update { it.copy(busy = false, storageError = readFailed,
                     listDraft = if (action is TaskAction.SaveList) null else it.listDraft,
                     deleteListId = null, deleteTaskId = null,
@@ -262,3 +334,7 @@ class TasksViewModel @Inject constructor(
         }
     }
 }
+
+/** Duration goals of task series are stored under this prefix (spec 008 source key). */
+private const val GOAL = "task:"
+private const val MAX_MINUTES = 1440

@@ -1,5 +1,7 @@
 ﻿package com.ethos.app.features.settings
 
+import androidx.compose.material3.Switch
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -68,13 +70,6 @@ fun SettingsContent(state: AppearanceUiState, onSelect: (AppearanceMode) -> Unit
             }
         }
     }
-    var informationExpanded by rememberSaveable { mutableStateOf(false) }
-    TextButton(onClick = { informationExpanded = !informationExpanded }) {
-        Text(stringResource(R.string.earnings))
-    }
-    if (informationExpanded) {
-        Text(stringResource(R.string.earnings_detail), style = MaterialTheme.typography.bodyMedium)
-    }
 }
 
 @Preview
@@ -88,5 +83,19 @@ private fun SettingsPreview() {
 private fun SettingsFailurePreview() {
     EthosTheme(darkTheme = true) {
         Column { SettingsContent(AppearanceUiState(loading = false, error = AppearanceError.WRITE), {}, {}) }
+    }
+}
+
+/** Global switch for the timer alarm (spec 016): rings when a timed task or habit finishes. */
+@Composable
+fun TimerAlarmSetting(enabled: Boolean, onChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().sizeIn(minHeight = 56.dp)
+        .toggleable(enabled, role = Role.Switch, onValueChange = onChange),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.timer_alarm_setting), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.timer_alarm_setting_hint), style = MaterialTheme.typography.bodySmall)
+        }
+        Switch(enabled, onCheckedChange = null)
     }
 }

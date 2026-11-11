@@ -1,5 +1,8 @@
 package com.ethos.app.core.timers.platform
 
+import android.media.AudioAttributes
+import android.media.RingtoneManager
+import com.ethos.app.core.preferences.AppearanceRepository
 import android.Manifest
 import android.app.*
 import android.content.*
@@ -45,7 +48,14 @@ class TimerNotifications @Inject constructor(@param:ApplicationContext private v
             NotificationChannel(SESSIONS, context.getString(R.string.timer_channel),
                 NotificationManager.IMPORTANCE_LOW),
             NotificationChannel(ALERTS, context.getString(R.string.timer_alert_channel),
-                NotificationManager.IMPORTANCE_DEFAULT)))
+                NotificationManager.IMPORTANCE_LOW).apply { setSound(null, null) },
+            NotificationChannel(ALARMS, context.getString(R.string.timer_alarm_channel),
+                NotificationManager.IMPORTANCE_HIGH).apply {
+                setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM), AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+                enableVibration(true)
+            }))
     }
 
     /** Whether session notifications can actually be shown; counting itself never depends on it. */
@@ -94,18 +104,21 @@ class TimerNotifications @Inject constructor(@param:ApplicationContext private v
         return b.build()
     }
 
-    fun alert(session: TimerSession, kind: TimerAuditKind): Boolean = try {
-        manager.notify("ethos:timer:${session.id}", 0, builder(ALERTS).setAutoCancel(true)
+    /** [alarm] rings on the alarm channel when the user keeps "Alarme ao terminar o cronômetro" on. */
+    fun alert(session: TimerSession, kind: TimerAuditKind, alarm: Boolean): Boolean = try {
+        val channel = if (alarm && kind == TimerAuditKind.REACHED) ALARMS else ALERTS
+        manager.notify("ethos:timer:${session.id}", 0, builder(channel).setAutoCancel(true)
             .setContentTitle(session.title)
             .setContentText(context.getString(if (kind == TimerAuditKind.EXHAUSTED) R.string.timer_exhausted
-                else R.string.timer_reached))
+                else R.string.timer_completed))
             .setContentIntent(open(session.id)).build())
         true
     } catch (_: SecurityException) { false }
 
     companion object {
         const val SESSIONS = "ethos_timers"
-        const val ALERTS = "ethos_timer_alerts"
+        const val ALERTS = "ethos_timer_alerts_silent"
+        const val ALARMS = "ethos_timer_alarms"
         const val ONGOING_ID = 8001
         const val ACTION_PAUSE = "com.ethos.app.TIMER_PAUSE"
         const val EXTRA_SESSION = "session"
@@ -117,6 +130,7 @@ class TimerNotifications @Inject constructor(@param:ApplicationContext private v
 class TimerCoordinator @Inject constructor(
     @param:ApplicationContext private val context: Context, val repository: TimerRepository,
     private val tasks: TaskRepository, private val habits: HabitRepository, val notifications: TimerNotifications,
+    private val preferences: AppearanceRepository,
 ) {
     private val lock = Mutex()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -155,8 +169,9 @@ class TimerCoordinator @Inject constructor(
         val result = repository.sync(closed)
         if (result.alerts.isNotEmpty()) {
             val sessions = repository.observe().first().sessions
+            val alarm = preferences.timerAlarm.first()
             result.alerts.forEach { alert ->
-                sessions.firstOrNull { it.id == alert.sessionId }?.let { notifications.alert(it, alert.kind) }
+                sessions.firstOrNull { it.id == alert.sessionId }?.let { notifications.alert(it, alert.kind, alarm) }
             }
         }
         if (!manageService) return@withLock result

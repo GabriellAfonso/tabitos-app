@@ -7,6 +7,7 @@ import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskClock
 import com.ethos.app.core.accounting.domain.AccountingRepository
 import com.ethos.app.core.accounting.domain.FinancialPreview
+import com.ethos.app.core.timers.domain.TimerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
 import java.util.UUID
@@ -19,6 +20,8 @@ import kotlinx.coroutines.launch
 data class HabitDraft(
     val habit: Habit, val rule: HabitRule, val editing: Boolean = false,
     val target: String = "1", val partial: String = "", val nextPeriod: Boolean = false,
+    /** Timed practice habit (spec 016): minutes per day or per week, depending on the rule unit. */
+    val timed: Boolean = false, val durationText: String = "",
 ) : java.io.Serializable
 data class HabitLifecycleDraft(val id: String, val status: HabitStatus, val partial: String = "",
     val listId: String? = null, val requiresDestination: Boolean = false,
@@ -32,15 +35,22 @@ data class HabitsUiState(
     val recordDate: String = "", val correctionId: String? = null,
     val lifecycle: HabitLifecycleDraft? = null, val preview: HabitPeriod? = null,
     val previewReady: Boolean = false,
-    val financialPreview: FinancialPreview? = null, val recordExists: Boolean = false,
+    val financialPreview: FinancialPreview? = null,
     val lastPractice: HabitAction.SetPractice? = null,
+    /** Duration goal in minutes per habit; a habit with a goal is the timed variant. */
+    val durations: Map<String, Int> = emptyMap(),
+    /** Timed habit waiting for "Concluir sem completar o tempo?". */
+    val timedConfirmation: String? = null,
 )
 
 @HiltViewModel
 class HabitsViewModel @Inject constructor(
     private val repository: HabitRepository, private val clock: TaskClock, private val saved: SavedStateHandle,
     private val accounting: AccountingRepository? = null,
+    private val timers: TimerRepository? = null,
 ) : ViewModel() {
+    /** Goal to store once the habit itself is saved; null minutes removes it (normal variant). */
+    private var pendingGoal: Pair<String, Int?>? = null
     private val mutable = MutableStateFlow(HabitsUiState(today = clock.today(), draft = saved["habitDraft"]))
     val state: StateFlow<HabitsUiState> = mutable.asStateFlow()
     private var observer: Job? = null
@@ -56,7 +66,20 @@ class HabitsViewModel @Inject constructor(
         mutable.update { it.copy(financialPreview = null) }
         if (confirm && action != null) execute(action, financialClose, confirmed = true)
     }
-    init { observe() }
+    init {
+        observe()
+        timers?.let { repository ->
+            viewModelScope.launch {
+                try {
+                    repository.observe().collect { snapshot ->
+                        mutable.update { it.copy(durations = snapshot.goals.filter { g -> g.sourceKey.startsWith(GOAL) }
+                            .associate { g -> g.sourceKey.removePrefix(GOAL) to g.minutes }) }
+                    }
+                } catch (e: CancellationException) { throw e
+                } catch (_: Exception) { }
+            }
+        }
+    }
     private fun derive(s: HabitsUiState): HabitsUiState = s.copy(
         periods = s.snapshot.habits.flatMap { HabitRules.periods(s.snapshot, it.id, s.today) },
         streaks = s.snapshot.habits.associate { it.id to HabitRules.streak(s.snapshot, it.id, s.today) },
@@ -109,7 +132,9 @@ class HabitsViewModel @Inject constructor(
     }
     fun edit(h: Habit) {
         val r = HabitRules.currentRule(state.value.snapshot, h.id, clock.today()) ?: return
-        draft(HabitDraft(h, r.copy(id = UUID.randomUUID().toString()), editing = true, target = r.target.toString()))
+        val minutes = state.value.durations[h.id]
+        draft(HabitDraft(h, r.copy(id = UUID.randomUUID().toString()), editing = true, target = r.target.toString(),
+            timed = minutes != null, durationText = minutes?.toString().orEmpty()))
     }
     fun difficulty(value: Int) {
         val d = state.value.draft ?: return
@@ -118,6 +143,9 @@ class HabitsViewModel @Inject constructor(
     }
     private fun saveAction(): HabitAction.Save {
         val d = state.value.draft ?: error("Missing draft")
+        val timed = d.timed && d.rule.type == HabitType.PRACTICE
+        val minutes = if (timed) d.durationText.toInt().also { require(it in 1..MAX_MINUTES) } else null
+        pendingGoal = "$GOAL${d.habit.id}" to minutes
         return HabitAction.Save(d.habit, d.rule.copy(target = d.target.toInt()), d.nextPeriod,
             d.partial.takeIf { it.isNotBlank() }?.toInt())
     }
@@ -137,7 +165,7 @@ class HabitsViewModel @Inject constructor(
         } catch (_: Exception) { mutable.update { it.copy(problem = HabitProblem.INPUT) } }
     }
     fun detail(id: String?) { mutable.update { it.copy(detail = id, recordDate = clock.today().toString(),
-        correctionId = null, problem = null, recordExists = false) } }
+        correctionId = null, problem = null) } }
     fun date(value: String) { mutable.update { it.copy(recordDate = value) } }
     fun correct(record: HabitRecord) { mutable.update { it.copy(correctionId = record.id,
         recordDate = record.date.toString()) } }
@@ -150,12 +178,10 @@ class HabitsViewModel @Inject constructor(
             execute(action)
         } catch (_: Exception) { mutable.update { it.copy(problem = HabitProblem.DATE) } }
     }
-    /** Confirmed duration objective: one practice on [date], never twice. */
-    fun recordDuration(habitId: String, date: LocalDate) {
-        detail(habitId)
+    /** The habit's duration was reached: one practice on [date], undoable from the feedback (spec 016). */
+    fun timerCompleted(habitId: String, date: LocalDate) {
         val exists = state.value.snapshot.records.any { it.habitId == habitId && it.date == date && !it.deleted }
-        mutable.update { it.copy(recordExists = exists, recordDate = date.toString()) }
-        if (!exists) execute(HabitAction.Record(UUID.randomUUID().toString(), habitId, date))
+        if (!exists) execute(HabitAction.SetPractice(UUID.randomUUID().toString(), habitId, date, true))
     }
     /** Practice toggles today directly; unwanted occurrences keep financial confirmation. */
     fun quickRecord(habitId: String) {
@@ -165,9 +191,18 @@ class HabitsViewModel @Inject constructor(
         val practice = HabitRules.currentRule(snapshot, habitId, today)?.type == HabitType.PRACTICE
         val existing = snapshot.records.firstOrNull { it.habitId == habitId && it.date == today && !it.deleted }
         val id = UUID.randomUUID().toString()
+        if (practice && existing == null && habitId in state.value.durations) {
+            mutable.update { it.copy(timedConfirmation = habitId) }; return
+        }
         val action = if (practice) HabitAction.SetPractice(id, habitId, today, existing == null)
             else HabitAction.Record(id, habitId, today)
         execute(action)
+    }
+    /** Manual practice of a timed habit, after the user accepted not finishing the time. */
+    fun confirmTimed(confirm: Boolean) {
+        val id = state.value.timedConfirmation ?: return
+        mutable.update { it.copy(timedConfirmation = null) }
+        if (confirm) execute(HabitAction.SetPractice(UUID.randomUUID().toString(), id, clock.today(), true))
     }
     fun lifecycle(value: HabitLifecycleDraft?) { mutable.update { it.copy(lifecycle = value, problem = null) } }
     fun dismissPracticeFeedback() { mutable.update { it.copy(lastPractice = null) } }
@@ -230,6 +265,10 @@ class HabitsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.execute(action)
+                if (action is HabitAction.Save) {
+                    pendingGoal?.let { (key, minutes) -> timers?.saveGoal(key, minutes) }
+                    pendingGoal = null
+                }
                 // Publish committed records before enabling another tap, even if observer delivery lags.
                 val committed = repository.observe().first()
                 mutable.update { derive(it.copy(snapshot = committed)) }
@@ -248,3 +287,7 @@ class HabitsViewModel @Inject constructor(
         }
     }
 }
+
+/** Duration goals of habits are stored under this prefix (spec 008 source key). */
+private const val GOAL = "habit:"
+private const val MAX_MINUTES = 1440

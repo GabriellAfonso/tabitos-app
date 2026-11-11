@@ -21,6 +21,7 @@ data class AppearanceUiState(
     val saving: Boolean = false,
     val error: AppearanceError? = null,
     val attemptedMode: AppearanceMode? = null,
+    val timerAlarm: Boolean = true,
 )
 
 @HiltViewModel
@@ -29,7 +30,21 @@ class AppearanceViewModel @Inject constructor(private val repository: Appearance
     val state = mutableState.asStateFlow()
     private var reading: Job? = null
 
-    init { read() }
+    init {
+        read()
+        viewModelScope.launch {
+            try { repository.timerAlarm.collect { on -> mutableState.update { it.copy(timerAlarm = on) } }
+            } catch (_: IOException) { }
+        }
+    }
+
+    fun setTimerAlarm(enabled: Boolean) {
+        mutableState.update { it.copy(timerAlarm = enabled) }
+        viewModelScope.launch {
+            try { repository.setTimerAlarm(enabled)
+            } catch (_: IOException) { mutableState.update { it.copy(timerAlarm = !enabled, error = AppearanceError.WRITE) } }
+        }
+    }
 
     private fun read() {
         reading?.cancel()
