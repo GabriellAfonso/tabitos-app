@@ -1,5 +1,18 @@
 package com.ethos.app.features.rewards
 
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.ethos.app.core.ui.components.CoinAmount
+import com.ethos.app.core.ui.components.LazyReorderState
+import com.ethos.app.core.ui.components.lazyReorderGestures
+import com.ethos.app.core.ui.components.moved
+import com.ethos.app.core.ui.components.reorderActions
+import com.ethos.app.core.ui.components.reorderableItem
+import com.ethos.app.core.ui.components.CoinGlyph
+import com.ethos.app.core.ui.components.Eyebrow
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -23,7 +36,7 @@ import kotlinx.coroutines.delay
 
 data class RewardActions(
     val edit: (Reward?) -> Unit = {}, val draft: (List<String>?) -> Unit = {}, val save: () -> Unit = {},
-    val deletion: (String?) -> Unit = {}, val delete: () -> Unit = {}, val move: (String, Int) -> Unit = { _, _ -> },
+    val deletion: (String?) -> Unit = {}, val delete: () -> Unit = {}, val order: (List<String>) -> Unit = {},
     val preview: (String) -> Unit = {}, val confirm: () -> Unit = {}, val close: () -> Unit = {},
     val retry: () -> Unit = {}, val confirmPause: () -> Unit = {}, val cancelPause: () -> Unit = {},
 )
@@ -38,7 +51,7 @@ fun RewardsScreen(viewModel: RewardsViewModel, sessions: @Composable () -> Unit 
         }
     }
     RewardsContent(state, RewardActions(viewModel::edit, viewModel::draft, viewModel::save,
-        viewModel::deletion, viewModel::delete, viewModel::move, viewModel::preview,
+        viewModel::deletion, viewModel::delete, viewModel::order, viewModel::preview,
         viewModel::confirm, viewModel::close, viewModel::retry, { viewModel.confirm(true) },
         viewModel::cancelPause), sessions)
 }
@@ -53,14 +66,26 @@ private fun RewardError(state: RewardsUiState, actions: RewardActions) {
 
 @Composable
 fun RewardsContent(state: RewardsUiState, actions: RewardActions, sessions: @Composable () -> Unit = {}) {
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp),
+    val listState = rememberLazyListState()
+    val ids = state.cards.map { it.reward.id }
+    val drag = remember(ids) { LazyReorderState(listState, ids) }
+    val dragEnabled = !state.busy && !state.error && !state.loading
+    val haptic = LocalHapticFeedback.current
+    val edge = with(LocalDensity.current) { 64.dp.toPx() }
+    LaunchedEffect(drag, drag.draggedId, dragEnabled) {
+        if (dragEnabled) drag.autoScroll(edge) else if (drag.draggedId != null) drag.cancel()
+    }
+    val cards = drag.order.mapNotNull { id -> state.cards.firstOrNull { it.reward.id == id } }
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 20.dp)
+        .lazyReorderGestures(drag, dragEnabled, { haptic.performHapticFeedback(HapticFeedbackType.LongPress) },
+            actions.order), state = listState,
         contentPadding = PaddingValues(vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item {
             if (state.loading) Text(stringResource(R.string.finance_loading))
             RewardError(state, actions)
             if (!state.loading && !state.error) {
-                com.ethos.app.core.ui.components.Eyebrow(stringResource(R.string.wallet_coins))
-                com.ethos.app.core.ui.components.CoinAmount(state.snapshot.wallet.balance.toString(),
+                Eyebrow(stringResource(R.string.wallet_coins))
+                CoinAmount(state.snapshot.wallet.balance.toString(),
                     style = MaterialTheme.typography.headlineMedium)
                 Text(stringResource(R.string.reward_immediate))
                 Button({ actions.edit(null) }, enabled = !state.busy) {
@@ -72,23 +97,28 @@ fun RewardsContent(state: RewardsUiState, actions: RewardActions, sessions: @Com
         if (!state.loading && !state.error && state.cards.isEmpty()) item {
             Text(stringResource(R.string.reward_empty))
         }
-        if (!state.loading) itemsIndexed(state.cards, key = { _, card -> card.reward.id }) { index, card ->
+        if (!state.loading) itemsIndexed(cards, key = { _, card -> card.reward.id }) { index, card ->
             val reward = card.reward
-            OutlinedCard(Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(17.dp),
-                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
+            OutlinedCard(Modifier.reorderableItem(this, drag, reward.id).fillMaxWidth()
+                .reorderActions(index, ids.lastIndex, dragEnabled) { actions.order(ids.moved(index, it)) },
+                shape = RoundedCornerShape(17.dp),
+                colors = CardDefaults.outlinedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        Text(rewardSymbol(reward.icon), Modifier.background(MaterialTheme.colorScheme.secondaryContainer,
-                            androidx.compose.foundation.shape.RoundedCornerShape(14.dp)).padding(10.dp),
+                        Text(rewardSymbol(reward.icon), Modifier
+                            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(14.dp))
+                            .padding(10.dp),
                             style = MaterialTheme.typography.titleLarge)
                         Text(reward.name, style = MaterialTheme.typography.titleMedium)
                     }
                     if (reward.description.isNotEmpty()) Text(reward.description)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        com.ethos.app.core.ui.components.CoinGlyph()
-                        Text(stringResource(R.string.reward_price, reward.cost), color = MaterialTheme.colorScheme.tertiary)
+                        CoinGlyph()
+                        Text(stringResource(R.string.reward_price, reward.cost),
+                            color = MaterialTheme.colorScheme.tertiary)
                     }
                     reward.minutes?.let { Text(stringResource(R.string.reward_minutes_line, durationLabel(it))) }
                     reward.limit?.let { limit ->
@@ -104,14 +134,6 @@ fun RewardsContent(state: RewardsUiState, actions: RewardActions, sessions: @Com
                     // Vertical actions remain reachable at large fonts and on narrow screens.
                     TextButton({ actions.edit(reward) }, enabled = !state.busy && !state.error) {
                         Text(stringResource(R.string.reward_edit, reward.name))
-                    }
-                    TextButton({ actions.move(reward.id, -1) },
-                        enabled = index > 0 && !state.busy && !state.error) {
-                        Text(stringResource(R.string.reward_up, reward.name))
-                    }
-                    TextButton({ actions.move(reward.id, 1) },
-                        enabled = index < state.cards.lastIndex && !state.busy && !state.error) {
-                        Text(stringResource(R.string.reward_down, reward.name))
                     }
                     TextButton({ actions.deletion(reward.id) }, enabled = !state.busy && !state.error) {
                         Text(stringResource(R.string.reward_delete, reward.name))

@@ -130,15 +130,12 @@ object TaskRules {
                     val value = action.list.copy(name = action.list.name.trim())
                     if (i < 0) lists.add(value.copy(position = lists.size)) else lists[i] = value
                 }
-                is TaskAction.MoveList -> {
-                    val ordered = lists.filterNot { it.deleted }.sortedBy { it.position }.toMutableList()
-                    val i = ordered.indexOfFirst { it.id == action.id }
-                    if (i >= 0) {
-                        val target = (i + action.direction).coerceIn(0, ordered.lastIndex)
-                        val moving = ordered.removeAt(i)
-                        ordered.add(target, moving)
-                        ordered.forEachIndexed { index, l -> lists[lists.indexOfFirst { it.id == l.id }] =
-                            l.copy(position = index) }
+                is TaskAction.OrderLists -> {
+                    val active = lists.filterNot { it.deleted }.map { it.id }
+                    requireInput(action.ids.size == active.size && action.ids.toSet() == active.toSet())
+                    action.ids.forEachIndexed { index, id ->
+                        val i = lists.indexOfFirst { it.id == id }
+                        lists[i] = lists[i].copy(position = index)
                     }
                 }
                 is TaskAction.DeleteList -> {

@@ -1,5 +1,6 @@
 package com.ethos.app.features.tasks
 
+import com.ethos.app.core.ui.accounting.FinancialConfirmation
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -26,12 +27,21 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ethos.app.R
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextDecoration
+import com.ethos.app.core.ui.components.ContentFilter
+import com.ethos.app.core.ui.components.DragHandle
+import com.ethos.app.core.ui.components.LazyReorderState
+import com.ethos.app.core.ui.components.ReorderableColumn
+import com.ethos.app.core.ui.components.lazyReorderGestures
+import com.ethos.app.core.ui.components.moved
+import com.ethos.app.core.ui.components.reorderActions
+import com.ethos.app.core.ui.components.reorderableItem
 import com.ethos.app.core.ui.components.RoundCheck
 import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.format.label
@@ -90,7 +100,7 @@ fun TaskDrawer(
 
 @Composable
 fun TasksContent(
-    state: TasksUiState, page: TaskPage, filter: Int, onNew: () -> Unit, onOpen: (String) -> Unit,
+    state: TasksUiState, page: TaskPage, filter: ContentFilter, onNew: () -> Unit, onOpen: (String) -> Unit,
     onAction: (TaskAction) -> Unit, onManage: () -> Unit, onRetry: () -> Unit, onDismissError: () -> Unit,
     extraItems: (LazyListScope.() -> Unit)? = null,
     onComplete: (String) -> Unit = {},
@@ -99,21 +109,14 @@ fun TasksContent(
     val recurring = state.snapshot.definitions.filter { it.rule.kind != RepeatKind.NONE }.map { it.id }.toSet()
     var collapsed by rememberSaveable(page, state.selectedListId) { mutableStateOf(false) }
     var habits by rememberSaveable(state.selectedListId) { mutableStateOf(false) }
-    val listItems = state.snapshot.listOccurrences(state.selectedListId)
-    val visible = when (page) {
-        TaskPage.LIST -> if (habits) emptyList() else listItems
-        TaskPage.TODAY -> if (filter == 2) emptyList() else state.snapshot.activeOccurrences.filter {
-            it.inDay(state.today) }
-        TaskPage.REVIEW -> if (filter == 2) emptyList() else state.snapshot.activeOccurrences.filter {
-            it.needsReview(state.today) }
-    }.sortedWith(compareBy<TaskOccurrence> { it.position }.thenBy { it.id })
-    val pending = visible.filter { it.status == TaskStatus.OPEN }
-    val notDone = visible.filter { it.status == TaskStatus.NOT_DONE }
-    val completed = if ((page == TaskPage.LIST && !habits) || (page != TaskPage.LIST && filter != 2))
-        state.snapshot.completedOccurrences(page, state.today, state.selectedListId) else emptyList()
+    val sections = remember(state.snapshot, page, filter, state.today, state.selectedListId, habits) {
+        state.snapshot.sections(page, filter, state.today, state.selectedListId, habits)
+    }
+    val pending = sections.pending
+    val showsHabitItems = extraItems != null && sections.showsHabits
     val listState = rememberLazyListState()
     val ids = pending.map { it.id }
-    val drag = remember(page, state.selectedListId, ids) { TaskDragState(listState, ids) }
+    val drag = remember(page, state.selectedListId, ids) { LazyReorderState(listState, ids) }
     val dragEnabled = page == TaskPage.LIST && !state.busy && !state.loading && !state.storageError
     val edge = with(LocalDensity.current) { 64.dp.toPx() }
     val haptic = LocalHapticFeedback.current
@@ -124,12 +127,8 @@ fun TasksContent(
         if (state.storageError || state.error != null) drag.cancel()
     }
     val pendingById = pending.associateBy { it.id }
-    val orderedPending = if (page == TaskPage.LIST) drag.order.mapNotNull(pendingById::get) else pending
-    val dayItems = if (page == TaskPage.TODAY) pending.filter { it.fields.deadline == DeadlineKind.DAY }
-        else orderedPending
-    val weeklyItems = if (page == TaskPage.TODAY) pending.filter { it.fields.deadline != DeadlineKind.DAY }
-        else emptyList()
-    LazyColumn(Modifier.fillMaxSize().taskDragGestures(drag, dragEnabled,
+    val dayItems = if (page == TaskPage.LIST) drag.order.mapNotNull(pendingById::get) else pending
+    LazyColumn(Modifier.fillMaxSize().lazyReorderGestures(drag, dragEnabled,
         { haptic.performHapticFeedback(HapticFeedbackType.LongPress) }, { onAction(TaskAction.Order(it)) }),
         state = listState, contentPadding = PaddingValues(
         start = 20.dp, top = 20.dp, end = 20.dp, bottom = if (page == TaskPage.TODAY) 96.dp else 20.dp),
@@ -151,57 +150,46 @@ fun TasksContent(
                 TextButton(onManage) { Text(stringResource(R.string.manage_lists)) }
             }
         }
-        if (page == TaskPage.LIST && !habits && filter != 2) item {
+        if (page == TaskPage.LIST && sections.showsTasks) item {
             Button(onNew, enabled = !state.loading && !state.busy) { Text(stringResource(R.string.new_task)) }
         }
-        if (!state.loading && visible.isEmpty() && completed.isEmpty() && !(extraItems != null &&
-                (habits || filter == 2 || page == TaskPage.TODAY))) item {
-            Text(stringResource(if ((page == TaskPage.LIST && habits) || filter == 2)
-                R.string.habits_empty_detail else if (page == TaskPage.REVIEW)
-                R.string.review_empty_detail else R.string.task_empty_real))
+        if (!state.loading && sections.isEmpty && !showsHabitItems) item {
+            Text(stringResource(when {
+                !sections.showsTasks -> R.string.habits_empty_detail
+                page == TaskPage.REVIEW -> R.string.review_empty_detail
+                else -> R.string.task_empty_real
+            }))
         }
         items(dayItems, key = { it.id }) { o ->
-            val up = stringResource(R.string.move_up)
-            val down = stringResource(R.string.move_down)
-            val placement = if (page == TaskPage.LIST) Modifier.taskDragPlacement(drag, o.id)
-                .semantics {
-                    customActions = listOfNotNull((-1).takeIf { ids.indexOf(o.id) > 0 },
-                        1.takeIf { ids.indexOf(o.id) < ids.lastIndex }).map { direction ->
-                        CustomAccessibilityAction(if (direction < 0) up else down) {
-                            if (!dragEnabled) false else {
-                                val reordered = ids.toMutableList()
-                                val index = reordered.indexOf(o.id)
-                                reordered.add(index + direction, reordered.removeAt(index))
-                                onAction(TaskAction.Order(reordered))
-                                true
-                            }
-                        }
-                    }
-                } else Modifier
-            TaskRow(o, state.busy, { onOpen(o.id) }, o.taskId in recurring,
-                { onComplete(o.id) }, today = state.today, modifier = placement)
+            val placement = if (page == TaskPage.LIST) {
+                val index = ids.indexOf(o.id)
+                Modifier.reorderableItem(this, drag, o.id).reorderActions(index, ids.lastIndex, dragEnabled) { to ->
+                    onAction(TaskAction.Order(ids.moved(index, to)))
+                }
+            } else Modifier
+            TaskRow(o, state.busy, { onOpen(o.id) }, state.today, placement, o.taskId in recurring) {
+                onComplete(o.id) }
         }
-        if (weeklyItems.isNotEmpty()) {
+        if (sections.weekly.isNotEmpty()) {
             item { Text(stringResource(R.string.weekly_section), style = MaterialTheme.typography.titleMedium) }
-            items(weeklyItems, key = { it.id }) { o ->
-                TaskRow(o, state.busy, { onOpen(o.id) }, o.taskId in recurring,
-                    { onComplete(o.id) }, today = state.today)
+            items(sections.weekly, key = { it.id }) { o ->
+                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, recurring = o.taskId in recurring) {
+                    onComplete(o.id) }
             }
         }
-        if (notDone.isNotEmpty()) {
-            item { Text(stringResource(R.string.not_done_section, notDone.size)) }
-            items(notDone, key = { it.id }) { o ->
-                TaskRow(o, state.busy, { onOpen(o.id) }, o.taskId in recurring, today = state.today)
+        if (sections.notDone.isNotEmpty()) {
+            item { Text(stringResource(R.string.not_done_section, sections.notDone.size)) }
+            items(sections.notDone, key = { it.id }) { o ->
+                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, recurring = o.taskId in recurring)
             }
         }
-        if (extraItems != null && ((page == TaskPage.LIST && habits) ||
-                (page in listOf(TaskPage.TODAY, TaskPage.REVIEW) && filter != 1))) extraItems()
-        if (completed.isNotEmpty()) {
+        if (showsHabitItems) extraItems?.invoke(this)
+        if (sections.completed.isNotEmpty()) {
             item("completed-section") { TextButton({ collapsed = !collapsed }) {
-                Text(stringResource(R.string.resolved_section, completed.size)) } }
-            if (!collapsed) items(completed, key = { it.id }) { o ->
-                TaskRow(o, state.busy, { onOpen(o.id) }, o.taskId in recurring,
-                    { onComplete(o.id) }, today = state.today)
+                Text(stringResource(R.string.resolved_section, sections.completed.size)) } }
+            if (!collapsed) items(sections.completed, key = { it.id }) { o ->
+                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, recurring = o.taskId in recurring) {
+                    onComplete(o.id) }
             }
         }
     }
@@ -210,13 +198,11 @@ fun TasksContent(
 /** Direct checkbox and independent detail target; completed cards remain readable with muted colors. */
 @Composable
 fun TaskRow(
-    o: TaskOccurrence, busy: Boolean, onOpen: () -> Unit,
-    recurring: Boolean = false, onComplete: () -> Unit = onOpen,
-    today: LocalDate = LocalDate.now(),
-    modifier: Modifier = Modifier,
+    o: TaskOccurrence, busy: Boolean, onOpen: () -> Unit, today: LocalDate,
+    modifier: Modifier = Modifier, recurring: Boolean = false, onComplete: () -> Unit = onOpen,
 ) {
     OutlinedCard(onClick = onOpen, modifier = modifier.fillMaxWidth().testTag("task:${o.id}"), enabled = !busy,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.outlinedCardColors(containerColor = if (o.status == TaskStatus.DONE)
             MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(Modifier.padding(start = 2.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
@@ -259,7 +245,7 @@ fun TaskRow(
 @Composable
 fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
     state.financialPreview?.let { preview ->
-        com.ethos.app.core.ui.accounting.FinancialConfirmation(preview, state.busy,
+        FinancialConfirmation(preview, state.busy,
             { viewModel.confirmFinancial(true) }, { viewModel.confirmFinancial(false) })
         return
     }
@@ -373,20 +359,21 @@ private fun ListManager(
     AlertDialog(onDismissRequest = close, title = { Text(stringResource(R.string.manage_lists)) }, text = {
         Column(Modifier.verticalScroll(rememberScrollState())) {
             error()
-            state.snapshot.activeLists.forEach { list ->
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(listSymbols[list.icon], color = itemColors[list.color])
-                    Text(list.name, style = MaterialTheme.typography.titleMedium)
+            ReorderableColumn(state.snapshot.activeLists, { it.id }, !state.busy,
+                onReorder = { lists -> action(TaskAction.OrderLists(lists.map { it.id })) }) { list, handle ->
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        DragHandle(handle)
+                        Text(listSymbols[list.icon], color = itemColors[list.color],
+                            modifier = Modifier.padding(end = 10.dp))
+                        Text(list.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+                    }
+                    Row {
+                        TextButton({ edit(list) }, enabled = !state.busy) { Text(stringResource(R.string.edit)) }
+                        TextButton({ delete(list.id) }, enabled = !state.busy) { Text(stringResource(R.string.delete)) }
+                    }
+                    HorizontalDivider()
                 }
-                Row {
-                    TextButton({ edit(list) }, enabled = !state.busy) { Text(stringResource(R.string.edit)) }
-                    TextButton({ delete(list.id) }, enabled = !state.busy) { Text(stringResource(R.string.delete)) }
-                }
-                TextButton({ action(TaskAction.MoveList(list.id, -1)) }, enabled = !state.busy) {
-                    Text(stringResource(R.string.move_up)) }
-                TextButton({ action(TaskAction.MoveList(list.id, 1)) }, enabled = !state.busy) {
-                    Text(stringResource(R.string.move_down)) }
-                HorizontalDivider()
             }
             TextButton(new, enabled = !state.busy) { Text(stringResource(R.string.new_list)) }
         }
@@ -428,6 +415,6 @@ private fun DeleteTaskDialog(
 private fun TaskRowPreview() {
     MaterialTheme {
         TaskRow(TaskOccurrence("preview:1", "preview", 1, TaskFields(title = "Organizar a próxima semana"),
-            null, null, null), false, {})
+            null, null, null), false, {}, LocalDate.of(2026, 11, 11))
     }
 }

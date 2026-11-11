@@ -6,7 +6,8 @@ interface RewardRepository {
     fun observe(): Flow<RewardSnapshot>
     suspend fun refresh()
     suspend fun save(reward: Reward)
-    suspend fun move(id: String, direction: Int)
+    /** Full order of the active rewards, as left by a drag. */
+    suspend fun order(ids: List<String>)
     suspend fun delete(id: String)
     suspend fun preview(id: String)
     /** Timed purchases return RUNNING_CONFLICT, uncharged, while another timer runs unless [pauseRunning]. */

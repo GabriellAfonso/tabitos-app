@@ -1,5 +1,9 @@
 package com.ethos.app.features.trackers
 
+import com.ethos.app.core.ui.components.DragHandle
+import com.ethos.app.core.ui.components.ReorderableColumn
+import com.ethos.app.core.habits.domain.HabitStatus
+import com.ethos.app.core.ui.components.ActionBanner
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -140,7 +144,7 @@ private fun TrackerHubDialog(state: TrackerUiState, vm: TrackerViewModel) {
             if (state.loading) Text(stringResource(R.string.tracker_loading))
             Text(stringResource(R.string.tracker_zero_effect), style = MaterialTheme.typography.bodySmall)
             val habitOpen = state.habits.habits.firstOrNull { it.id == habitId }?.status !=
-                com.ethos.app.core.habits.domain.HabitStatus.EXCLUDED
+                HabitStatus.EXCLUDED
             if (t == null) {
                 Text(stringResource(R.string.tracker_none))
                 if (habitOpen) Button({ vm.editForm(habitId) }, enabled = !state.busy && !state.loading) {
@@ -192,11 +196,6 @@ private fun TrackerHubDialog(state: TrackerUiState, vm: TrackerViewModel) {
         confirmButton = { TextButton({ vm.open(null) }, enabled = !state.busy) { Text(stringResource(R.string.close)) } })
 }
 
-private fun <T> List<T>.move(index: Int, delta: Int): List<T> {
-    val target = index + delta
-    if (target !in indices) return this
-    return toMutableList().apply { add(target, removeAt(index)) }
-}
 
 @Composable
 fun TrackerFormContent(
@@ -214,7 +213,9 @@ fun TrackerFormContent(
         }
         fun update(i: Int, q: TrackerQuestion) = change(draft.copy(questions = draft.questions.toMutableList()
             .also { it[i] = q }))
-        draft.questions.forEachIndexed { i, q ->
+        ReorderableColumn(draft.questions, { it.id }, enabled,
+            onReorder = { change(draft.copy(questions = it)) }) { q, questionHandle ->
+            val i = draft.questions.indexOfFirst { it.id == q.id }
             val type = stringResource(when {
                 q.type == QuestionType.SCALE -> R.string.tracker_type_scale
                 q.type == QuestionType.TEXT -> R.string.tracker_type_text
@@ -223,8 +224,11 @@ fun TrackerFormContent(
             })
             OutlinedCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(stringResource(R.string.tracker_question_number, i + 1, type),
-                        style = MaterialTheme.typography.labelLarge)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        DragHandle(questionHandle)
+                        Text(stringResource(R.string.tracker_question_number, i + 1, type),
+                            style = MaterialTheme.typography.labelLarge)
+                    }
                     OutlinedTextField(q.title, { update(i, q.copy(title = it)) }, Modifier.fillMaxWidth(),
                         enabled = enabled, label = { Text(stringResource(R.string.tracker_question_title)) })
                     LabeledSwitch(R.string.tracker_required, q.required, enabled) { update(i, q.copy(required = it)) }
@@ -249,7 +253,9 @@ fun TrackerFormContent(
                         QuestionType.CHOICE -> {
                             LabeledSwitch(R.string.tracker_answer_multiple, q.multiple, enabled) {
                                 update(i, q.copy(multiple = it)) }
-                            q.options.forEachIndexed { k, o ->
+                            ReorderableColumn(q.options, { it.id }, enabled,
+                                onReorder = { update(i, q.copy(options = it)) }) { o, optionHandle ->
+                                val k = q.options.indexOfFirst { it.id == o.id }
                                 fun updateOption(value: TrackerOption) = update(i, q.copy(options =
                                     q.options.toMutableList().also { it[k] = value }))
                                 OutlinedTextField(o.label, { updateOption(o.copy(label = it)) }, Modifier.fillMaxWidth(),
@@ -257,11 +263,8 @@ fun TrackerFormContent(
                                 OutlinedTextField(o.description, { updateOption(o.copy(description = it)) },
                                     Modifier.fillMaxWidth(), enabled = enabled,
                                     label = { Text(stringResource(R.string.tracker_option_description)) })
-                                Row {
-                                    TextButton({ update(i, q.copy(options = q.options.move(k, -1))) }, enabled = enabled) {
-                                        Text(stringResource(R.string.move_up)) }
-                                    TextButton({ update(i, q.copy(options = q.options.move(k, 1))) }, enabled = enabled) {
-                                        Text(stringResource(R.string.move_down)) }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    DragHandle(optionHandle)
                                     TextButton({ update(i, q.copy(options = q.options - o)) }, enabled = enabled) {
                                         Text(stringResource(R.string.tracker_remove_option)) }
                                 }
@@ -270,12 +273,6 @@ fun TrackerFormContent(
                                 Text(stringResource(R.string.tracker_add_option)) }
                         }
                         QuestionType.TEXT -> Unit
-                    }
-                    Row {
-                        TextButton({ change(draft.copy(questions = draft.questions.move(i, -1))) }, enabled = enabled) {
-                            Text(stringResource(R.string.move_up)) }
-                        TextButton({ change(draft.copy(questions = draft.questions.move(i, 1))) }, enabled = enabled) {
-                            Text(stringResource(R.string.move_down)) }
                     }
                     TextButton({ change(draft.copy(questions = draft.questions - q)) }, enabled = enabled) {
                         Text(stringResource(R.string.tracker_remove_question)) }
@@ -426,7 +423,7 @@ fun TrackerChart(a: TrackerAnalytics) {
 @Composable
 fun TrackerPendingCard(count: Int, open: () -> Unit) {
     if (count == 0) return
-    com.ethos.app.core.ui.components.ActionBanner(pluralStringResource(R.plurals.tracker_pending_count, count, count),
+    ActionBanner(pluralStringResource(R.plurals.tracker_pending_count, count, count),
         "✎", open, outlined = true)
 }
 

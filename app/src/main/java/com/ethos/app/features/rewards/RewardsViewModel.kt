@@ -110,7 +110,7 @@ class RewardsViewModel @Inject constructor(
             mutable.update { it.copy(deleteId = null) }
         }
     }
-    fun move(id: String, direction: Int) { write({ move(id, direction) }) { repository.move(id, direction) } }
+    fun order(ids: List<String>) { write({ order(ids) }) { repository.order(ids) } }
     fun preview(id: String) {
         write({ preview(id) }) {
             repository.preview(id)

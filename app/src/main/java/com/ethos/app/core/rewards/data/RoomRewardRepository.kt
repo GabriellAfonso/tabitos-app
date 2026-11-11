@@ -47,16 +47,14 @@ class RoomRewardRepository(
         }
     }
 
-    override suspend fun move(id: String, direction: Int) {
-        require(direction == -1 || direction == 1)
+    override suspend fun order(ids: List<String>) {
         database.withTransaction {
-            val all = dao.rewards().map { it.value }.filter { !it.deleted }
-            val index = all.indexOfFirst { it.id == id }
-            if (index < 0) return@withTransaction
-            val target = all.getOrNull(index + direction) ?: return@withTransaction
-            val current = all[index]
-            dao.save(RewardEntity(id, current.copy(position = target.position)))
-            dao.save(RewardEntity(target.id, target.copy(position = current.position)))
+            val active = dao.rewards().map { it.value }.filter { !it.deleted }.associateBy { it.id }
+            // A stale order (reward added or removed meanwhile) is ignored instead of half applied.
+            if (ids.size != active.size || ids.toSet() != active.keys) return@withTransaction
+            ids.forEachIndexed { index, id ->
+                dao.save(RewardEntity(id, active.getValue(id).copy(position = index.toLong())))
+            }
         }
     }
 

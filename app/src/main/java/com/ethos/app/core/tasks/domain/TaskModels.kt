@@ -68,7 +68,8 @@ data class TaskSnapshot(
 sealed interface TaskAction {
     data class SaveList(val list: TaskList) : TaskAction
     data class DeleteList(val id: String) : TaskAction
-    data class MoveList(val id: String, val direction: Int) : TaskAction
+    /** Full order of the active lists, as left by a drag. */
+    data class OrderLists(val ids: List<String>) : TaskAction
     data class Create(val id: String, val fields: TaskFields, val rule: RepeatRule) : TaskAction
     data class Edit(
         val id: String, val fields: TaskFields, val rule: RepeatRule, val scope: ChangeScope,

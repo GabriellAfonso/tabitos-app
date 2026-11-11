@@ -57,9 +57,3 @@ fun addChecklistItem(items: List<String>, after: Int = items.lastIndex): List<St
 
 fun removeChecklistItem(items: List<String>, index: Int): List<String> =
     items.filterIndexed { i, _ -> i != index }
-
-fun moveChecklistItem(items: List<String>, index: Int, direction: Int): List<String> {
-    val target = index + direction
-    if (index !in items.indices || target !in items.indices) return items
-    return items.toMutableList().apply { add(target, removeAt(index)) }
-}

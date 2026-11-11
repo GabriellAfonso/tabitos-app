@@ -32,6 +32,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.ethos.app.R
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.ui.accounting.FinancialEstimate
+import com.ethos.app.core.ui.components.DragHandle
+import com.ethos.app.core.ui.components.ReorderableColumn
 import com.ethos.app.core.ui.format.EthosDates
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -234,31 +236,41 @@ private fun RepeatOptions(
 @Composable
 private fun ChecklistEditor(items: List<String>, enabled: Boolean, change: (List<String>) -> Unit) {
     var focusTarget by rememberSaveable { mutableIntStateOf(-1) }
+    // Stable identities keep each field (and its drag animation) attached to its item; never stored.
+    val ids = remember { mutableListOf<Long>() }
+    val counter = remember { longArrayOf(0) }
+    if (ids.size != items.size) { ids.clear(); repeat(items.size) { ids.add(counter[0]++) } }
+    fun update(newItems: List<String>, newIds: List<Long>) {
+        ids.clear(); ids.addAll(newIds); change(newItems)
+    }
+    fun add(after: Int) {
+        update(addChecklistItem(items, after), ids.toMutableList().apply { add(after + 1, counter[0]++) })
+        focusTarget = after + 1
+    }
     Text(stringResource(R.string.checklist), style = MaterialTheme.typography.labelLarge)
-    items.forEachIndexed { index, item ->
+    val rows = items.indices.map { ids[it] to items[it] }
+    ReorderableColumn(rows, { it.first }, enabled, onReorder = { moved ->
+        update(moved.map { it.second }, moved.map { it.first })
+    }) { (id, item), handle ->
+        val index = rows.indexOfFirst { it.first == id }
         val name = item.ifBlank { stringResource(R.string.checklist_empty_item) }
         val focus = remember { FocusRequester() }
         LaunchedEffect(focusTarget, items.size) {
             if (focusTarget == index) { runCatching { focus.requestFocus() }; focusTarget = -1 }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
+            DragHandle(handle)
             OutlinedTextField(item, { text -> change(items.mapIndexed { i, old -> if (i == index) text else old }) },
                 Modifier.weight(1f).focusRequester(focus).testTag("checklist:$index"), enabled = enabled,
                 singleLine = true, label = { Text(stringResource(R.string.checklist_item, index + 1)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                keyboardActions = KeyboardActions(onNext = {
-                    if (item.isNotBlank()) { change(addChecklistItem(items, index)); focusTarget = index + 1 }
-                }))
-            SymbolButton("↑", stringResource(R.string.checklist_move_up, name), enabled && index > 0) {
-                change(moveChecklistItem(items, index, -1)) }
-            SymbolButton("↓", stringResource(R.string.checklist_move_down, name), enabled && index < items.lastIndex) {
-                change(moveChecklistItem(items, index, 1)) }
+                keyboardActions = KeyboardActions(onNext = { if (item.isNotBlank()) add(index) }))
             SymbolButton("✕", stringResource(R.string.checklist_remove, name), enabled) {
-                change(removeChecklistItem(items, index)) }
+                update(removeChecklistItem(items, index), ids.filterIndexed { i, _ -> i != index })
+            }
         }
     }
-    TextButton({ change(addChecklistItem(items)); focusTarget = items.size }, enabled = enabled) {
-        Text("+ " + stringResource(R.string.checklist_add)) }
+    TextButton({ add(items.lastIndex) }, enabled = enabled) { Text("+ " + stringResource(R.string.checklist_add)) }
 }
 
 @Composable
