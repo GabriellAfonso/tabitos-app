@@ -16,3 +16,7 @@ signing.properties
 .env
 .env.*
 *.log
+
+# Local logs and Spec Kit cache
+*.log
+.specify/integrations/.cache/
