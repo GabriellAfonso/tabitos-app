@@ -1,5 +1,6 @@
 package com.ethos.app.core.demo.data
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -39,8 +40,8 @@ class DemoDatabaseTest {
         try {
             val text = context.resources.getStringArray(R.array.demo_content)
             RoomDemoRepository.restoreContent(db, clock, timerClock, text)
-            val tasks = RoomTaskRepository(db, clock)
-            val habits = RoomHabitRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
+            val habits = RoomHabitRepository(db, clock, FixedGameMode(on = true))
             val accounting = RoomAccountingRepository(db, clock)
             val beforeTasks = tasks.observe().first()
             val beforeHabits = habits.observe().first()
@@ -83,7 +84,7 @@ class DemoDatabaseTest {
     @Test fun desiredPracticeStateReversesMoneyAndRemovesLegacyDuplicateDays() = runBlocking {
         val db = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java).build()
         try {
-            val repo = RoomHabitRepository(db, clock)
+            val repo = RoomHabitRepository(db, clock, FixedGameMode(on = true))
             val wallet = RoomAccountingRepository(db, clock)
             repo.execute(HabitAction.Save(Habit("h", clock.today(), "Ler"),
                 HabitRule("r", "h", clock.today(), unit = HabitUnit.WEEK, target = 3), partialTarget = 3))

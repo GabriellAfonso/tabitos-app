@@ -1,5 +1,6 @@
 package com.ethos.app.core.accounting
 
+import com.ethos.app.core.preferences.FixedGameMode
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.rememberScrollState
@@ -35,7 +36,7 @@ class AccountingUiTest {
     @Test fun realTaskNeedsFinancialConfirmationAndCancellationDoesNotWrite() {
         val db = Room.inMemoryDatabaseBuilder(compose.activity, TaskDatabase::class.java).build()
         try {
-            val tasks = RoomTaskRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             val wallet = RoomAccountingRepository(db, clock)
             runBlocking { tasks.execute(TaskAction.Create("t", TaskFields(title = "Preparar café", difficulty = 0),
                 RepeatRule(start = clock.today()))) }

@@ -1,5 +1,6 @@
 package com.ethos.app.core.tasks.data
 
+import com.ethos.app.core.preferences.FixedGameMode
 import androidx.room.Room
 import androidx.room.withTransaction
 import androidx.test.core.app.ApplicationProvider
@@ -22,7 +23,7 @@ class TaskDatabaseTest {
         val name = "task-test-${System.nanoTime()}.db"
         var db = Room.databaseBuilder(context, TaskDatabase::class.java, name).build()
         try {
-            var repo = RoomTaskRepository(db, clock)
+            var repo = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             repo.execute(TaskAction.SaveList(TaskList("l", "Work", 2, 1)))
             repo.execute(TaskAction.Create("a", TaskFields(title = "Persist", listId = "l",
                 deadline = DeadlineKind.DAY, date = clock.today(), checklist = listOf("Check")),
@@ -32,7 +33,7 @@ class TaskDatabaseTest {
             repo.execute(TaskAction.Undo("a:1"))
             db.close()
             db = Room.databaseBuilder(context, TaskDatabase::class.java, name).build()
-            repo = RoomTaskRepository(db, clock)
+            repo = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             val s = repo.observe().first()
             assertEquals("Work", s.activeLists.single().name)
             assertTrue(s.occurrences.first { it.ordinal == 1 }.checks.single().checked)
@@ -47,7 +48,7 @@ class TaskDatabaseTest {
     @Test fun transactionFailureRollsBackAndInvalidMutationDoesNotEraseData() = runBlocking {
         val db = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java).build()
         try {
-            val repo = RoomTaskRepository(db, clock)
+            val repo = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             repo.execute(TaskAction.Create("a", TaskFields(title = "Keep"), RepeatRule(start = clock.today())))
             val before = repo.observe().first()
             try {

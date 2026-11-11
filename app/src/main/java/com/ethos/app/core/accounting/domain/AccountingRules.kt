@@ -27,10 +27,14 @@ object AccountingRules {
         return FinancialChange(result - balance, xp, result, nextXp)
     }
 
-    /** Pure reconciliation; the persistence adapter assigns monotonically increasing entry sequences. */
+    /**
+     * Pure reconciliation; the persistence adapter assigns monotonically increasing entry sequences.
+     * With [scoring] off (game mode off, spec 017) newly valid outcomes become exempt without a ledger entry, so
+     * they never pay — not even after scoring returns — while removing an outcome still reverses what it paid.
+     */
     fun reconcile(
         snapshot: AccountingSnapshot, outcomes: List<FinancialOutcome>, owners: Set<String>, now: Long,
-        priceOrigins: Map<String, String> = emptyMap(),
+        priceOrigins: Map<String, String> = emptyMap(), scoring: Boolean = true,
     ): AccountingSnapshot {
         val desired = outcomes.associateBy { it.key }
         val subjects = snapshot.entitlements.associateBy { it.key }.toMutableMap()
@@ -62,7 +66,8 @@ object AccountingRules {
             var subject = subjects[o.key]
             val originKey = priceOrigins[o.key]
             val origin = originKey?.let { subjects[it] }
-            if (o.active && subject?.active != true && origin != null) {
+            val movesPricedDay = o.active && subject?.active != true && origin != null
+            if (movesPricedDay) {
                 // Moving a unique practice day is a correction of its original award, not a new price.
                 val wasExempt = snapshot.entitlements.first { it.key == originKey }.exempt
                 subject = origin.copy(key = o.key, owner = o.owner, title = o.title, date = o.date,
@@ -89,7 +94,11 @@ object AccountingRules {
                 subject = subject.copy(title = o.title, date = o.date)
             }
             if (o.active && !subject.active) subject = subject.copy(title = o.title, date = o.date)
-            if (o.active && !subject.active) subject = append(subject, true)
+            if (o.active && !subject.active) {
+                // A moved practice day keeps its original award even with scoring off: it is a correction.
+                subject = if (scoring || movesPricedDay) append(subject, true)
+                else subject.copy(active = true, exempt = true)
+            }
             subjects[o.key] = subject
         }
         return snapshot.copy(entries = ledger, entitlements = subjects.values.toList())

@@ -4,12 +4,16 @@ import androidx.room.withTransaction
 import com.ethos.app.core.accounting.data.AccountingStore
 import com.ethos.app.core.accounting.domain.AccountingProjection
 import com.ethos.app.core.habits.domain.*
+import com.ethos.app.core.preferences.GameModeSource
 import com.ethos.app.core.tasks.data.TaskDatabase
 import com.ethos.app.core.tasks.domain.TaskClock
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-class RoomHabitRepository(private val database: TaskDatabase, private val clock: TaskClock) : HabitRepository {
+class RoomHabitRepository(
+    private val database: TaskDatabase, private val clock: TaskClock, private val gameMode: GameModeSource,
+) : HabitRepository {
     override fun observe(): Flow<HabitSnapshot> = database.invalidationTracker.createFlow(
         "habits", "habit_rules", "habit_intervals", "habit_overrides", "habit_records", "habit_reviews",
         "habit_audits", emitInitialState = true,
@@ -27,6 +31,8 @@ class RoomHabitRepository(private val database: TaskDatabase, private val clock:
         }
     }
     override suspend fun execute(action: HabitAction) {
+        // Read before the transaction: outcomes follow the mode at write time (spec 017).
+        val scoring = gameMode.enabled.first()
         database.withTransaction {
             val accounting = AccountingStore(database, clock)
             accounting.initialize()
@@ -45,7 +51,8 @@ class RoomHabitRepository(private val database: TaskDatabase, private val clock:
             if (action == HabitAction.Settle) {
                 // Automatic closings (avoid/limit successes) reach the ledger without any user action.
                 val owners = s.habits.map { "habit:${it.id}" }.toSet()
-                accounting.reconcile(accounting.habitOutcomes(s).filter { it.owner in owners }, owners, emptyMap())
+                accounting.reconcile(accounting.habitOutcomes(s).filter { it.owner in owners }, owners,
+                    scoring = scoring)
             } else if (action !is HabitAction.Status || (action.status != HabitStatus.EXCLUDED &&
                     before.overrides != s.overrides)) {
                 val id = when (action) {
@@ -61,7 +68,7 @@ class RoomHabitRepository(private val database: TaskDatabase, private val clock:
                 if (action !is HabitAction.Save || before.rules != s.rules || before.overrides != s.overrides) {
                     accounting.reconcile(accounting.habitOutcomes(s)
                         .filter { it.owner == "habit:$id" }, setOf("habit:$id"),
-                        AccountingProjection.practiceOrigins(before, s, action, clock.today()))
+                        AccountingProjection.practiceOrigins(before, s, action, clock.today()), scoring)
                 }
             }
         }

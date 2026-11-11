@@ -28,6 +28,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import com.ethos.app.core.preferences.GameModeSource
 import java.time.LocalDate
 import javax.inject.Singleton
 
@@ -55,10 +56,12 @@ object TaskModule {
         RoomRewardRepository(database, clock, timerClock)
     @Provides @Singleton fun accounting(database: TaskDatabase, clock: TaskClock): AccountingRepository =
         RoomAccountingRepository(database, clock)
-    @Provides @Singleton fun habits(database: TaskDatabase, clock: TaskClock): HabitRepository =
-        RoomHabitRepository(database, clock)
+    @Provides @Singleton
+    fun habits(database: TaskDatabase, clock: TaskClock, gameMode: GameModeSource): HabitRepository =
+        RoomHabitRepository(database, clock, gameMode)
     @Provides @Singleton fun trackers(database: TaskDatabase, clock: TaskClock): TrackerRepository =
         RoomTrackerRepository(database, clock)
-    @Provides @Singleton fun repository(database: TaskDatabase, clock: TaskClock): TaskRepository =
-        RoomTaskRepository(database, clock)
+    @Provides @Singleton
+    fun repository(database: TaskDatabase, clock: TaskClock, gameMode: GameModeSource): TaskRepository =
+        RoomTaskRepository(database, clock, gameMode)
 }

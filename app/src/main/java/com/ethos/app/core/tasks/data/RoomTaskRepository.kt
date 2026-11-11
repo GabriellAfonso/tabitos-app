@@ -3,21 +3,27 @@ package com.ethos.app.core.tasks.data
 import androidx.room.withTransaction
 import com.ethos.app.core.accounting.data.AccountingStore
 import com.ethos.app.core.accounting.domain.AccountingProjection
+import com.ethos.app.core.preferences.GameModeSource
 import com.ethos.app.core.tasks.domain.TaskAction
 import com.ethos.app.core.tasks.domain.TaskClock
 import com.ethos.app.core.tasks.domain.TaskRepository
 import com.ethos.app.core.tasks.domain.TaskRules
 import com.ethos.app.core.tasks.domain.TaskSnapshot
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-class RoomTaskRepository(private val database: TaskDatabase, private val clock: TaskClock) : TaskRepository {
+class RoomTaskRepository(
+    private val database: TaskDatabase, private val clock: TaskClock, private val gameMode: GameModeSource,
+) : TaskRepository {
     override fun observe(): Flow<TaskSnapshot> = database.invalidationTracker.createFlow(
         "task_lists", "task_definitions", "task_occurrences", "task_checklist", "task_audit",
         emitInitialState = true,
     ).map { database.withTransaction { read() } }
 
     override suspend fun execute(action: TaskAction) {
+        // Read before the transaction: outcomes follow the mode at write time (spec 017).
+        val scoring = gameMode.enabled.first()
         database.withTransaction {
             val accounting = AccountingStore(database, clock)
             accounting.initialize()
@@ -31,7 +37,7 @@ class RoomTaskRepository(private val database: TaskDatabase, private val clock: 
                     is TaskAction.SetCompleted -> action.id
                 }
                 accounting.reconcile(AccountingProjection.tasks(after).filter { it.owner == "task:$id" },
-                    setOf("task:$id"))
+                    setOf("task:$id"), scoring = scoring)
             }
             if (action is TaskAction.DeleteList) {
                 database.habits().closeListIntervals(action.id, clock.today())

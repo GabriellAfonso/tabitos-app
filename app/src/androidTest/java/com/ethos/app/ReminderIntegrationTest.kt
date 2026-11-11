@@ -1,5 +1,6 @@
 package com.ethos.app
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.content.ContentValues
 import android.content.Context
 import androidx.room.Room
@@ -83,7 +84,7 @@ class ReminderIntegrationTest {
         val name = "reminder-cold-${System.nanoTime()}.db"
         var db = open(name)
         try {
-            val tasks = RoomTaskRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             tasks.execute(TaskAction.Create("t", TaskFields(title = "Fictício", deadline = DeadlineKind.DAY,
                 date = today, minute = 600), RepeatRule(start = today)))
             val before = tasks.observe().first()
@@ -103,7 +104,7 @@ class ReminderIntegrationTest {
             assertEquals(3000, restored.deliveries.single().dueAt)
             assertTrue(restored.deliveries.single().snoozed)
             assertEquals(600, restored.settings.summaryMinute)
-            assertEquals(before, RoomTaskRepository(db, clock).observe().first())
+            assertEquals(before, RoomTaskRepository(db, clock, FixedGameMode(on = true)).observe().first())
             RoomReminderRepository(db).remove(first)
             assertFalse(RoomReminderRepository(db).read().definitions.first { it.id == "a" }.enabled)
         } finally { db.close(); context.deleteDatabase(name) }
@@ -112,7 +113,7 @@ class ReminderIntegrationTest {
     @Test fun materializationUsesOriginalSeriesAndNeverRecordsCompletion() = runBlocking {
         val db = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java).build()
         try {
-            val repo = RoomTaskRepository(db, clock)
+            val repo = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             repo.execute(TaskAction.Create("t", TaskFields(title = "Fictício", deadline = DeadlineKind.DAY,
                 date = today), RepeatRule(RepeatKind.DAILY, today, count = 4)))
             repo.execute(TaskAction.Materialize(today.plusDays(3)))

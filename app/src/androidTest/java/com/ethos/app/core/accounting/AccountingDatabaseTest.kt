@@ -1,5 +1,6 @@
 package com.ethos.app.core.accounting
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.content.ContentValues
 import android.content.Context
 import androidx.room.Room
@@ -36,7 +37,7 @@ class AccountingDatabaseTest {
     @Test fun taskAwardsOriginalPricesRollbackAndSourceDeletion() = runBlocking {
         val db = memory()
         try {
-            val tasks = RoomTaskRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             val wallet = RoomAccountingRepository(db, clock)
             assertEquals(0L, wallet.observe().first().balance)
             create(tasks, "t", 0, 2)
@@ -67,7 +68,7 @@ class AccountingDatabaseTest {
     @Test fun floorClippingRefundsOnlyEffectiveDeductionAndRetainsZeroIncident() = runBlocking {
         val db = memory()
         try {
-            val tasks = RoomTaskRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             val wallet = RoomAccountingRepository(db, clock)
             wallet.savePrices(Price.defaults().map { if (it.category == 0) it.copy(penalty = 295) else it })
             create(tasks, "first", importance = 0)
@@ -94,7 +95,7 @@ class AccountingDatabaseTest {
     @Test fun habitReclassificationAndConfirmedPeriodsAreIdempotent() = runBlocking {
         val db = memory()
         try {
-            val habits = RoomHabitRepository(db, clock)
+            val habits = RoomHabitRepository(db, clock, FixedGameMode(on = true))
             val wallet = RoomAccountingRepository(db, clock)
             habits.execute(HabitAction.Save(Habit("h", day, "Limite"),
                 HabitRule("r", "h", day, HabitType.LIMIT, HabitUnit.WEEK, 1)))
@@ -122,7 +123,7 @@ class AccountingDatabaseTest {
     @Test fun practiceRewardsDistinctDaysAndRejectsExtraWithAtomicRollback() = runBlocking {
         val db = memory()
         try {
-            val habits = RoomHabitRepository(db, clock)
+            val habits = RoomHabitRepository(db, clock, FixedGameMode(on = true))
             val wallet = RoomAccountingRepository(db, clock)
             habits.execute(HabitAction.Save(Habit("h", day, "Prática"),
                 HabitRule("r", "h", day, HabitType.PRACTICE, HabitUnit.WEEK, 2)))
@@ -200,7 +201,7 @@ class AccountingDatabaseTest {
             for (table in tables) db.openHelper.readableDatabase.query("SELECT COUNT(*) FROM `$table`").use {
                 assertTrue(it.moveToFirst()); assertEquals("Preserve $table", 1, it.getInt(0))
             }
-            val tasks = RoomTaskRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             tasks.execute(TaskAction.Refresh)
             assertTrue(wallet.observe().first().entries.isEmpty())
             tasks.execute(TaskAction.Undo("saved"))
@@ -208,7 +209,7 @@ class AccountingDatabaseTest {
             tasks.execute(TaskAction.Resolve("saved", true, day))
             assertEquals(10L, wallet.observe().first().balance)
             day = day.plusDays(1)
-            RoomHabitRepository(db, clock).execute(HabitAction.Correct("saved", date = day))
+            RoomHabitRepository(db, clock, FixedGameMode(on = true)).execute(HabitAction.Correct("saved", date = day))
             assertEquals(10L, wallet.observe().first().balance)
             val expected = wallet.observe().first()
             db.close()

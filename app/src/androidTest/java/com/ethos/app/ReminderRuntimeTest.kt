@@ -1,5 +1,6 @@
 package com.ethos.app
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
@@ -74,10 +75,10 @@ class ReminderRuntimeTest {
             override fun today() = LocalDate.now()
             override fun nowMillis() = System.currentTimeMillis()
         }
-        val tasks = RoomTaskRepository(db, clock)
+        val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
         val repository = RoomReminderRepository(db)
         val platform = ReminderPlatform(context)
-        val coordinator = ReminderCoordinator(repository, tasks, RoomHabitRepository(db, clock),
+        val coordinator = ReminderCoordinator(repository, tasks, RoomHabitRepository(db, clock, FixedGameMode(on = true)),
             com.ethos.app.core.trackers.data.RoomTrackerRepository(db, clock), platform)
         val id = "runtime-${UUID.randomUUID()}"
         val at = ZonedDateTime.now().plusMinutes(1).withSecond(0).withNano(0)
@@ -130,10 +131,10 @@ class ReminderRuntimeTest {
             override fun today() = LocalDate.now()
             override fun nowMillis() = System.currentTimeMillis()
         }
-        val tasks = RoomTaskRepository(db, clock)
+        val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
         val repository = RoomReminderRepository(db)
         val platform = ReminderPlatform(context)
-        val coordinator = ReminderCoordinator(repository, tasks, RoomHabitRepository(db, clock),
+        val coordinator = ReminderCoordinator(repository, tasks, RoomHabitRepository(db, clock, FixedGameMode(on = true)),
             com.ethos.app.core.trackers.data.RoomTrackerRepository(db, clock), platform)
         val missed = ZonedDateTime.now().minusMinutes(10)
         val id = "missed-${UUID.randomUUID()}"

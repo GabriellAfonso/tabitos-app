@@ -1,5 +1,6 @@
 package com.ethos.app.features.tasks
 
+import com.ethos.app.core.preferences.FixedGameMode
 import com.ethos.app.core.ui.components.ContentFilter
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
@@ -30,7 +31,7 @@ class DirectTaskCheckboxTest {
     @Test fun todayMovesToCompletedBelowHabitsAndUncheckingReturnsWithoutDialogs() {
         val db = Room.inMemoryDatabaseBuilder(compose.activity, TaskDatabase::class.java).build()
         try {
-            val tasks = RoomTaskRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             val wallet = RoomAccountingRepository(db, clock)
             runBlocking { tasks.execute(TaskAction.Create("t", TaskFields(title = "Preparar mochila",
                 deadline = DeadlineKind.DAY, date = clock.today(), checklist = listOf("Chaves")),

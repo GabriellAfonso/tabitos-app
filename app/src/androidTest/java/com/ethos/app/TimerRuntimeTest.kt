@@ -1,5 +1,6 @@
 package com.ethos.app
 
+import com.ethos.app.core.preferences.FixedGameMode
 import com.ethos.app.core.preferences.AppearanceMode
 import com.ethos.app.core.preferences.AppearanceRepository
 import kotlinx.coroutines.flow.flowOf
@@ -53,7 +54,7 @@ class TimerRuntimeTest {
             override fun today() = LocalDate.now()
             override fun nowMillis() = System.currentTimeMillis()
         }
-        val tasks = RoomTaskRepository(db, clock)
+        val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
         val timers = RoomTimerRepository(db, AndroidTimerClock(context))
         val silent = object : AppearanceRepository {
             override val modes = flowOf(AppearanceMode.SYSTEM)
@@ -61,7 +62,7 @@ class TimerRuntimeTest {
             override val timerAlarm = flowOf(false)
             override suspend fun setTimerAlarm(enabled: Boolean) = Unit
         }
-        val coordinator = TimerCoordinator(context, timers, tasks, RoomHabitRepository(db, clock),
+        val coordinator = TimerCoordinator(context, timers, tasks, RoomHabitRepository(db, clock, FixedGameMode(on = true)),
             TimerNotifications(context), silent)
         val id = "timer-runtime-${UUID.randomUUID()}"
         try {

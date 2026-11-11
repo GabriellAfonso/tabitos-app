@@ -1,5 +1,6 @@
 package com.ethos.app.core.timers
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.content.ContentValues
 import android.content.Context
 import androidx.room.Room
@@ -182,7 +183,7 @@ class TimerDatabaseTest {
             val clock = clock()
             val timers = RoomTimerRepository(db, clock)
             val rewards = RoomRewardRepository(db, taskClock, clock)
-            val tasks = RoomTaskRepository(db, taskClock)
+            val tasks = RoomTaskRepository(db, taskClock, FixedGameMode(on = true))
             tasks.execute(TaskAction.Create("w", TaskFields(title = "w"), RepeatRule(start = day)))
             tasks.execute(TaskAction.Resolve(tasks.observe().first().occurrences.first().id, true, day))
             rewards.save(Reward("r", "Jogo", cost = 5, limit = 1, minutes = 2))

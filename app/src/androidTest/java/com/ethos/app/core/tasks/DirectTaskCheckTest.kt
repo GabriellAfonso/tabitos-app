@@ -1,5 +1,6 @@
 package com.ethos.app.core.tasks
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
@@ -23,7 +24,7 @@ class DirectTaskCheckTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         val db = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java).build()
         try {
-            val tasks = RoomTaskRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             val wallet = RoomAccountingRepository(db, clock)
             tasks.execute(TaskAction.Create("t", TaskFields(title = "Routine", deadline = DeadlineKind.DAY,
                 date = clock.today(), checklist = listOf("One")),

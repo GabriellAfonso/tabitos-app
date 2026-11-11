@@ -1,5 +1,6 @@
 package com.ethos.app.core.rewards
 
+import com.ethos.app.core.preferences.FixedGameMode
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalDensity
@@ -81,7 +82,7 @@ class RewardsUiTest {
         try {
             val repo = RoomRewardRepository(db, clock)
             runBlocking {
-                val tasks = RoomTaskRepository(db, clock)
+                val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
                 tasks.execute(TaskAction.Create("work", TaskFields(title = "Trabalho fictício"),
                     RepeatRule(start = clock.today())))
                 tasks.execute(TaskAction.Resolve(tasks.observe().first().occurrences.single().id,

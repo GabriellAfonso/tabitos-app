@@ -2,6 +2,7 @@ package com.ethos.app.core.demo.data
 
 import com.ethos.app.core.habits.data.RoomHabitRepository
 import com.ethos.app.core.habits.domain.*
+import com.ethos.app.core.preferences.FixedGameMode
 import com.ethos.app.core.rewards.data.RoomRewardRepository
 import com.ethos.app.core.rewards.domain.Reward
 import com.ethos.app.core.rewards.domain.PurchaseResult
@@ -28,8 +29,9 @@ internal class DemoSeed(
         override fun nowMillis(): Long = minOf(realClock.nowMillis(),
             day.atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli())
     }
-    private val tasks = RoomTaskRepository(db, clock)
-    private val habits = RoomHabitRepository(db, clock)
+    // The fictitious wallet is always scored and the user's game mode preference is never written (spec 017).
+    private val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
+    private val habits = RoomHabitRepository(db, clock, FixedGameMode(on = true))
     private val trackers = RoomTrackerRepository(db, clock)
 
     suspend fun populate() {

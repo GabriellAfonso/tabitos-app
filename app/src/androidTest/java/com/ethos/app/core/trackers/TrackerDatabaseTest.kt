@@ -1,5 +1,6 @@
 package com.ethos.app.core.trackers
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteConstraintException
@@ -87,7 +88,7 @@ class TrackerDatabaseTest {
     @Test fun versionsEntriesAndUniqueDayAreStoredWithoutTouchingHabitsOrLedger() = runBlocking {
         val db = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java).build()
         try {
-            val habits = RoomHabitRepository(db, clock)
+            val habits = RoomHabitRepository(db, clock, FixedGameMode(on = true))
             habits.execute(HabitAction.Save(Habit("h", day, "Hábito"), HabitRule("r", "h", day)))
             val before = habits.observe().first()
             val ledger = count(db, "accounting_ledger")

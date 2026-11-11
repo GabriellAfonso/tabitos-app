@@ -63,9 +63,10 @@ class AccountingStore(private val database: TaskDatabase, private val clock: Tas
 
     suspend fun reconcile(
         outcomes: List<FinancialOutcome>, owners: Set<String>, priceOrigins: Map<String, String> = emptyMap(),
+        scoring: Boolean,
     ) {
         val before = snapshot()
-        val after = AccountingRules.reconcile(before, outcomes, owners, clock.nowMillis(), priceOrigins)
+        val after = AccountingRules.reconcile(before, outcomes, owners, clock.nowMillis(), priceOrigins, scoring)
         val changed = after.entitlements.filter { value -> before.entitlements.none { it == value } }
         if (changed.isNotEmpty()) database.accounting().entitlements(changed.map { EntitlementEntity(it.key, it) })
         val added = after.entries.drop(before.entries.size)

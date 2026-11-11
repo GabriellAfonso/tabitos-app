@@ -1,5 +1,6 @@
 package com.ethos.app
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
@@ -43,11 +44,11 @@ class TrackerReminderRuntimeTest {
             override fun today() = LocalDate.now()
             override fun nowMillis() = System.currentTimeMillis()
         }
-        val habits = RoomHabitRepository(db, clock)
+        val habits = RoomHabitRepository(db, clock, FixedGameMode(on = true))
         val trackers = RoomTrackerRepository(db, clock)
         val repository = RoomReminderRepository(db)
         val platform = ReminderPlatform(context)
-        val coordinator = ReminderCoordinator(repository, RoomTaskRepository(db, clock), habits, trackers, platform)
+        val coordinator = ReminderCoordinator(repository, RoomTaskRepository(db, clock, FixedGameMode(on = true)), habits, trackers, platform)
         val manager = context.getSystemService(NotificationManager::class.java)
         var key: String? = null
         try {

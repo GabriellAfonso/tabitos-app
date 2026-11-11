@@ -1,5 +1,6 @@
 package com.ethos.app.core.habits
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.content.ContentValues
 import android.content.Context
 import androidx.room.Room
@@ -68,12 +69,12 @@ class HabitDatabaseTest {
                 com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6,
                 com.ethos.app.core.trackers.data.TRACKER_MIGRATION_6_7).build()
         try {
-            val tasks = RoomTaskRepository(db, clock).observe().first()
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true)).observe().first()
             assertEquals("Lista anterior", tasks.lists.single().name)
             assertEquals("Preservada", tasks.occurrences.single().fields.title)
             assertEquals("Conferir", tasks.occurrences.single().checks.single().label)
             assertEquals(1, tasks.history.size)
-            val habits = RoomHabitRepository(db, clock)
+            val habits = RoomHabitRepository(db, clock, FixedGameMode(on = true))
             habits.execute(HabitAction.Save(Habit("h", clock.today(), "Leitura"),
                 HabitRule("r", "h", clock.today())))
             habits.execute(HabitAction.Record("a", "h", clock.today()))
@@ -86,15 +87,15 @@ class HabitDatabaseTest {
                 com.ethos.app.core.reminders.data.REMINDER_MIGRATION_4_5,
                 com.ethos.app.core.timers.data.TIMER_MIGRATION_5_6,
                 com.ethos.app.core.trackers.data.TRACKER_MIGRATION_6_7).build()
-            assertEquals(before, RoomHabitRepository(db, clock).observe().first())
-            assertEquals(tasks, RoomTaskRepository(db, clock).observe().first())
+            assertEquals(before, RoomHabitRepository(db, clock, FixedGameMode(on = true)).observe().first())
+            assertEquals(tasks, RoomTaskRepository(db, clock, FixedGameMode(on = true)).observe().first())
         } finally { db.close(); context.deleteDatabase(name) }
     }
     @Test fun listDeletionIsAtomicAndRetainsHabitHistory() = runBlocking {
         val db = Room.inMemoryDatabaseBuilder(context, TaskDatabase::class.java).build()
         try {
-            val tasks = RoomTaskRepository(db, clock)
-            val habits = RoomHabitRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
+            val habits = RoomHabitRepository(db, clock, FixedGameMode(on = true))
             tasks.execute(TaskAction.SaveList(TaskList("list", "Rotina")))
             habits.execute(HabitAction.Save(Habit("h", clock.today(), "Ler", listId = "list"),
                 HabitRule("r", "h", clock.today())))

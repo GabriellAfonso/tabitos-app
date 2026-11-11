@@ -1,5 +1,6 @@
 package com.ethos.app.core.rewards
 
+import com.ethos.app.core.preferences.FixedGameMode
 import android.content.Context
 import android.content.ContentValues
 import androidx.room.Room
@@ -32,7 +33,7 @@ class RewardDatabaseTest {
     private suspend fun RoomRewardRepository.confirm(id: String): PurchaseResult =
         confirm(observe().first().intent!!.copy(id = id))
     private suspend fun earn(db: TaskDatabase, id: String = "work") : String {
-        val tasks = RoomTaskRepository(db, clock)
+        val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
         tasks.execute(TaskAction.Create(id, TaskFields(title = id), RepeatRule(start = day)))
         val occurrence = tasks.observe().first().occurrences.first { it.taskId == id }.id
         tasks.execute(TaskAction.Resolve(occurrence, true, day))
@@ -161,8 +162,8 @@ class RewardDatabaseTest {
             assertEquals(PurchaseResult.PURCHASED, repo.confirm(id))
             repo.save(reward.copy(name = "Novo", description = "Alterada", cost = 99, icon = "GAME"))
             repo.delete("r")
-            RoomTaskRepository(db, clock).execute(TaskAction.Undo(occurrence))
-            RoomTaskRepository(db, clock).execute(TaskAction.Refresh)
+            RoomTaskRepository(db, clock, FixedGameMode(on = true)).execute(TaskAction.Undo(occurrence))
+            RoomTaskRepository(db, clock, FixedGameMode(on = true)).execute(TaskAction.Refresh)
             assertEquals(-5L, repo.observe().first().wallet.balance)
             db.close()
             db = Room.databaseBuilder(context, TaskDatabase::class.java, name).build()
@@ -262,7 +263,7 @@ class RewardDatabaseTest {
         val db = memory()
         try {
             val repo = RoomRewardRepository(db, clock)
-            val tasks = RoomTaskRepository(db, clock)
+            val tasks = RoomTaskRepository(db, clock, FixedGameMode(on = true))
             val occurrence = earn(db)
             tasks.execute(TaskAction.Undo(occurrence))
             tasks.execute(TaskAction.Resolve(occurrence, false, day))
@@ -284,7 +285,7 @@ class RewardDatabaseTest {
         val db = memory()
         try {
             val repo = RoomRewardRepository(db, clock)
-            val habits = RoomHabitRepository(db, clock)
+            val habits = RoomHabitRepository(db, clock, FixedGameMode(on = true))
             habits.execute(HabitAction.Save(Habit("h", day, "Prática fictícia"),
                 HabitRule("rule", "h", day, HabitType.PRACTICE, HabitUnit.WEEK, 2)))
             habits.execute(HabitAction.Record("record", "h", day))

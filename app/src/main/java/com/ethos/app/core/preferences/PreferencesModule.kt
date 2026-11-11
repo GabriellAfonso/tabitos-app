@@ -20,6 +20,14 @@ abstract class AppearanceBindings {
     @Binds
     @Singleton
     abstract fun bindAppearanceRepository(implementation: DataStoreAppearanceRepository): AppearanceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindGameModeRepository(implementation: DataStoreGameModeRepository): GameModeRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindGameModeSource(implementation: GameModeRepository): GameModeSource
 }
 
 @Module
