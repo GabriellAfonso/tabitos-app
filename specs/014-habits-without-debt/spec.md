@@ -232,3 +232,8 @@ As a user, the "+" on Hoje offers Nova tarefa, Novo hábito and Quebrar hábito,
 - "Quebrar hábito" is implemented as a third "+" option (literal reading of the user's answer; decided by the
   agent during autonomous execution, 2026-11-10). The Hábitos page also offers "Quebrar hábito".
 - Automatic closings reach the ledger through a settle step run when habits load and when the day changes.
+
+### UI adjustment — 2026-11-11
+
+List pages reuse Hoje's floating + menu (Nova tarefa, Novo hábito, Quebrar hábito).
+The separate creation buttons are removed from list content; all three actions preserve the selected list.

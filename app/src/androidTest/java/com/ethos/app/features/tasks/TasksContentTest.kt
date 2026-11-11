@@ -1,6 +1,7 @@
 package com.ethos.app.features.tasks
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import com.ethos.app.core.ui.components.FilterRow
@@ -11,6 +12,8 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.SavedStateHandle
 import com.ethos.app.R
 import com.ethos.app.core.ui.components.ContentFilter
+import com.ethos.app.features.shell.TodayCreateButton
+import com.ethos.app.features.shell.CreateActions
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.ui.theme.EthosTheme
 import java.time.LocalDate
@@ -33,11 +36,18 @@ class TasksContentTest {
             val vm = remember { TasksViewModel(repo, clock, SavedStateHandle()) }
             EthosTheme {
                 TasksScreen(vm) { state ->
-                    TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::newTask, vm::detail, vm::action,
-                        { vm.manageLists(true) }, vm::retry, vm::dismissError)
+                    Column {
+                        TodayCreateButton(CreateActions(
+                            taskEnabled = true, habitEnabled = true,
+                            onNewTask = vm::newTask, onNewHabit = {}, onBreakHabit = {},
+                        ))
+                        TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::detail, vm::action,
+                            { vm.manageLists(true) }, vm::retry, vm::dismissError)
+                    }
                 }
             }
         }
+        compose.onNodeWithContentDescription("Criar tarefa ou hábito").performClick()
         compose.onNodeWithText("Nova tarefa").performClick()
         compose.onNodeWithText("Título").performTextInput("Preparar mochila")
         compose.onNodeWithTag("more-options").performClick()
@@ -66,7 +76,7 @@ class TasksContentTest {
             var filter by remember { mutableStateOf(ContentFilter.ALL) }
             EthosTheme {
                 TasksContent(TasksUiState(s, day, loading = false), TaskPage.TODAY, filter,
-                    {}, {}, {}, {}, {}, {}) {
+                    {}, {}, {}, {}, {}) {
                     FilterRow(filter) { filter = it }
                 }
             }

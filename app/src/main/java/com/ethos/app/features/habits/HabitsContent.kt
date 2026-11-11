@@ -156,7 +156,7 @@ fun LazyListScope.habitItems(
     } }
     item("habit-errors") { HabitError(state, retry) }
     if (state.loading) item("habit-loading") { Text(stringResource(R.string.habit_loading)) }
-    if (page != HabitPage.TODAY && page != HabitPage.REVIEW && page != HabitPage.HISTORY) item("new-habit") {
+    if (page == HabitPage.ALL) item("new-habit") {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(new, enabled = !state.busy && !state.loading) { Text(stringResource(R.string.new_habit)) }
             newBreaking?.let { OutlinedButton(it, enabled = !state.busy && !state.loading) {

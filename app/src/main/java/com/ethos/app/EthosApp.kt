@@ -262,7 +262,7 @@ private fun TaskDestination(
     }
     TasksContent(
         state = tasks, page = page, filter = filter,
-        onNew = vm.tasks::newTask, onOpen = vm.tasks::detail, onAction = vm.tasks::action,
+        onOpen = vm.tasks::detail, onAction = vm.tasks::action,
         onManage = { vm.tasks.manageLists(true) }, onRetry = vm.tasks::retry,
         onDismissError = vm.tasks::dismissError, onComplete = vm.tasks::quickCheck,
         onNotDone = { vm.tasks.action(TaskAction.Resolve(it, false, tasks.today)) },

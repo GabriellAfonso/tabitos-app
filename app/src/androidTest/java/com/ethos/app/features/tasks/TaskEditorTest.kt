@@ -1,7 +1,10 @@
 package com.ethos.app.features.tasks
 
 import com.ethos.app.core.ui.components.ContentFilter
+import com.ethos.app.features.shell.TodayCreateButton
+import com.ethos.app.features.shell.CreateActions
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -30,8 +33,14 @@ class TaskEditorTest {
             val vm = remember { TasksViewModel(repo, clock, SavedStateHandle()).also { created = it } }
             EthosTheme {
                 TasksScreen(vm) { state ->
-                    TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::newTask, vm::detail, vm::action,
-                        {}, vm::retry, vm::dismissError)
+                    Column {
+                        TodayCreateButton(CreateActions(
+                            taskEnabled = true, habitEnabled = true,
+                            onNewTask = vm::newTask, onNewHabit = {}, onBreakHabit = {},
+                        ))
+                        TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::detail, vm::action,
+                            {}, vm::retry, vm::dismissError)
+                    }
                 }
             }
         }
@@ -42,6 +51,7 @@ class TaskEditorTest {
     @Test fun titleOnlyCaptureUsesDefaultsAndHidesAdvancedFields() {
         val repo = FakeRepository(clock)
         show(repo)
+        compose.onNodeWithContentDescription("Criar tarefa ou hábito").performClick()
         compose.onNodeWithText("Nova tarefa").performClick()
         compose.onNodeWithText("Dificuldade").assertDoesNotExist()
         compose.onNodeWithContentDescription("Data, Hoje").assertExists()
@@ -70,6 +80,7 @@ class TaskEditorTest {
     @Test fun backWithChangesAsksBeforeDiscarding() {
         val repo = FakeRepository(clock)
         show(repo)
+        compose.onNodeWithContentDescription("Criar tarefa ou hábito").performClick()
         compose.onNodeWithText("Nova tarefa").performClick()
         compose.onNodeWithText("Título").performTextInput("Rascunho")
         compose.onNodeWithText("Voltar").performClick()

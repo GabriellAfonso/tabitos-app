@@ -113,7 +113,7 @@ fun TaskDrawer(
 
 @Composable
 fun TasksContent(
-    state: TasksUiState, page: TaskPage, filter: ContentFilter, onNew: () -> Unit, onOpen: (String) -> Unit,
+    state: TasksUiState, page: TaskPage, filter: ContentFilter, onOpen: (String) -> Unit,
     onAction: (TaskAction) -> Unit, onManage: () -> Unit, onRetry: () -> Unit, onDismissError: () -> Unit,
     extraItems: (LazyListScope.() -> Unit)? = null,
     onComplete: (String) -> Unit = {},
@@ -146,7 +146,7 @@ fun TasksContent(
     LazyColumn(Modifier.fillMaxSize().lazyReorderGestures(drag, dragEnabled,
         { haptic.performHapticFeedback(HapticFeedbackType.LongPress) }, { onAction(TaskAction.Order(it)) }),
         state = listState, contentPadding = PaddingValues(
-        start = 20.dp, top = 20.dp, end = 20.dp, bottom = if (page == TaskPage.TODAY) 96.dp else 20.dp),
+        start = 20.dp, top = 20.dp, end = 20.dp, bottom = if (page == TaskPage.REVIEW) 20.dp else 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { header() }
         item { TaskError(state, onRetry, onDismissError) }
@@ -164,9 +164,6 @@ fun TasksContent(
                     habits = it == 1 }
                 TextButton(onManage) { Text(stringResource(R.string.manage_lists)) }
             }
-        }
-        if (page == TaskPage.LIST && sections.showsTasks) item {
-            Button(onNew, enabled = !state.loading && !state.busy) { Text(stringResource(R.string.new_task)) }
         }
         if (!state.loading && sections.isEmpty && !showsHabitItems) item {
             Text(stringResource(when {

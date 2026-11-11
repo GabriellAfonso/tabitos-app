@@ -39,7 +39,7 @@ class DirectTaskCheckboxTest {
             compose.setContent {
                 val vm = remember { TasksViewModel(tasks, clock, SavedStateHandle(), wallet) }
                 EthosTheme { TasksScreen(vm) { state ->
-                    TasksContent(state, TaskPage.TODAY, ContentFilter.ALL, {}, vm::detail, vm::action, {}, vm::retry,
+                    TasksContent(state, TaskPage.TODAY, ContentFilter.ALL, vm::detail, vm::action, {}, vm::retry,
                         vm::dismissError, extraItems = { item("habits-test") { Text("Hábitos do dia") } },
                         onComplete = vm::quickCheck)
                 } }

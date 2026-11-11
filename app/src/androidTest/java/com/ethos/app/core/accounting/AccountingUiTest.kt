@@ -43,7 +43,7 @@ class AccountingUiTest {
             compose.setContent {
                 val vm = remember { TasksViewModel(tasks, clock, SavedStateHandle(), wallet) }
                 EthosTheme { TasksScreen(vm) { state ->
-                    TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::newTask, vm::detail, vm::action,
+                    TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::detail, vm::action,
                         {}, vm::retry, vm::dismissError)
                 } }
             }

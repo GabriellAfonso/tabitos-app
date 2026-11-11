@@ -99,7 +99,11 @@ fun EthosShell(
     }) {
         Scaffold(
             snackbarHost = snackbar,
-            floatingActionButton = { if (current == ShellDestination.TODAY) TodayCreateButton(createActions) },
+            floatingActionButton = {
+                if (current == ShellDestination.TODAY || current == ShellDestination.TASKS) {
+                    TodayCreateButton(createActions)
+                }
+            },
             topBar = {
                 ShellHeader(today, current, { scope.launch { drawer.open() } }) { navigate(ShellDestination.SETTINGS) }
             },

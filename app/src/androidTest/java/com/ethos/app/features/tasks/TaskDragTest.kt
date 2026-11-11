@@ -29,7 +29,7 @@ class TaskDragTest {
             var saved by remember { mutableStateOf(snapshot) }
             EthosTheme {
                 TasksContent(TasksUiState(saved, day, loading = false), TaskPage.LIST,
-                    ContentFilter.ALL, {}, { opened++ },
+                    ContentFilter.ALL, { opened++ },
                     { action ->
                         committed.add(action)
                         snapshot = TaskRules.apply(snapshot, action, day, 1)
