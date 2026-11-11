@@ -1,7 +1,6 @@
-﻿package com.ethos.app.features.shell
+package com.ethos.app.features.shell
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -9,11 +8,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
@@ -22,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -33,19 +29,8 @@ import java.util.Locale
 
 @Composable
 fun FilterRow(filter: ContentFilter, onFilter: (ContentFilter) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        ContentFilter.entries.forEach { value ->
-            FilterChip(
-                selected = filter == value,
-                onClick = { onFilter(value) },
-                label = { Text(stringResource(value.title)) },
-                modifier = Modifier.sizeIn(minHeight = 48.dp).testTag("filter_${value.name}"),
-            )
-        }
-    }
+    com.ethos.app.core.ui.components.SegmentedControl(ContentFilter.entries, filter, { stringResource(it.title) },
+        onFilter, Modifier.sizeIn(minHeight = 48.dp), tag = { "filter_${it.name}" })
 }
 
 @Composable
@@ -108,14 +93,8 @@ fun TodayContent(
     Text(stringResource(R.string.one_step), style = MaterialTheme.typography.headlineSmall)
     BalanceTiles(presentation, onRewards)
     if (presentation.pendingItems.isNotEmpty()) {
-        Card(onClick = onReview, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                pluralStringResource(
-                    R.plurals.pending_count, presentation.pendingItems.size, presentation.pendingItems.size,
-                ),
-                Modifier.padding(16.dp),
-            )
-        }
+        com.ethos.app.core.ui.components.ActionBanner(pluralStringResource(
+            R.plurals.pending_count, presentation.pendingItems.size, presentation.pendingItems.size), "◷", onReview)
     }
     FilterRow(filter, onFilter)
     val items = presentation.todayItems.matching(filter)

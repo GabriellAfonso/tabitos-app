@@ -426,9 +426,8 @@ fun TrackerChart(a: TrackerAnalytics) {
 @Composable
 fun TrackerPendingCard(count: Int, open: () -> Unit) {
     if (count == 0) return
-    Card(open, Modifier.fillMaxWidth()) {
-        Text(pluralStringResource(R.plurals.tracker_pending_count, count, count), Modifier.padding(16.dp))
-    }
+    com.ethos.app.core.ui.components.ActionBanner(pluralStringResource(R.plurals.tracker_pending_count, count, count),
+        "✎", open, outlined = true)
 }
 
 @Preview

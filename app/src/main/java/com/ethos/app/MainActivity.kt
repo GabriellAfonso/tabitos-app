@@ -95,6 +95,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val appearanceViewModel: AppearanceViewModel = viewModel()
+            val demoViewModel: com.ethos.app.features.settings.DemoViewModel = viewModel()
             AppearanceScreen(appearanceViewModel) { state, onSelect, onRetry ->
                 val dark = when (state.mode) {
                     AppearanceMode.SYSTEM -> isSystemInDarkTheme()
@@ -194,7 +195,15 @@ class MainActivity : ComponentActivity() {
                         val pending = tasks.snapshot.activeOccurrences.count { it.needsReview(tasks.today) } +
                             habits.pendingCount
                         EthosShell(
+                            snackbarContent = {
+                                HabitPracticeFeedback(habits, habitsViewModel::undoPractice,
+                                    habitsViewModel::dismissPracticeFeedback)
+                            },
                             pendingCount = pending,
+                            onNewTask = tasksViewModel::newTask,
+                            onNewHabit = { habitsViewModel.newHabit(tasks.selectedListId) },
+                            taskCreationEnabled = !tasks.loading && !tasks.busy,
+                            habitCreationEnabled = !habits.loading && !habits.busy,
                             drawerLists = { navigate ->
                                 TaskDrawer(tasks, { tasksViewModel.selectList(it); navigate() },
                                     tasksViewModel::newList, { tasksViewModel.manageLists(true) })
@@ -205,7 +214,7 @@ class MainActivity : ComponentActivity() {
                                     trackerViewModel::fill, trackerViewModel::editEntry)
                               } else if (destination == ShellDestination.HABITS) {
                                 HabitsContent(habits, HabitPage.ALL, { habitsViewModel.newHabit(null) },
-                                    habitsViewModel::detail, habitsViewModel::retry)
+                                    habitsViewModel::detail, habitsViewModel::retry, habitsViewModel::quickRecord)
                               } else {
                                 val page = when (destination) {
                                     ShellDestination.TODAY -> TaskPage.TODAY
@@ -216,6 +225,7 @@ class MainActivity : ComponentActivity() {
                                     tasksViewModel::detail, tasksViewModel::action,
                                     { tasksViewModel.manageLists(true) }, tasksViewModel::retry,
                                     tasksViewModel::dismissError,
+                                    onComplete = tasksViewModel::quickCheck,
                                     extraItems = {
                                         habitItems(habits, when (page) {
                                             TaskPage.TODAY -> HabitPage.TODAY
@@ -223,24 +233,24 @@ class MainActivity : ComponentActivity() {
                                             else -> HabitPage.LIST
                                         }, tasks.selectedListId,
                                             { habitsViewModel.newHabit(tasks.selectedListId) },
-                                            habitsViewModel::detail, habitsViewModel::retry)
+                                            habitsViewModel::detail, habitsViewModel::retry,
+                                            habitsViewModel::quickRecord)
                                     }) {
                                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                         if (page == TaskPage.TODAY) {
-                                            Text(tasks.today.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM",
-                                                Locale.forLanguageTag("pt-BR"))))
+                                            // The shell header already shows the date (spec 010).
                                             Text(stringResource(R.string.one_step),
-                                                style = MaterialTheme.typography.headlineSmall)
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant)
                                             WalletTiles(financial, onRewards, accountingViewModel::retry)
                                             TimerSessionCards(timerState, sessions, zone, timerCards)
                                             TrackerPendingCard(trackerState.pending.size) {
                                                 trackerState.pending.firstOrNull()?.let {
                                                     trackerViewModel.fill(it.id, trackerState.today) }
                                             }
-                                            if (pending > 0) Card(onClick = onReview) {
-                                                Text(pluralStringResource(R.plurals.pending_count, pending, pending),
-                                                    Modifier.padding(16.dp))
-                                            }
+                                            if (pending > 0) com.ethos.app.core.ui.components.ActionBanner(
+                                                pluralStringResource(R.plurals.pending_count, pending, pending), "◷",
+                                                onReview, urgent = true)
                                         }
                                         if (page == TaskPage.REVIEW) Text(stringResource(R.string.review_hint))
                                         if (page == TaskPage.TODAY || page == TaskPage.REVIEW) {
@@ -261,6 +271,7 @@ class MainActivity : ComponentActivity() {
                             walletContent = { rewards -> WalletTiles(financial, rewards, accountingViewModel::retry) },
                             settingsContent = {
                                 SettingsContent(state, onSelect, onRetry)
+                                if (BuildConfig.DEBUG) com.ethos.app.features.settings.DemoSettingsScreen(demoViewModel)
                                 AccountingSettings(financial, accountingViewModel::edit, accountingViewModel::draft,
                                     accountingViewModel::save, accountingViewModel::retry)
                                 ReminderSettingsContent(reminderState, reminderViewModel, requestPermission)

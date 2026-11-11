@@ -15,6 +15,10 @@ import com.ethos.app.core.ui.accounting.*
 import com.ethos.app.core.accounting.domain.*
 import com.ethos.app.core.rewards.domain.Purchase
 import com.ethos.app.core.ui.rewards.rewardSymbol
+import com.ethos.app.core.ui.components.CoinAmount
+import com.ethos.app.core.ui.components.Eyebrow
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 
 @Composable
 fun AccountingStatus(state: AccountingUiState, retry: () -> Unit) {
@@ -30,19 +34,38 @@ fun WalletTiles(state: AccountingUiState, rewards: () -> Unit, retry: () -> Unit
     AccountingStatus(state, retry)
     if (state.loading || state.error) return
     val s = state.snapshot
+    val shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+    val border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    val cardColors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
+    // Model B wallet (spec 010): amber coin amount, link to rewards, level with XP bar.
     val balance: @Composable (Modifier) -> Unit = { modifier ->
-        Card(rewards, modifier) { Column(Modifier.padding(12.dp)) {
-            Text(stringResource(R.string.balance), style = MaterialTheme.typography.labelLarge)
-            Text(stringResource(R.string.finance_coins, s.balance), style = MaterialTheme.typography.titleMedium)
-        } }
+        val description = stringResource(R.string.wallet_description, s.balance)
+        Card(rewards, modifier.semantics(mergeDescendants = true) { contentDescription = description },
+            shape = shape, colors = cardColors, border = border) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Eyebrow(stringResource(R.string.wallet_coins))
+                CoinAmount(s.balance.toString())
+                Text(stringResource(R.string.wallet_rewards), style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
     val level: @Composable (Modifier) -> Unit = { modifier ->
-        OutlinedCard(modifier) { Column(Modifier.padding(12.dp)) {
-            Text(stringResource(R.string.finance_level, s.progress.level), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.finance_progress, s.progress.within, s.progress.required, s.totalXp))
-            LinearProgressIndicator(progress = { s.progress.within.toFloat() / s.progress.required.toFloat() },
-                modifier = Modifier.fillMaxWidth())
-        } }
+        Card(modifier, shape = shape, colors = cardColors, border = border) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Eyebrow(stringResource(R.string.wallet_progress))
+                Text(stringResource(R.string.finance_level, s.progress.level), style = MaterialTheme.typography.titleLarge,
+                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
+                val xpDescription = stringResource(R.string.finance_progress,
+                    s.progress.within, s.progress.required, s.totalXp)
+                Text(stringResource(R.string.finance_progress_compact, s.progress.within, s.progress.required),
+                    modifier = Modifier.semantics { contentDescription = xpDescription },
+                    style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                LinearProgressIndicator(progress = { s.progress.within.toFloat() / s.progress.required.toFloat() },
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    trackColor = MaterialTheme.colorScheme.outlineVariant)
+            }
+        }
     }
     BoxWithConstraints {
         if (maxWidth >= 300.dp && LocalDensity.current.fontScale < 1.5f) {

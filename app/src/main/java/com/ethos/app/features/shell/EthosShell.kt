@@ -20,6 +20,13 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.text.font.FontWeight
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -49,6 +56,8 @@ import androidx.navigation.compose.rememberNavController
 import com.ethos.app.R
 import kotlinx.coroutines.launch
 
+private val ptBr = Locale.forLanguageTag("pt-BR")
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EthosShell(
@@ -60,6 +69,11 @@ fun EthosShell(
     historyContent: (@Composable () -> Unit)? = null,
     walletContent: (@Composable (() -> Unit) -> Unit)? = null,
     rewardsContent: (@Composable () -> Unit)? = null,
+    onNewTask: (() -> Unit)? = null,
+    onNewHabit: (() -> Unit)? = null,
+    taskCreationEnabled: Boolean = true,
+    habitCreationEnabled: Boolean = true,
+    snackbarContent: @Composable () -> Unit = {},
     settingsContent: @Composable () -> Unit,
 ) {
     val navController = rememberNavController()
@@ -122,6 +136,12 @@ fun EthosShell(
         },
     ) {
         Scaffold(
+            snackbarHost = snackbarContent,
+            floatingActionButton = {
+                if (current == ShellDestination.TODAY && onNewTask != null && onNewHabit != null) {
+                    TodayCreateButton(taskCreationEnabled, habitCreationEnabled, onNewTask, onNewHabit)
+                }
+            },
             topBar = {
                 Row(
                     Modifier.fillMaxWidth()
@@ -132,12 +152,23 @@ fun EthosShell(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     LabeledSymbol("☰", R.string.open_menu) { scope.launch { drawer.open() } }
-                    Text(
-                        stringResource(current.title),
-                        Modifier.weight(1f).padding(horizontal = 8.dp),
-                        style = MaterialTheme.typography.titleLarge,
-                    )
-                    LabeledSymbol("⚙", R.string.open_settings) { navigate(ShellDestination.SETTINGS) }
+                    // Model B header: date eyebrow over a large title (spec 010).
+                    Column(Modifier.weight(1f).padding(horizontal = 4.dp)) {
+                        Text(
+                            LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", ptBr))
+                                .uppercase(ptBr),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            stringResource(current.title),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                    LabeledSymbol("⚙", R.string.open_settings, outlined = true) {
+                        navigate(ShellDestination.SETTINGS)
+                    }
                 }
             },
             bottomBar = {
@@ -219,9 +250,17 @@ fun ShellPage(content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun LabeledSymbol(symbol: String, label: Int, onClick: () -> Unit) {
+private fun LabeledSymbol(symbol: String, label: Int, outlined: Boolean = false, onClick: () -> Unit) {
     val description = stringResource(label)
-    IconButton(
+    if (outlined) OutlinedIconButton(
+        onClick = onClick,
+        modifier = Modifier.padding(end = 8.dp).sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .semantics { contentDescription = description },
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = IconButtonDefaults.outlinedIconButtonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+    ) { Text(symbol, style = MaterialTheme.typography.titleMedium) }
+    else IconButton(
         onClick = onClick,
         modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
             .semantics { contentDescription = description },

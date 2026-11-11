@@ -13,6 +13,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ethos.app.R
 import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskList
+import com.ethos.app.core.ui.components.ColorPicker
 
 @Composable
 fun HabitInput(label: Int, value: String, enabled: Boolean = true, change: (String) -> Unit) {
@@ -98,9 +99,8 @@ fun HabitEditor(state: HabitsUiState, lists: List<TaskList>, actions: HabitEdito
                     HabitChoices(R.string.habit_importance, listOf(R.string.habit_low, R.string.habit_medium,
                         R.string.habit_high), d.habit.importance, !state.busy) {
                         actions.change(d.copy(habit = d.habit.copy(importance = it, importanceManual = true))) }
-                    HabitChoices(R.string.habit_color, listOf(R.string.habit_sage, R.string.habit_blue,
-                        R.string.habit_purple, R.string.habit_orange, R.string.habit_rose, R.string.habit_gray),
-                        d.habit.color, !state.busy) { actions.change(d.copy(habit = d.habit.copy(color = it))) }
+                    ColorPicker(d.habit.color, !state.busy) {
+                        actions.change(d.copy(habit = d.habit.copy(color = it))) }
                     HabitChoices(R.string.habit_icon, listOf(R.string.habit_icon_leaf, R.string.habit_icon_book,
                         R.string.habit_icon_home, R.string.habit_icon_work, R.string.habit_icon_heart,
                         R.string.habit_icon_star), d.habit.icon, !state.busy) {

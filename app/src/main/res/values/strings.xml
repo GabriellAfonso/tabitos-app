@@ -1,6 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools" tools:locale="pt-BR">
     <string name="app_name">Ethos</string>
     <string name="today">Hoje</string>
+    <string name="tomorrow">Amanhã</string>
     <string name="tasks">Tarefas</string>
     <string name="habits">Hábitos</string>
     <string name="calendar">Calendário</string>
@@ -144,7 +145,8 @@
     <string name="confirm_complete">Concluir mesmo assim</string>
     <string name="delete_list_confirm">Excluir esta lista e suas tarefas? Os hábitos sairão do acompanhamento, mas seu histórico será preservado em Hábitos excluídos. Os itens não serão movidos para a Caixa de entrada. A exclusão não aplica penalidade.</string>
     <string name="delete_task_confirm">Excluir a tarefa neste escopo? A exclusão não aplica penalidade e preserva o histórico dos registros.</string>
-    <string name="resolved_section">Concluídas e não realizadas (%1$d)</string>
+    <string name="resolved_section">Concluídas (%1$d)</string>
+    <string name="not_done_section">Não realizadas (%1$d)</string>
     <string name="weekly_section">Nesta semana · sem dia definido</string>
     <string name="task_empty_real">Nenhuma tarefa aqui. Capture uma tarefa quando precisar.</string>
     <string name="loading_tasks">Carregando tarefas…</string>
@@ -155,6 +157,8 @@
     <string name="task_dependent_actions">Há ocorrências seguintes com alterações ou registros. Corrija esses registros primeiro; o histórico foi preservado.</string>
     <string name="task_not_open">Este registro já foi resolvido. Desfaça o registro para reabrir.</string>
     <string name="color_label">Cor</string>
+    <string name="create_item">Criar tarefa ou hábito</string>
+    <string name="create_plus">+</string>
     <string name="icon_label">Ícone</string>
     <string name="color_sage">Sálvia</string>
     <string name="color_blue">Azul</string>
@@ -244,7 +248,6 @@
     <string name="habit_excess">Ocorrências excedentes: %1$d</string>
     <string name="habit_empty_real">Nenhum hábito corresponde a esta seleção.</string>
     <string name="habit_loading">Carregando hábitos…</string>
-    <string name="habit_goals_met">Metas cumpridas (%1$d)</string>
     <string name="habit_excluded">Hábitos excluídos</string>
     <string name="habit_paused">Pausado</string>
     <string name="habit_streak">Sequência: %1$d · Recorde: %2$d · unidade: %3$s</string>
@@ -279,9 +282,9 @@
     <string name="habit_old_best">Recorde histórico: %1$d · unidade: %2$s</string>
     <string name="finance_loading">Carregando moedas e progresso…</string>
     <string name="finance_error">Não foi possível carregar ou salvar a contabilização. Tente novamente.</string>
-    <string name="finance_coins">Moedas: %1$d</string>
     <string name="finance_level">Nível %1$d</string>
     <string name="finance_progress">%1$d de %2$d XP para o próximo nível · %3$d XP total</string>
+    <string name="finance_progress_compact">%1$d/%2$d</string>
     <string name="finance_edit_table">Editar ganhos e penalidades</string>
     <string name="finance_bounds">Valores inteiros de 0 a 10.000. Alterações valem para novos lançamentos; históricos e estornos preservam os preços originais.</string>
     <string name="finance_coin_gain">Moedas por cumprimento</string>
@@ -611,4 +614,71 @@
     <string name="calendar_tracker_fill">Preencher acompanhamento: %1$s</string>
     <string name="calendar_week_range">%1$s a %2$s</string>
     <string name="calendar_selected">selecionado</string>
+    <!-- Feature 010: Ameixa visual refresh -->
+    <string name="wallet_coins">Suas moedas</string>
+    <string name="wallet_rewards">Ver recompensas ›</string>
+    <string name="wallet_progress">Seu progresso</string>
+    <string name="wallet_description">Saldo em moedas: %1$d. Abrir recompensas</string>
+    <string name="task_quick_complete">Concluir %1$s</string>
+    <string name="task_quick_uncomplete">Desmarcar %1$s</string>
+    <string name="task_resolved_open">Abrir %1$s</string>
+    <string name="task_repeats">Tarefa recorrente</string>
+    <string name="habit_quick_record">Marcar</string>
+    <string name="habit_quick_occurrence">Registrar</string>
+    <string name="habit_quick_done">✓ Feito hoje</string>
+    <string name="habit_quick_unmark_description">Desmarcar prática de hoje: %1$s</string>
+    <string name="habit_marked_today">Prática de hoje marcada.</string>
+    <string name="habit_unmarked_today">Prática de hoje desmarcada.</string>
+    <string name="habit_undo_quick">Desfazer</string>
+    <string name="habit_feedback_close">Fechar</string>
+    <plurals name="habit_today_occurrences">
+        <item quantity="one">Hoje: %1$d ocorrência</item>
+        <item quantity="other">Hoje: %1$d ocorrências</item>
+    </plurals>
+    <string name="demo_title">Dados de demonstração · versão de teste</string>
+    <string name="demo_hint">Explore listas, tarefas, hábitos, históricos, acompanhamentos e recompensas fictícios. Restaure a base quando quiser recomeçar os testes.</string>
+    <string name="demo_reset">Resetar progresso e restaurar demonstração</string>
+    <string name="demo_confirmation">Isso apaga todas as tarefas, listas, hábitos, registros, moedas, XP, compras, cronômetros e lembretes atuais e os substitui pelos exemplos iniciais, com datas ajustadas para hoje. Não é possível desfazer. O tema e as permissões do Android serão mantidos.</string>
+    <string name="demo_confirm">Apagar dados e restaurar</string>
+    <string name="demo_busy">Restaurando a base de demonstração…</string>
+    <string name="demo_success">Demonstração restaurada. Os exemplos estão prontos para testar.</string>
+    <string name="demo_error">Não foi possível restaurar a demonstração. Os dados anteriores foram preservados. Tente novamente.</string>
+    <string name="demo_timer_running">Pause o cronômetro antes de restaurar a demonstração.</string>
+    <string-array name="demo_content">
+        <item>Casa</item>
+        <item>Trabalho</item>
+        <item>Saúde e bem-estar</item>
+        <item>Estudos</item>
+        <item>Ler algumas páginas</item>
+        <item>Caminhar ao ar livre</item>
+        <item>Beber água ao acordar</item>
+        <item>Evitar refrigerante</item>
+        <item>Limitar cafés</item>
+        <item>Alongamento pela manhã</item>
+        <item>Como estava sua energia?</item>
+        <item>Baixa</item>
+        <item>Alta</item>
+        <item>Onde caminhou?</item>
+        <item>Parque</item>
+        <item>Rua</item>
+        <item>Como foi a caminhada?</item>
+        <item>Organizar a mesa</item>
+        <item>Caminhada tranquila para espairecer.</item>
+        <item>Fazer compras da semana</item>
+        <item>Frutas e verduras</item>
+        <item>Arroz e feijão</item>
+        <item>Produtos de limpeza</item>
+        <item>Revisar proposta do projeto</item>
+        <item>Marcar consulta no dentista</item>
+        <item>Assistir à próxima aula do curso</item>
+        <item>Conferir conta de energia</item>
+        <item>Separar roupas para doação</item>
+        <item>Enviar resumo da reunião</item>
+        <item>Café especial</item>
+        <item>30 minutos de videogame</item>
+        <item>Noite de filme</item>
+    </string-array>
+    <string name="habit_quick_record_description">Marcar prática de hoje: %1$s</string>
+    <string name="habit_quick_occurrence_description">Registrar ocorrência de hoje: %1$s</string>
+    <string name="habit_week_description">Semana atual: %1$d de 7 dias com registro</string>
 </resources>

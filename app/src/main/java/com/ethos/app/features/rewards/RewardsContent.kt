@@ -16,6 +16,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.ethos.app.R
+import androidx.compose.foundation.background
 import com.ethos.app.core.rewards.domain.*
 import com.ethos.app.core.ui.rewards.rewardSymbol
 import kotlinx.coroutines.delay
@@ -58,8 +59,8 @@ fun RewardsContent(state: RewardsUiState, actions: RewardActions, sessions: @Com
             if (state.loading) Text(stringResource(R.string.finance_loading))
             RewardError(state, actions)
             if (!state.loading && !state.error) {
-                Text(stringResource(R.string.balance), style = MaterialTheme.typography.labelLarge)
-                Text(stringResource(R.string.finance_coins, state.snapshot.wallet.balance),
+                com.ethos.app.core.ui.components.Eyebrow(stringResource(R.string.wallet_coins))
+                com.ethos.app.core.ui.components.CoinAmount(state.snapshot.wallet.balance.toString(),
                     style = MaterialTheme.typography.headlineMedium)
                 Text(stringResource(R.string.reward_immediate))
                 Button({ actions.edit(null) }, enabled = !state.busy) {
@@ -73,11 +74,22 @@ fun RewardsContent(state: RewardsUiState, actions: RewardActions, sessions: @Com
         }
         if (!state.loading) itemsIndexed(state.cards, key = { _, card -> card.reward.id }) { index, card ->
             val reward = card.reward
-            OutlinedCard(Modifier.fillMaxWidth()) {
+            OutlinedCard(Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(17.dp),
+                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("${rewardSymbol(reward.icon)} ${reward.name}", style = MaterialTheme.typography.titleMedium)
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text(rewardSymbol(reward.icon), Modifier.background(MaterialTheme.colorScheme.secondaryContainer,
+                            androidx.compose.foundation.shape.RoundedCornerShape(14.dp)).padding(10.dp),
+                            style = MaterialTheme.typography.titleLarge)
+                        Text(reward.name, style = MaterialTheme.typography.titleMedium)
+                    }
                     if (reward.description.isNotEmpty()) Text(reward.description)
-                    Text(stringResource(R.string.reward_price, reward.cost))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        com.ethos.app.core.ui.components.CoinGlyph()
+                        Text(stringResource(R.string.reward_price, reward.cost), color = MaterialTheme.colorScheme.tertiary)
+                    }
                     reward.minutes?.let { Text(stringResource(R.string.reward_minutes_line, durationLabel(it))) }
                     reward.limit?.let { limit ->
                         Text(stringResource(R.string.reward_limit_status, card.used, limit,

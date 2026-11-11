@@ -16,8 +16,6 @@ val repeatLabels = listOf(R.string.no_repeat, R.string.repeat_daily, R.string.re
     R.string.repeat_weekly, R.string.repeat_custom, R.string.repeat_monthly, R.string.repeat_fixed,
     R.string.repeat_after)
 val deadlineLabels = listOf(R.string.no_date, R.string.specific_day, R.string.this_week, R.string.work_week)
-val colorLabels = listOf(R.string.color_sage, R.string.color_blue, R.string.color_purple,
-    R.string.color_orange, R.string.color_rose, R.string.color_gray)
 val iconLabels = listOf(R.string.icon_list, R.string.icon_work, R.string.icon_home,
     R.string.icon_study, R.string.icon_health, R.string.icon_star)
 

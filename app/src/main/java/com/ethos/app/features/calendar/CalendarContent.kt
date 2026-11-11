@@ -34,6 +34,8 @@ import com.ethos.app.core.tasks.domain.TaskFields
 import com.ethos.app.core.tasks.domain.TaskOccurrence
 import com.ethos.app.core.tasks.domain.TaskSnapshot
 import com.ethos.app.core.ui.theme.EthosTheme
+import com.ethos.app.core.ui.components.SegmentedControl
+import androidx.compose.foundation.shape.CircleShape
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -97,12 +99,11 @@ fun CalendarContent(state: CalendarUiState, actions: CalendarActions) {
             TextButton(actions.today) { Text(stringResource(R.string.calendar_go_today)) }
             TextButton({ actions.shift(1) }) { Text(stringResource(R.string.calendar_next)) }
         }
-        ChipRow {
-            listOf(CalendarView.MONTH to R.string.calendar_month, CalendarView.WEEK to R.string.calendar_week,
-                CalendarView.DAY to R.string.calendar_day).forEach { (v, label) ->
-                FilterChip(state.view == v, { actions.view(v) }, { Text(stringResource(label)) })
-            }
-        }
+        SegmentedControl(CalendarView.entries, state.view, { stringResource(when (it) {
+            CalendarView.MONTH -> R.string.calendar_month
+            CalendarView.WEEK -> R.string.calendar_week
+            CalendarView.DAY -> R.string.calendar_day
+        }) }, actions.view)
         Filters(state, actions)
         if (state.view != CalendarView.DAY) Grid(state, actions)
         state.selected?.let { DayDetails(it, state.filters, actions) }
@@ -168,11 +169,11 @@ private fun Grid(state: CalendarUiState, actions: CalendarActions) {
                         else stringResource(R.string.calendar_cell, d.date.toString(), d.tasks.size,
                             d.habitRecordCount, d.entries.size)
                     val description = if (selected) "$base · $selectedLabel" else base
-                    val shape = RoundedCornerShape(8.dp)
+                    val shape = RoundedCornerShape(12.dp)
                     Column(Modifier.weight(1f).heightIn(min = 52.dp)
                         .then(if (selected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, shape) else Modifier)
                         .background(if (d.date == state.today) MaterialTheme.colorScheme.secondaryContainer
-                            else MaterialTheme.colorScheme.surface, shape)
+                            else MaterialTheme.colorScheme.background, shape)
                         .clickable(role = Role.Button) { actions.select(d.date) }
                         .semantics { contentDescription = description; this.selected = selected }
                         .padding(4.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -182,7 +183,8 @@ private fun Grid(state: CalendarUiState, actions: CalendarActions) {
                         val count = d.tasks.size + d.habitRecordCount
                         if (count > 0) Text(count.toString(), style = MaterialTheme.typography.labelSmall)
                         // Discreet tracker indicator; absence is never drawn as a value.
-                        if (d.entries.isNotEmpty()) Text("•", color = MaterialTheme.colorScheme.primary)
+                        if (d.entries.isNotEmpty()) Box(Modifier.padding(top = 3.dp).size(6.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape))
                     }
                 }
             }
