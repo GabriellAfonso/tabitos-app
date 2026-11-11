@@ -177,6 +177,15 @@ object TaskRules {
                     audit(o, AuditKind.CHECKED)
                 }
                 is TaskAction.Resolve -> resolve(action)
+                is TaskAction.SetCompleted -> {
+                    val o = occurrence(action.id)
+                    if (action.done && o.status != TaskStatus.DONE) {
+                        resolve(TaskAction.Resolve(action.id, true, action.actualDate))
+                    } else if (!action.done && o.status != TaskStatus.OPEN) {
+                        if (o.status != TaskStatus.DONE) fail(TaskProblem.NOT_OPEN)
+                        undo(action.id)
+                    }
+                }
                 is TaskAction.Undo -> undo(action.id)
                 is TaskAction.Edit -> edit(action)
                 is TaskAction.Delete -> delete(action)
@@ -195,6 +204,21 @@ object TaskRules {
                         val moving = ordered.removeAt(i)
                         ordered.add((i + action.direction).coerceIn(0, ordered.size), moving)
                         ordered.forEachIndexed { index, item -> put(item.copy(position = index)) }
+                    }
+                }
+                is TaskAction.Order -> {
+                    requireInput(action.ids.isNotEmpty() && action.ids.distinct().size == action.ids.size)
+                    val selected = action.ids.map { occurrence(it) }
+                    requireInput(selected.all { it.status == TaskStatus.OPEN &&
+                        it.fields.listId == selected.first().fields.listId })
+                    val ordered = occurrences.filter { it.status == TaskStatus.OPEN &&
+                        it.fields.listId == selected.first().fields.listId }
+                        .sortedWith(compareBy<TaskOccurrence> { it.position }.thenBy { it.id })
+                    val selectedIds = action.ids.toSet()
+                    val replacements = selected.iterator()
+                    ordered.forEachIndexed { index, item ->
+                        val next = if (item.id in selectedIds) replacements.next() else item
+                        put(next.copy(position = index))
                     }
                 }
                 TaskAction.Refresh, is TaskAction.Materialize -> Unit

@@ -24,10 +24,11 @@ class RoomTaskRepository(private val database: TaskDatabase, private val clock: 
             val before = read()
             val after = TaskRules.apply(before, action, clock.today(), clock.nowMillis())
             if (before != after) write(after)
-            if (action is TaskAction.Resolve || action is TaskAction.Undo) {
+            if (action is TaskAction.Resolve || action is TaskAction.Undo || action is TaskAction.SetCompleted) {
                 val id = when (action) {
                     is TaskAction.Resolve -> action.id
                     is TaskAction.Undo -> action.id
+                    is TaskAction.SetCompleted -> action.id
                 }
                 accounting.reconcile(AccountingProjection.tasks(after).filter { it.owner == "task:$id" },
                     setOf("task:$id"))

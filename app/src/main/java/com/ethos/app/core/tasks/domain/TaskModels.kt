@@ -77,9 +77,11 @@ sealed interface TaskAction {
     data class Check(val id: String, val index: Int, val checked: Boolean) : TaskAction
     data class Resolve(val id: String, val done: Boolean, val actualDate: LocalDate) : TaskAction
     data class Undo(val id: String) : TaskAction
+    data class SetCompleted(val id: String, val done: Boolean, val actualDate: LocalDate) : TaskAction
     data class Delete(val id: String, val scope: ChangeScope) : TaskAction
     data class Move(val id: String, val listId: String?) : TaskAction
     data class Reorder(val id: String, val direction: Int) : TaskAction
+    data class Order(val ids: List<String>) : TaskAction
     data object Refresh : TaskAction
     data class Materialize(val through: LocalDate) : TaskAction
 }

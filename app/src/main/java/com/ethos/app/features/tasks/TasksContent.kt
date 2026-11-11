@@ -4,34 +4,50 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ethos.app.R
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextDecoration
+import com.ethos.app.core.ui.components.RoundCheck
+import com.ethos.app.core.ui.components.ColorPicker
+import com.ethos.app.core.ui.components.itemColors
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.ui.reminders.LocalOpenReminders
 import com.ethos.app.core.ui.timers.LocalOpenTimer
 import com.ethos.app.core.timers.domain.TimerKind
 import com.ethos.app.core.reminders.domain.ReminderKind
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 enum class TaskPage { LIST, TODAY, REVIEW }
-private val listColors = listOf(Color(0xFF54745C), Color(0xFF426B96), Color(0xFF79568E),
-    Color(0xFFA45B25), Color(0xFFA04D68), Color(0xFF657078))
-private val listSymbols = listOf("≡", "▣", "⌂", "▤", "♡", "☆")
+private val listSymbols = listOf("☰", "▣", "⌂", "▤", "♡", "☰")
 
 @Composable
 fun TaskError(state: TasksUiState, retry: () -> Unit, dismiss: () -> Unit) {
@@ -64,7 +80,7 @@ fun TaskDrawer(
     TextButton({ onSelect(null) }, enabled = !state.busy) { Text(stringResource(R.string.inbox)) }
     state.snapshot.activeLists.forEach { list ->
         TextButton({ onSelect(list.id) }, enabled = !state.busy) {
-            Text(listSymbols[list.icon], color = listColors[list.color], modifier = Modifier.padding(end = 8.dp))
+            Text(listSymbols[list.icon], color = itemColors[list.color], modifier = Modifier.padding(end = 8.dp))
             Text(list.name)
         }
     }
@@ -77,11 +93,13 @@ fun TasksContent(
     state: TasksUiState, page: TaskPage, filter: Int, onNew: () -> Unit, onOpen: (String) -> Unit,
     onAction: (TaskAction) -> Unit, onManage: () -> Unit, onRetry: () -> Unit, onDismissError: () -> Unit,
     extraItems: (LazyListScope.() -> Unit)? = null,
+    onComplete: (String) -> Unit = {},
     header: @Composable () -> Unit = {},
 ) {
-    var collapsed by rememberSaveable(page, state.selectedListId) { mutableStateOf(true) }
+    val recurring = state.snapshot.definitions.filter { it.rule.kind != RepeatKind.NONE }.map { it.id }.toSet()
+    var collapsed by rememberSaveable(page, state.selectedListId) { mutableStateOf(false) }
     var habits by rememberSaveable(state.selectedListId) { mutableStateOf(false) }
-    val listItems = state.snapshot.activeOccurrences.filter { it.fields.listId == state.selectedListId }
+    val listItems = state.snapshot.listOccurrences(state.selectedListId)
     val visible = when (page) {
         TaskPage.LIST -> if (habits) emptyList() else listItems
         TaskPage.TODAY -> if (filter == 2) emptyList() else state.snapshot.activeOccurrences.filter {
@@ -90,11 +108,31 @@ fun TasksContent(
             it.needsReview(state.today) }
     }.sortedWith(compareBy<TaskOccurrence> { it.position }.thenBy { it.id })
     val pending = visible.filter { it.status == TaskStatus.OPEN }
-    val resolved = visible.filter { it.status != TaskStatus.OPEN }
-    val dayItems = if (page == TaskPage.TODAY) pending.filter { it.fields.deadline == DeadlineKind.DAY } else pending
+    val notDone = visible.filter { it.status == TaskStatus.NOT_DONE }
+    val completed = if ((page == TaskPage.LIST && !habits) || (page != TaskPage.LIST && filter != 2))
+        state.snapshot.completedOccurrences(page, state.today, state.selectedListId) else emptyList()
+    val listState = rememberLazyListState()
+    val ids = pending.map { it.id }
+    val drag = remember(page, state.selectedListId, ids) { TaskDragState(listState, ids) }
+    val dragEnabled = page == TaskPage.LIST && !state.busy && !state.loading && !state.storageError
+    val edge = with(LocalDensity.current) { 64.dp.toPx() }
+    val haptic = LocalHapticFeedback.current
+    LaunchedEffect(drag, drag.draggedId, dragEnabled) {
+        if (dragEnabled) drag.autoScroll(edge) else if (drag.draggedId != null) drag.cancel()
+    }
+    LaunchedEffect(drag, state.storageError, state.error) {
+        if (state.storageError || state.error != null) drag.cancel()
+    }
+    val pendingById = pending.associateBy { it.id }
+    val orderedPending = if (page == TaskPage.LIST) drag.order.mapNotNull(pendingById::get) else pending
+    val dayItems = if (page == TaskPage.TODAY) pending.filter { it.fields.deadline == DeadlineKind.DAY }
+        else orderedPending
     val weeklyItems = if (page == TaskPage.TODAY) pending.filter { it.fields.deadline != DeadlineKind.DAY }
         else emptyList()
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp),
+    LazyColumn(Modifier.fillMaxSize().taskDragGestures(drag, dragEnabled,
+        { haptic.performHapticFeedback(HapticFeedbackType.LongPress) }, { onAction(TaskAction.Order(it)) }),
+        state = listState, contentPadding = PaddingValues(
+        start = 20.dp, top = 20.dp, end = 20.dp, bottom = if (page == TaskPage.TODAY) 96.dp else 20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item { header() }
         item { TaskError(state, onRetry, onDismissError) }
@@ -102,61 +140,122 @@ fun TasksContent(
         if (state.busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
         if (page == TaskPage.LIST) {
             item {
-                Text(state.snapshot.activeLists.firstOrNull { it.id == state.selectedListId }?.name
-                    ?: stringResource(R.string.inbox), style = MaterialTheme.typography.headlineSmall)
+                val selectedList = state.snapshot.activeLists.firstOrNull { it.id == state.selectedListId }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    selectedList?.let { Text(listSymbols[it.icon], color = itemColors[it.color]) }
+                    Text(selectedList?.name ?: stringResource(R.string.inbox),
+                        style = MaterialTheme.typography.headlineSmall)
+                }
                 ChoiceRow(R.string.choose_list, listOf(R.string.tasks, R.string.habits), if (habits) 1 else 0) {
                     habits = it == 1 }
                 TextButton(onManage) { Text(stringResource(R.string.manage_lists)) }
             }
         }
-        if (page != TaskPage.REVIEW && !habits && filter != 2) item {
+        if (page == TaskPage.LIST && !habits && filter != 2) item {
             Button(onNew, enabled = !state.loading && !state.busy) { Text(stringResource(R.string.new_task)) }
         }
-        if (!state.loading && visible.isEmpty() && !(extraItems != null &&
+        if (!state.loading && visible.isEmpty() && completed.isEmpty() && !(extraItems != null &&
                 (habits || filter == 2 || page == TaskPage.REVIEW || page == TaskPage.TODAY))) item {
             Text(stringResource(if ((page == TaskPage.LIST && habits) || filter == 2)
                 R.string.habits_empty_detail else if (page == TaskPage.REVIEW)
                 R.string.review_empty_detail else R.string.task_empty_real))
         }
         items(dayItems, key = { it.id }) { o ->
-            TaskRow(o, state.busy, page == TaskPage.LIST, { onOpen(o.id) }, onAction)
+            val up = stringResource(R.string.move_up)
+            val down = stringResource(R.string.move_down)
+            val placement = if (page == TaskPage.LIST) Modifier.taskDragPlacement(drag, o.id)
+                .semantics {
+                    customActions = listOfNotNull((-1).takeIf { ids.indexOf(o.id) > 0 },
+                        1.takeIf { ids.indexOf(o.id) < ids.lastIndex }).map { direction ->
+                        CustomAccessibilityAction(if (direction < 0) up else down) {
+                            if (!dragEnabled) false else {
+                                val reordered = ids.toMutableList()
+                                val index = reordered.indexOf(o.id)
+                                reordered.add(index + direction, reordered.removeAt(index))
+                                onAction(TaskAction.Order(reordered))
+                                true
+                            }
+                        }
+                    }
+                } else Modifier
+            TaskRow(o, state.busy, { onOpen(o.id) }, o.taskId in recurring,
+                { onComplete(o.id) }, today = state.today, modifier = placement)
         }
         if (weeklyItems.isNotEmpty()) {
             item { Text(stringResource(R.string.weekly_section), style = MaterialTheme.typography.titleMedium) }
-            items(weeklyItems, key = { it.id }) { o -> TaskRow(o, state.busy, false, { onOpen(o.id) }, onAction) }
+            items(weeklyItems, key = { it.id }) { o ->
+                TaskRow(o, state.busy, { onOpen(o.id) }, o.taskId in recurring,
+                    { onComplete(o.id) }, today = state.today)
+            }
         }
-        if (resolved.isNotEmpty()) {
-            item { TextButton({ collapsed = !collapsed }) {
-                Text(stringResource(R.string.resolved_section, resolved.size)) } }
-            if (!collapsed) items(resolved, key = { it.id }) { o ->
-                TaskRow(o, state.busy, false, { onOpen(o.id) }, onAction)
+        if (notDone.isNotEmpty()) {
+            item { Text(stringResource(R.string.not_done_section, notDone.size)) }
+            items(notDone, key = { it.id }) { o ->
+                TaskRow(o, state.busy, { onOpen(o.id) }, o.taskId in recurring, today = state.today)
             }
         }
         if (extraItems != null && ((page == TaskPage.LIST && habits) ||
                 (page in listOf(TaskPage.TODAY, TaskPage.REVIEW) && filter != 1))) extraItems()
+        if (completed.isNotEmpty()) {
+            item("completed-section") { TextButton({ collapsed = !collapsed }) {
+                Text(stringResource(R.string.resolved_section, completed.size)) } }
+            if (!collapsed) items(completed, key = { it.id }) { o ->
+                TaskRow(o, state.busy, { onOpen(o.id) }, o.taskId in recurring,
+                    { onComplete(o.id) }, today = state.today)
+            }
+        }
     }
 }
 
+/** Direct checkbox and independent detail target; completed cards remain readable with muted colors. */
 @Composable
-fun TaskRow(o: TaskOccurrence, busy: Boolean, reorder: Boolean, onOpen: () -> Unit, onAction: (TaskAction) -> Unit) {
-    OutlinedCard(onClick = onOpen, modifier = Modifier.fillMaxWidth(), enabled = !busy) {
-        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(o.fields.title, style = MaterialTheme.typography.titleSmall)
-            val status = when (o.status) {
-                TaskStatus.DONE -> R.string.task_status_done
-                TaskStatus.NOT_DONE -> R.string.task_status_not_done
-                else -> R.string.task_status_open
+fun TaskRow(
+    o: TaskOccurrence, busy: Boolean, onOpen: () -> Unit,
+    recurring: Boolean = false, onComplete: () -> Unit = onOpen,
+    today: LocalDate = LocalDate.now(),
+    modifier: Modifier = Modifier,
+) {
+    OutlinedCard(onClick = onOpen, modifier = modifier.fillMaxWidth().testTag("task:${o.id}"), enabled = !busy,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        colors = CardDefaults.outlinedCardColors(containerColor = if (o.status == TaskStatus.DONE)
+            MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainerLow)) {
+        Row(Modifier.padding(start = 2.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+            val open = o.status == TaskStatus.OPEN
+            val checkLabel = stringResource(when (o.status) {
+                TaskStatus.OPEN -> R.string.task_quick_complete
+                TaskStatus.DONE -> R.string.task_quick_uncomplete
+                else -> R.string.task_resolved_open
+            }, o.fields.title)
+            Box(Modifier.size(48.dp).toggleable(o.status == TaskStatus.DONE, enabled = !busy, role = Role.Checkbox,
+                onValueChange = { if (o.status == TaskStatus.NOT_DONE) onOpen() else onComplete() })
+                .semantics { contentDescription = checkLabel },
+                contentAlignment = Alignment.Center) { RoundCheck(o.status == TaskStatus.DONE) }
+            Column(Modifier.weight(1f).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(o.fields.title, style = MaterialTheme.typography.titleSmall,
+                    textDecoration = if (open) null else TextDecoration.LineThrough,
+                    color = if (open) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
+                val status = when (o.status) {
+                    TaskStatus.DONE -> R.string.task_status_done
+                    TaskStatus.NOT_DONE -> R.string.task_status_not_done
+                    else -> R.string.task_status_open
+                }
+                val dateLabel = when (o.dueDate) {
+                    null -> stringResource(R.string.no_date)
+                    today -> stringResource(R.string.today)
+                    today.plusDays(1) -> stringResource(R.string.tomorrow)
+                    else -> o.dueDate.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                }
+                val parts = listOfNotNull(o.fields.minute?.let { "%02d:%02d".format(it / 60, it % 60) },
+                    dateLabel,
+                    stringResource(status))
+                Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Text(stringResource(status), style = MaterialTheme.typography.labelMedium)
-            Text(o.dueDate?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) ?: stringResource(R.string.no_date),
-                style = MaterialTheme.typography.bodySmall)
-            o.fields.minute?.let { Text("%02d:%02d".format(it / 60, it % 60)) }
-            if (reorder) Row {
-                TextButton({ onAction(TaskAction.Reorder(o.id, -1)) }, enabled = !busy) {
-                    Text(stringResource(R.string.move_up)) }
-                TextButton({ onAction(TaskAction.Reorder(o.id, 1)) }, enabled = !busy) {
-                    Text(stringResource(R.string.move_down)) }
-            }
+            if (recurring) Icon(painterResource(R.drawable.ic_task_repeat),
+                contentDescription = stringResource(R.string.task_repeats),
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f))
         }
     }
 }
@@ -266,7 +365,10 @@ private fun ListManager(
         Column(Modifier.verticalScroll(rememberScrollState())) {
             error()
             state.snapshot.activeLists.forEach { list ->
-                Text(list.name, style = MaterialTheme.typography.titleMedium)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(listSymbols[list.icon], color = itemColors[list.color])
+                    Text(list.name, style = MaterialTheme.typography.titleMedium)
+                }
                 Row {
                     TextButton({ edit(list) }, enabled = !state.busy) { Text(stringResource(R.string.edit)) }
                     TextButton({ delete(list.id) }, enabled = !state.busy) { Text(stringResource(R.string.delete)) }
@@ -291,7 +393,7 @@ private fun ListEditor(
         text = { Column(Modifier.verticalScroll(rememberScrollState())) {
             error()
             Input(R.string.list_name, list.name, !busy) { change(list.copy(name = it)) }
-            ChoiceRow(R.string.color_label, colorLabels, list.color, !busy) { change(list.copy(color = it)) }
+            ColorPicker(list.color, !busy) { change(list.copy(color = it)) }
             ChoiceRow(R.string.icon_label, iconLabels, list.icon, !busy) { change(list.copy(icon = it)) }
         } }, confirmButton = { TextButton(save, enabled = !busy) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(close, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
@@ -317,6 +419,6 @@ private fun DeleteTaskDialog(
 private fun TaskRowPreview() {
     MaterialTheme {
         TaskRow(TaskOccurrence("preview:1", "preview", 1, TaskFields(title = "Organizar a próxima semana"),
-            null, null, null), false, true, {}, {})
+            null, null, null), false, {})
     }
 }

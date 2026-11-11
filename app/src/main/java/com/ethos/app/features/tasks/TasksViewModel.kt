@@ -51,6 +51,7 @@ class TasksViewModel @Inject constructor(
     private var readFailed = false
     private var retryAction: TaskAction? = null
     private var retryClose: Boolean = false
+    private var retryConfirmed: Boolean = false
     private var completionAction: TaskAction.Resolve? = null
     private var financialAction: TaskAction? = null
 
@@ -69,6 +70,7 @@ class TasksViewModel @Inject constructor(
                 repository.observe().collect { snapshot ->
                     readFailed = false
                     mutable.update { it.copy(snapshot = snapshot, loading = false,
+                        selectedListId = it.selectedListId?.takeIf { id -> snapshot.activeLists.any { l -> l.id == id } },
                         storageError = if (retryAction == null) false else it.storageError) }
                 }
             } catch (e: CancellationException) { throw e
@@ -86,7 +88,7 @@ class TasksViewModel @Inject constructor(
         mutable.update { it.copy(error = null, storageError = false) }
         observe()
         val action = retryAction
-        if (action != null) execute(action, retryClose) else refresh()
+        if (action != null) execute(action, retryClose, retryConfirmed) else refresh()
     }
     fun dismissError() { mutable.update { it.copy(error = null, storageError = false) } }
     fun selectList(id: String?) { mutable.update { it.copy(selectedListId = id) } }
@@ -166,6 +168,13 @@ class TasksViewModel @Inject constructor(
         }
     }
     fun completionDate(text: String) { mutable.update { it.copy(completionText = text) } }
+    fun quickCheck(id: String) {
+        val s = state.value
+        if (s.busy || s.loading || s.storageError) return
+        val o = s.snapshot.occurrences.firstOrNull { it.id == id } ?: return
+        if (o.status != TaskStatus.OPEN && o.status != TaskStatus.DONE) return
+        execute(TaskAction.SetCompleted(id, o.status == TaskStatus.OPEN, clock.today()), confirmed = true)
+    }
     fun complete(o: TaskOccurrence, done: Boolean, confirmed: Boolean = false) {
         val date = try {
             if (done) LocalDate.parse(state.value.completionText) else clock.today()
@@ -206,6 +215,7 @@ class TasksViewModel @Inject constructor(
                     mutable.update { it.copy(busy = false, error = e.problem) }
                 } catch (_: Exception) {
                     retryAction = action
+                    retryConfirmed = false
                     mutable.update { it.copy(busy = false, storageError = true) }
                 }
             }
@@ -216,6 +226,8 @@ class TasksViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.execute(action)
+                val committed = repository.observe().first()
+                mutable.update { it.copy(snapshot = committed) }
                 retryAction = null
                 if (closeDraft) updateDraft(null)
                 mutable.update { it.copy(busy = false, storageError = readFailed,
@@ -228,7 +240,7 @@ class TasksViewModel @Inject constructor(
             } catch (e: TaskRuleException) {
                 mutable.update { it.copy(busy = false, error = e.problem) }
             } catch (_: Exception) {
-                retryAction = action; retryClose = closeDraft
+                retryAction = action; retryClose = closeDraft; retryConfirmed = confirmed
                 mutable.update { it.copy(busy = false, storageError = true) }
             }
         }
