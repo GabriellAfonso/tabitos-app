@@ -29,7 +29,9 @@ import com.ethos.app.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
@@ -115,6 +117,7 @@ fun TasksContent(
     onAction: (TaskAction) -> Unit, onManage: () -> Unit, onRetry: () -> Unit, onDismissError: () -> Unit,
     extraItems: (LazyListScope.() -> Unit)? = null,
     onComplete: (String) -> Unit = {},
+    onNotDone: (String) -> Unit = {},
     timerChip: (TaskOccurrence) -> TimerChip? = { null },
     header: @Composable () -> Unit = {},
 ) {
@@ -180,20 +183,14 @@ fun TasksContent(
                 }
             } else Modifier
             TaskRow(o, state.busy, { onOpen(o.id) }, state.today, placement, o.taskId in recurring,
-                timerChip(o)) { onComplete(o.id) }
+                timerChip(o), onNotDone = { onNotDone(o.id) }) { onComplete(o.id) }
         }
         if (sections.weekly.isNotEmpty()) {
             item { Text(stringResource(R.string.weekly_section), style = MaterialTheme.typography.titleMedium) }
             items(sections.weekly, key = { it.id }) { o ->
                 TaskRow(o, state.busy, { onOpen(o.id) }, state.today, recurring = o.taskId in recurring,
-                    timer = timerChip(o)) {
+                    timer = timerChip(o), onNotDone = { onNotDone(o.id) }) {
                     onComplete(o.id) }
-            }
-        }
-        if (sections.notDone.isNotEmpty()) {
-            item { Text(stringResource(R.string.not_done_section, sections.notDone.size)) }
-            items(sections.notDone, key = { it.id }) { o ->
-                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, recurring = o.taskId in recurring)
             }
         }
         if (showsHabitItems) extraItems?.invoke(this)
@@ -213,11 +210,13 @@ fun TasksContent(
 fun TaskRow(
     o: TaskOccurrence, busy: Boolean, onOpen: () -> Unit, today: LocalDate,
     modifier: Modifier = Modifier, recurring: Boolean = false, timer: TimerChip? = null,
+    onNotDone: () -> Unit = onOpen,
     onComplete: () -> Unit = onOpen,
 ) {
+    var showCheckMenu by remember(o.id, o.status) { mutableStateOf(false) }
     OutlinedCard(onClick = onOpen, modifier = modifier.fillMaxWidth().testTag("task:${o.id}"), enabled = !busy,
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.outlinedCardColors(containerColor = if (o.status == TaskStatus.DONE)
+        colors = CardDefaults.outlinedCardColors(containerColor = if (o.status != TaskStatus.OPEN)
             MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(Modifier.padding(start = 2.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically) {
@@ -227,10 +226,32 @@ fun TaskRow(
                 TaskStatus.DONE -> R.string.task_quick_uncomplete
                 else -> R.string.task_resolved_open
             }, o.fields.title)
-            Box(Modifier.size(48.dp).toggleable(o.status == TaskStatus.DONE, enabled = !busy, role = Role.Checkbox,
-                onValueChange = { if (o.status == TaskStatus.NOT_DONE) onOpen() else onComplete() })
-                .semantics { contentDescription = checkLabel },
-                contentAlignment = Alignment.Center) { RoundCheck(o.status == TaskStatus.DONE) }
+            Box {
+                Box(Modifier.size(48.dp).combinedClickable(
+                    enabled = !busy,
+                    role = Role.Checkbox,
+                    interactionSource = null,
+                    indication = null,
+                    onLongClickLabel = stringResource(R.string.task_status_options),
+                    onLongClick = if (open) ({ showCheckMenu = true }) else null,
+                    onClick = { if (o.status == TaskStatus.NOT_DONE) onOpen() else onComplete() },
+                ).semantics {
+                    contentDescription = checkLabel
+                    toggleableState = ToggleableState(o.status == TaskStatus.DONE)
+                }, contentAlignment = Alignment.Center) {
+                    RoundCheck(checked = o.status == TaskStatus.DONE, crossed = o.status == TaskStatus.NOT_DONE)
+                }
+                DropdownMenu(expanded = showCheckMenu && !busy, onDismissRequest = { showCheckMenu = false }) {
+                    DropdownMenuItem(text = { Text(stringResource(R.string.task_mark_done)) }, onClick = {
+                        showCheckMenu = false
+                        onComplete()
+                    })
+                    DropdownMenuItem(text = { Text(stringResource(R.string.task_mark_not_done)) }, onClick = {
+                        showCheckMenu = false
+                        onNotDone()
+                    })
+                }
+            }
             Column(Modifier.weight(1f).padding(vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(o.fields.title, style = MaterialTheme.typography.titleSmall,
                     textDecoration = if (open) null else TextDecoration.LineThrough,

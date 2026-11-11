@@ -3,6 +3,8 @@
 Autorizado pelo usuário em 2026-11-10, após implementação da spec 011.
 
 ## Decisões
+- “Não será feito” também vai para Concluídas, com X no lugar do visto. Hoje e Revisão usam
+  o dia local do registro de não realização; listas mostram os resultados da própria lista.
 - Checkbox da tarefa conclui com data de hoje sem abrir detalhes, confirmação financeira
   ou confirmação de checklist pendente. Não marcar automaticamente os itens do checklist.
 - Concluídas aparecem ao fim do conteúdo sob **Concluídas (n)**, inicialmente expandida,
@@ -18,6 +20,9 @@ Autorizado pelo usuário em 2026-11-10, após implementação da spec 011.
 - Sem migração, dependências novas, reset de dados ou commits. Instalar atualização no celular.
 
 ## Aceite
+Segurar a checkbox de uma tarefa pendente abre “Feito” e “Não será feito”. Feito usa a conclusão
+rápida; Não será feito usa Resolve com a data de hoje e mantém as confirmações financeiras.
+O toque simples e a ausência de realce na área de toque são preservados.
 1. Marcar tarefa com checklist incompleto pelo cartão não abre modal e a move a Concluídas.
 2. Desmarcar em Concluídas a devolve às pendentes; sem duplicação de ganho/estorno em retry.
 3. Concluídas fica após os hábitos em Hoje e respeita data/lista/filtro.

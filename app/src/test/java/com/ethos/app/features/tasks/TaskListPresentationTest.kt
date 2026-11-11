@@ -2,6 +2,7 @@ package com.ethos.app.features.tasks
 
 import com.ethos.app.core.tasks.domain.*
 import java.time.LocalDate
+import java.time.ZoneId
 import com.ethos.app.core.ui.components.ContentFilter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -31,21 +32,33 @@ class TaskListPresentationTest {
         assertFalse(s.sections(TaskPage.REVIEW, ContentFilter.ALL, day, null, false).showsHabits)
     }
 
-    @Test fun completedSectionsRespectActualDayListAndReviewWithoutIncludingFailures() {
+    @Test fun completedSectionsIncludeNotDoneAndRespectResolutionDayListAndReview() {
         val day = LocalDate.of(2026, 11, 10)
         val base = TaskOccurrence("done", "t", 1, TaskFields(title = "Done", listId = "a"),
             day.minusDays(2), day.minusDays(2), day.minusDays(2), TaskStatus.DONE, completedDate = day)
         val old = base.copy(id = "old", completedDate = day.minusDays(1))
         val other = base.copy(id = "other", fields = base.fields.copy(listId = "b"))
         val todayTask = base.copy(id = "today", dueDate = day)
-        val failure = base.copy(id = "failure", status = TaskStatus.NOT_DONE, completedDate = null)
-        val s = TaskSnapshot(occurrences = listOf(base, old, other, todayTask, failure))
-        assertEquals(setOf("done", "old", "today"), s.completedOccurrences(TaskPage.LIST, day, "a")
+        val failure = base.copy(id = "failure", status = TaskStatus.NOT_DONE, completedDate = null,
+            activeOutcome = "failure-outcome")
+        val oldFailure = failure.copy(id = "old-failure", activeOutcome = "old-outcome")
+        val recordedAt = day.atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val s = TaskSnapshot(occurrences = listOf(base, old, other, todayTask, failure, oldFailure),
+            history = listOf(
+                TaskAudit("failure-outcome", failure.id, AuditKind.NOT_DONE, recordedAt),
+                TaskAudit("old-outcome", oldFailure.id, AuditKind.NOT_DONE,
+                    day.minusDays(1).atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()),
+            ))
+        assertEquals(setOf("done", "old", "today", "failure", "old-failure"),
+            s.completedOccurrences(TaskPage.LIST, day, "a")
             .map { it.id }.toSet())
-        assertEquals(setOf("done", "other", "today"), s.completedOccurrences(TaskPage.TODAY, day, "a")
+        assertEquals(setOf("done", "other", "today", "failure"), s.completedOccurrences(TaskPage.TODAY, day, "a")
             .map { it.id }.toSet())
-        assertEquals(setOf("done", "other"), s.completedOccurrences(TaskPage.REVIEW, day, null)
+        assertEquals(setOf("done", "other", "failure"), s.completedOccurrences(TaskPage.REVIEW, day, null)
             .map { it.id }.toSet())
+        val sections = s.sections(TaskPage.TODAY, ContentFilter.TASKS, day, "a", false)
+        assertTrue(sections.pending.isEmpty())
+        assertEquals(setOf("done", "other", "today", "failure"), sections.completed.map { it.id }.toSet())
     }
     private val today = LocalDate.of(2026, 11, 10)
     private val fields = TaskFields(title = "Bible", listId = "routine", deadline = DeadlineKind.DAY)

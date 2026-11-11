@@ -1,4 +1,5 @@
 package com.ethos.app
+import com.ethos.app.core.tasks.domain.TaskAction
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -264,6 +265,7 @@ private fun TaskDestination(
         onNew = vm.tasks::newTask, onOpen = vm.tasks::detail, onAction = vm.tasks::action,
         onManage = { vm.tasks.manageLists(true) }, onRetry = vm.tasks::retry,
         onDismissError = vm.tasks::dismissError, onComplete = vm.tasks::quickCheck,
+        onNotDone = { vm.tasks.action(TaskAction.Resolve(it, false, tasks.today)) },
         timerChip = { app.timerChip(vm, TimerKind.TASK, it.id, tasks.durations[it.taskId]) },
         extraItems = {
             habitItems(app.habits, habitPage, tasks.selectedListId, { vm.habits.newHabit(tasks.selectedListId) },

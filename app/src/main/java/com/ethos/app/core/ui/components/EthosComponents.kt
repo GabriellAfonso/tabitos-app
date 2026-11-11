@@ -116,13 +116,14 @@ fun WeekBars(hits: List<Boolean>, description: String, modifier: Modifier = Modi
 
 /** Rounded check box drawn as in the prototype; the caller supplies click semantics. */
 @Composable
-fun RoundCheck(checked: Boolean, modifier: Modifier = Modifier) {
+fun RoundCheck(checked: Boolean, modifier: Modifier = Modifier, crossed: Boolean = false) {
     val colors = MaterialTheme.colorScheme
     Box(modifier.size(24.dp).clip(RoundedCornerShape(7.dp))
         .background(if (checked) colors.primary else Color.Transparent)
         .border(1.5.dp, if (checked) colors.primary else colors.onSurfaceVariant, RoundedCornerShape(7.dp)),
         contentAlignment = Alignment.Center) {
         if (checked) Text("✓", color = colors.onPrimary, fontSize = 13.sp)
+        else if (crossed) Text("×", color = colors.onSurfaceVariant, fontSize = 20.sp)
     }
 }
 

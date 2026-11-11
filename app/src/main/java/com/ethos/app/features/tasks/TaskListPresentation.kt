@@ -7,15 +7,22 @@ import com.ethos.app.core.tasks.domain.TaskOccurrence
 import com.ethos.app.core.tasks.domain.TaskSnapshot
 import com.ethos.app.core.tasks.domain.TaskStatus
 import java.time.LocalDate
+import java.time.Instant
+import java.time.ZoneId
 
 internal fun TaskSnapshot.completedOccurrences(page: TaskPage, today: LocalDate, listId: String?):
-    List<TaskOccurrence> = activeOccurrences.filter { o ->
-        o.status == TaskStatus.DONE && when (page) {
+    List<TaskOccurrence> {
+    val outcomeDates = history.associate { it.id to Instant.ofEpochMilli(it.recordedAt)
+        .atZone(ZoneId.systemDefault()).toLocalDate() }
+    fun resolvedDate(o: TaskOccurrence): LocalDate? = o.completedDate ?: outcomeDates[o.activeOutcome]
+    return activeOccurrences.filter { o ->
+        (o.status == TaskStatus.DONE || o.status == TaskStatus.NOT_DONE) && when (page) {
             TaskPage.LIST -> o.fields.listId == listId
-            TaskPage.TODAY -> o.completedDate == today
-            TaskPage.REVIEW -> o.completedDate == today && o.dueDate?.isBefore(today) == true
+            TaskPage.TODAY -> resolvedDate(o) == today
+            TaskPage.REVIEW -> resolvedDate(o) == today && o.dueDate?.isBefore(today) == true
         }
-    }.sortedWith(compareByDescending<TaskOccurrence> { it.completedDate }.thenBy { it.position }.thenBy { it.id })
+    }.sortedWith(compareByDescending<TaskOccurrence> { resolvedDate(it) }.thenBy { it.position }.thenBy { it.id })
+}
 
 internal fun TaskSnapshot.listOccurrences(listId: String?): List<TaskOccurrence> {
     val recurringIds = definitions.filter { it.rule.kind != RepeatKind.NONE }.map { it.id }.toSet()
@@ -32,12 +39,11 @@ internal fun TaskSnapshot.listOccurrences(listId: String?): List<TaskOccurrence>
 data class TaskSections(
     val pending: List<TaskOccurrence>,
     val weekly: List<TaskOccurrence>,
-    val notDone: List<TaskOccurrence>,
     val completed: List<TaskOccurrence>,
     val showsTasks: Boolean,
     val showsHabits: Boolean,
 ) {
-    val isEmpty: Boolean get() = pending.isEmpty() && weekly.isEmpty() && notDone.isEmpty() && completed.isEmpty()
+    val isEmpty: Boolean get() = pending.isEmpty() && weekly.isEmpty() && completed.isEmpty()
 }
 
 /**
@@ -53,7 +59,7 @@ internal fun TaskSnapshot.sections(
         TaskPage.TODAY -> filter.showsHabits
         TaskPage.REVIEW -> false
     }
-    if (!showsTasks) return TaskSections(emptyList(), emptyList(), emptyList(), emptyList(), false, showsHabits)
+    if (!showsTasks) return TaskSections(emptyList(), emptyList(), emptyList(), false, showsHabits)
     val visible = when (page) {
         TaskPage.LIST -> listOccurrences(listId)
         TaskPage.TODAY -> activeOccurrences.filter { it.inDay(today) }
@@ -62,6 +68,6 @@ internal fun TaskSnapshot.sections(
     val open = visible.filter { it.status == TaskStatus.OPEN }
     val (day, weekly) = if (page == TaskPage.TODAY) open.partition { it.fields.deadline == DeadlineKind.DAY }
         else open to emptyList()
-    return TaskSections(day, weekly, visible.filter { it.status == TaskStatus.NOT_DONE },
+    return TaskSections(day, weekly,
         completedOccurrences(page, today, listId), true, showsHabits)
 }
