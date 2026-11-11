@@ -133,6 +133,16 @@
 - Não fazer commits, push, tags, publicação ou aumentar versão por iniciativa própria.
 - Não copiar configurações pessoais, credenciais, identidade visual ou regras da IPB para este projeto.
 
+## Rotina pessoal em uso
+- O usuário já criou sua rotina real no app (informado em 2026-11-11). Tratar os dados existentes como
+  dados pessoais em uso, preservando tarefas, hábitos, listas, históricos, configurações e vínculos.
+- Antes de mudanças que possam afetar essa rotina, avaliar migrações e impacto no comportamento existente.
+  Se houver perda de dados, redefinição ou mudança incompatível inevitável, explicar o impacto concreto e
+  combinar a solução com o usuário antes de executar a ação que afeta sua rotina.
+- Não restaurar base fictícia, limpar dados, desinstalar o app nem substituir a rotina por dados de teste.
+- Os detalhes da rotina não foram fornecidos nem copiados; este registro é uma preferência de preservação,
+  não um backup dos dados do app.
+
 <!-- SPECKIT START -->
 Fundação Android implementada: specs/001-android-foundation/spec.md.
 Interface/navegação implementada: specs/002-app-shell/spec.md.
