@@ -1,5 +1,6 @@
 package com.ethos.app.features.habits
 
+import com.ethos.app.core.ui.components.NumberStepper
 import com.ethos.app.core.ui.accounting.FinancialEstimate
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -60,7 +61,17 @@ fun HabitEditor(state: HabitsUiState, lists: List<TaskList>, actions: HabitEdito
                         actions.change(d.copy(habit = d.habit.copy(name = it))) }
                     HabitInput(R.string.habit_description, d.habit.description, !state.busy) {
                         actions.change(d.copy(habit = d.habit.copy(description = it))) }
-                    if (d.rule.type == HabitType.PRACTICE) PracticeFrequency(d, !state.busy, actions.change)
+                    if (d.rule.type == HabitType.PRACTICE) {
+                        HabitChoices(R.string.variant, listOf(R.string.variant_normal, R.string.variant_timed),
+                            if (d.timed) 1 else 0, !state.busy) { index ->
+                            actions.change(if (index == 1) d.copy(timed = true, target = "1",
+                                durationText = d.durationText.ifBlank { "20" },
+                                rule = d.rule.copy(unit = if (d.rule.unit == HabitUnit.MONTH) HabitUnit.DAY else d.rule.unit))
+                                else d.copy(timed = false))
+                        }
+                        if (d.timed) TimedFrequency(d, !state.busy, actions.change)
+                        else PracticeFrequency(d, !state.busy, actions.change)
+                    }
                     else BreakingRule(d, !state.busy, actions.change)
                     if (d.editing) Text(stringResource(R.string.habit_future_type_hint))
                     if (d.editing) HabitChoices(R.string.habit_goal_effect,
@@ -131,7 +142,9 @@ private fun PracticeFrequency(d: HabitDraft, enabled: Boolean, change: (HabitDra
             }
         }
     }
-    if (selected >= 2) HabitInput(R.string.habit_times, d.target, enabled) { change(d.copy(target = it)) }
+    if (selected >= 2) NumberStepper(d.target.toIntOrNull() ?: 1, { change(d.copy(target = it.toString())) },
+        if (selected == 2) 1..7 else 1..31,
+        stringResource(if (selected == 2) R.string.times_per_week else R.string.times_per_month), enabled = enabled)
 }
 
 /** "Quebrar hábito": avoid entirely or limit how often, never mixed with practice. */
@@ -147,6 +160,44 @@ private fun BreakingRule(d: HabitDraft, enabled: Boolean, change: (HabitDraft?) 
         HabitChoices(R.string.habit_period, listOf(R.string.habit_day, R.string.habit_week,
             R.string.habit_month), r.unit.ordinal, enabled) {
             change(d.copy(rule = r.copy(unit = HabitUnit.entries[it]))) }
-        HabitInput(R.string.habit_occurrence_limit, d.target, enabled) { change(d.copy(target = it)) }
+        NumberStepper(d.target.toIntOrNull() ?: 1, { change(d.copy(target = it.toString())) }, 0..99,
+            stringResource(when (r.unit) {
+                HabitUnit.DAY -> R.string.max_per_day
+                HabitUnit.WEEK -> R.string.max_per_week
+                HabitUnit.MONTH -> R.string.max_per_month
+            }), prefix = stringResource(R.string.at_most), enabled = enabled)
     }
 }
+
+/** Timed practice: minutes per day (on chosen weekdays) or per week; one practice per period (spec 016). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TimedFrequency(d: HabitDraft, enabled: Boolean, change: (HabitDraft?) -> Unit) {
+    val r = d.rule
+    val weekly = r.unit == HabitUnit.WEEK
+    HabitChoices(R.string.habit_frequency, listOf(R.string.habit_per_day, R.string.habit_per_week),
+        if (weekly) 1 else 0, enabled) { index ->
+        change(d.copy(target = "1", rule = r.copy(unit = if (index == 1) HabitUnit.WEEK else HabitUnit.DAY,
+            weekdays = if (index == 1) 127 else r.weekdays)))
+    }
+    if (!weekly) {
+        Text(stringResource(R.string.habit_weekdays), style = MaterialTheme.typography.labelLarge)
+        val days = listOf(R.string.habit_mon, R.string.habit_tue, R.string.habit_wed,
+            R.string.habit_thu, R.string.habit_fri, R.string.habit_sat, R.string.habit_sun)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            days.forEachIndexed { index, label ->
+                FilterChip(r.weekdays and (1 shl index) != 0, {
+                    val bits = r.weekdays xor (1 shl index)
+                    if (bits != 0) change(d.copy(rule = r.copy(weekdays = bits)))
+                }, enabled = enabled, label = { Text(stringResource(label)) })
+            }
+        }
+    }
+    NumberStepper(d.durationText.toIntOrNull() ?: DEFAULT_MINUTES, { change(d.copy(durationText = it.toString())) },
+        MINUTES_RANGE, stringResource(if (weekly) R.string.minutes_per_week else R.string.minutes_per_day),
+        step = MINUTES_STEP, enabled = enabled)
+}
+
+private const val DEFAULT_MINUTES = 20
+private const val MINUTES_STEP = 5
+private val MINUTES_RANGE = 5..600

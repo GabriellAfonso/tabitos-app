@@ -1,4 +1,6 @@
-﻿package com.ethos.app.core.ui.accounting
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
+package com.ethos.app.core.ui.accounting
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,14 +23,49 @@ val LocalFinancialPrices = staticCompositionLocalOf<List<Price>?> { null }
 fun financialTime(time: Long): String = Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault())
     .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
 
+private val difficultyLabels = listOf(R.string.easy, R.string.medium, R.string.hard)
+private val importanceLabels = listOf(R.string.low, R.string.medium, R.string.high)
+
+/** How coins and XP work, as two small tables and short facts instead of a paragraph. */
 @Composable
 fun AccountingExplanation(prices: List<Price>) {
-    Text(stringResource(R.string.finance_explanation))
-    prices.forEach { price ->
-        Text(stringResource(R.string.finance_table_line,
-            stringResource(listOf(R.string.easy, R.string.medium, R.string.hard)[price.category]),
-            price.coins, price.xp,
-            stringResource(listOf(R.string.low, R.string.medium, R.string.high)[price.category]), price.penalty))
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        PriceTable(R.string.finance_gain_title, R.string.finance_col_difficulty,
+            listOf(R.string.finance_col_coins, R.string.finance_col_xp),
+            prices.map { listOf(stringResource(difficultyLabels[it.category]), "+${it.coins}", "+${it.xp}") })
+        PriceTable(R.string.finance_penalty_title, R.string.finance_col_importance, listOf(R.string.finance_col_coins),
+            prices.map { listOf(stringResource(importanceLabels[it.category]), "−${it.penalty}") })
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(R.string.finance_fact_xp, R.string.finance_fact_habits, R.string.finance_fact_floor,
+                R.string.finance_fact_level).forEach { fact ->
+                AssistChip(onClick = {}, label = { Text(stringResource(fact)) }, enabled = false,
+                    colors = AssistChipDefaults.assistChipColors(
+                        disabledLabelColor = MaterialTheme.colorScheme.onSurface))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PriceTable(title: Int, firstColumn: Int, columns: List<Int>, rows: List<List<String>>) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
+            TableRow((listOf(firstColumn) + columns).map { stringResource(it) }, header = true)
+            HorizontalDivider()
+            rows.forEach { TableRow(it, header = false) }
+        }
+    }
+}
+
+@Composable
+private fun TableRow(cells: List<String>, header: Boolean) {
+    Row(Modifier.fillMaxWidth()) {
+        cells.forEachIndexed { index, cell ->
+            Text(cell, Modifier.weight(if (index == 0) 1.4f else 1f),
+                style = if (header) MaterialTheme.typography.labelMedium else MaterialTheme.typography.bodyLarge,
+                color = if (header) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
+        }
     }
 }
 

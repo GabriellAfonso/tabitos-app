@@ -33,6 +33,7 @@ import com.ethos.app.R
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.ui.accounting.FinancialEstimate
 import com.ethos.app.core.ui.components.DragHandle
+import com.ethos.app.core.ui.components.NumberStepper
 import com.ethos.app.core.ui.components.ReorderableColumn
 import com.ethos.app.core.ui.format.EthosDates
 import java.time.DayOfWeek
@@ -82,7 +83,7 @@ fun Input(
 fun TaskEditor(
     draft: TaskDraft, lists: List<TaskList>, occurrence: TaskOccurrence?, today: LocalDate, busy: Boolean,
     error: @Composable () -> Unit, onChange: (TaskDraft) -> Unit, onDifficulty: (Int) -> Unit,
-    onRepeat: (RepeatRule) -> Unit, onSave: () -> Unit, onClose: () -> Unit,
+    onRepeat: (RepeatRule) -> Unit, onSave: () -> Unit, onClose: () -> Unit, onNewList: () -> Unit = {},
 ) {
     Dialog(onDismissRequest = { if (!busy) onClose() },
         properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -100,7 +101,7 @@ fun TaskEditor(
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     error()
-                    QuickFields(draft, lists, today, busy, onChange)
+                    QuickFields(draft, lists, today, busy, onChange, onNewList)
                     var expanded by rememberSaveable(draft.id) { mutableStateOf(hasAdvancedOptions(draft)) }
                     TextButton({ expanded = !expanded }, Modifier.testTag("more-options")) {
                         Text(stringResource(if (expanded) R.string.fewer_options else R.string.more_options) +
@@ -127,12 +128,19 @@ fun TaskEditor(
 @Composable
 private fun QuickFields(
     draft: TaskDraft, lists: List<TaskList>, today: LocalDate, busy: Boolean, onChange: (TaskDraft) -> Unit,
+    onNewList: () -> Unit,
 ) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(draft.id) { if (!draft.editing) runCatching { focus.requestFocus() } }
     OutlinedTextField(draft.fields.title, { onChange(draft.copy(fields = draft.fields.copy(title = it))) },
         Modifier.fillMaxWidth().focusRequester(focus), enabled = !busy, singleLine = true,
         label = { Text(stringResource(R.string.title_field)) })
+    // Variant enables only compatible options: a timed task has a duration and no checklist (spec 016).
+    ChoiceRow(R.string.variant, listOf(R.string.variant_normal, R.string.variant_timed), if (draft.timed) 1 else 0,
+        !busy) { onChange(draft.copy(timed = it == 1, durationText = draft.durationText.ifBlank { "25" })) }
+    if (draft.timed) NumberStepper(draft.durationText.toIntOrNull() ?: DEFAULT_MINUTES,
+        { onChange(draft.copy(durationText = it.toString())) }, MINUTES_RANGE, stringResource(R.string.minutes),
+        step = MINUTES_STEP, enabled = !busy)
     val recurring = draft.rule.kind != RepeatKind.NONE
     val kinds = DeadlineKind.entries.filter { !recurring || it != DeadlineKind.NONE }
     val labels = kinds.map { kind -> when (kind) {
@@ -162,7 +170,8 @@ private fun QuickFields(
     if (draft.fields.deadline == DeadlineKind.DAY) {
         TimeField(draft.timeText, !busy) { onChange(draft.copy(timeText = it)) }
     }
-    ListChoices(lists, draft.fields.listId, !busy) { onChange(draft.copy(fields = draft.fields.copy(listId = it))) }
+    ListChoices(lists, draft.fields.listId, !busy, onNewList) {
+        onChange(draft.copy(fields = draft.fields.copy(listId = it))) }
 }
 
 @Composable
@@ -172,7 +181,11 @@ private fun MoreOptions(
 ) {
     Input(R.string.description_field, draft.fields.description, !busy, true) {
         onChange(draft.copy(fields = draft.fields.copy(description = it))) }
-    ChecklistEditor(draft.fields.checklist, !busy) { onChange(draft.copy(fields = draft.fields.copy(checklist = it))) }
+    if (!draft.timed) {
+        ChecklistEditor(draft.fields.checklist, !busy) { onChange(draft.copy(fields = draft.fields.copy(checklist = it))) }
+    } else if (draft.fields.checklist.isNotEmpty()) {
+        Text(stringResource(R.string.timed_removes_checklist), color = MaterialTheme.colorScheme.error)
+    }
     ChoiceRow(R.string.difficulty, listOf(R.string.easy, R.string.medium, R.string.hard),
         draft.fields.difficulty, !busy, onDifficulty)
     ChoiceRow(R.string.importance, listOf(R.string.low, R.string.medium, R.string.high),
@@ -215,11 +228,12 @@ private fun RepeatOptions(
                 }
             }
         }
-        RepeatChoice.MONTHLY -> Input(R.string.monthly_day, draft.monthDayText, !busy, number = true) {
-            onChange(draft.copy(monthDayText = it)) }
+        RepeatChoice.MONTHLY -> NumberStepper(draft.monthDayText.toIntOrNull() ?: 1,
+            { onChange(draft.copy(monthDayText = it.toString())) }, 1..31, "",
+            prefix = stringResource(R.string.on_day), enabled = !busy)
         RepeatChoice.INTERVAL -> {
-            Input(R.string.interval_days, draft.intervalText, !busy, number = true) {
-                onChange(draft.copy(intervalText = it)) }
+            NumberStepper(draft.intervalText.toIntOrNull() ?: 1, { onChange(draft.copy(intervalText = it.toString())) },
+                1..365, stringResource(R.string.days), prefix = stringResource(R.string.every), enabled = !busy)
             ChoiceRow(R.string.repeat_count_from, listOf(R.string.repeat_from_planned, R.string.repeat_from_completion),
                 if (rule.kind == RepeatKind.AFTER_COMPLETION) 1 else 0, !busy) {
                 onRepeat(rule.copy(kind = if (it == 1) RepeatKind.AFTER_COMPLETION else RepeatKind.FIXED_INTERVAL)) }
@@ -229,8 +243,9 @@ private fun RepeatOptions(
         draft.ending, !busy) { onChange(draft.copy(ending = it)) }
     if (draft.ending == 1) DateField(R.string.final_date, draft.untilText, today, !busy,
         { onChange(draft.copy(untilText = it)) }, min = start)
-    if (draft.ending == 2) Input(R.string.occurrence_count, draft.countText, !busy, number = true) {
-        onChange(draft.copy(countText = it)) }
+    if (draft.ending == 2) NumberStepper(draft.countText.toIntOrNull() ?: 1,
+        { onChange(draft.copy(countText = it.toString())) }, 1..999, stringResource(R.string.times_total),
+        enabled = !busy)
 }
 
 @Composable
@@ -281,7 +296,10 @@ private fun SymbolButton(symbol: String, description: String, enabled: Boolean, 
 }
 
 @Composable
-fun ListChoices(lists: List<TaskList>, selected: String?, enabled: Boolean, onSelect: (String?) -> Unit) {
+fun ListChoices(
+    lists: List<TaskList>, selected: String?, enabled: Boolean, onNewList: (() -> Unit)? = null,
+    onSelect: (String?) -> Unit,
+) {
     Text(stringResource(R.string.choose_list), style = MaterialTheme.typography.labelLarge)
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         FilterChip(selected == null, { onSelect(null) }, enabled = enabled,
@@ -289,6 +307,11 @@ fun ListChoices(lists: List<TaskList>, selected: String?, enabled: Boolean, onSe
         lists.forEach { list ->
             FilterChip(selected == list.id, { onSelect(list.id) }, enabled = enabled,
                 label = { Text(list.name) }, modifier = Modifier.sizeIn(minHeight = 48.dp))
+        }
+        // Creating the destination without leaving the task being written.
+        onNewList?.let { new ->
+            FilterChip(false, new, enabled = enabled, label = { Text("+ " + stringResource(R.string.new_list)) },
+                modifier = Modifier.sizeIn(minHeight = 48.dp))
         }
     }
 }
@@ -298,3 +321,7 @@ fun ScopeChoice(scope: ChangeScope, enabled: Boolean, change: (ChangeScope) -> U
     ChoiceRow(R.string.change_scope, listOf(R.string.only_this, R.string.this_and_future),
         scope.ordinal, enabled) { change(ChangeScope.entries[it]) }
 }
+
+private const val DEFAULT_MINUTES = 25
+private const val MINUTES_STEP = 5
+private val MINUTES_RANGE = 5..600
