@@ -1,5 +1,8 @@
 # Feature Specification: Coins, XP and levels
 
+> Spec 014: missed habit periods no longer incur penalties (penalties confirmed earlier stay in history);
+> avoid/limit success rewards are granted automatically when the period closes. Event penalties remain.
+
 **Feature Branch**: master retained
 **Created**: 2026-11-06
 **Status**: Implemented; clarifications approved 2026-11-06; evidence and limits in verification.md

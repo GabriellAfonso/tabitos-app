@@ -153,5 +153,9 @@ Spec013: editor de tarefa em tela cheia, captura rápida + "Mais opções", sele
 Datas pt-BR únicas (Hoje/Amanhã/Ontem, "10 nov", ano só se diferente); revisão só se vencida e data mudar.
 Checklist por itens; repetição em 5 opções mapeando os 8 RepeatKind; sem mudança de schema/regras.
 Verificação: specs/013-task-editor-pickers/verification.md; 132 JVM aprovados; instrumentados não executados.
+Spec014: hábito não deixa pendência; período fecha sozinho 2 dias após o fim (feito/perdido), sem Revisão.
+Hábito perdido não tira moedas; evitar/limitar sem evento = sucesso automático (HabitAction.Settle).
+Cartão com sequência e % de constância; editor com frequências simples; "+" com Tarefa/Hábito/Quebrar hábito.
+Verificação: specs/014-habits-without-debt/verification.md; 134 JVM aprovados; instrumentados não executados.
 Constituição: .specify/memory/constitution.md v1.0.0.
 <!-- SPECKIT END -->

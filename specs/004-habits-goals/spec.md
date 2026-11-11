@@ -1,5 +1,9 @@
 # Feature Specification: Habits and goals
 
+> Spec 014 supersedes the review rules here: habit periods close by themselves 2 days after their end
+> (success or missed), never become pending, never go to Revisão and missed periods cost no coins.
+> Avoid/limit succeed by default without events. Records are accepted only before a period closes.
+
 **Feature Branch**: master retained
 **Created**: 2026-11-06
 **Status**: Implemented; clarifications approved 2026-11-06; evidence and limits in verification.md.
