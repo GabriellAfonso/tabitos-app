@@ -37,6 +37,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     sourceSets.getByName("androidTest").assets.directories.add("$projectDir/schemas")
 }
