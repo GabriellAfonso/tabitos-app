@@ -30,6 +30,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -65,6 +66,7 @@ data class DrawerListActions(val openTasks: () -> Unit, val close: () -> Unit, v
 fun EthosShell(
     today: LocalDate,
     pendingCount: Int,
+    gameMode: Boolean,
     createActions: CreateActions,
     drawerLists: @Composable (lists: DrawerListActions) -> Unit,
     snackbar: @Composable () -> Unit = {},
@@ -84,8 +86,10 @@ fun EthosShell(
         }
     }
     fun navigateFromDrawer(destination: ShellDestination) = scope.launch { drawer.close(); navigate(destination) }
+    val leavesGameDestination = !gameMode && current.isGameOnly
+    LaunchedEffect(leavesGameDestination) { if (leavesGameDestination) navigate(ShellDestination.TODAY) }
     ModalNavigationDrawer(drawerState = drawer, drawerContent = {
-        ShellDrawer(current, pendingCount, ::navigateFromDrawer) {
+        ShellDrawer(current, pendingCount, ShellDestination.drawerFor(gameMode), ::navigateFromDrawer) {
             drawerLists(DrawerListActions(
                 openTasks = { navigateFromDrawer(ShellDestination.TASKS) },
                 close = { scope.launch { drawer.close() } },
@@ -115,15 +119,15 @@ fun EthosShell(
 
 @Composable
 private fun ShellDrawer(
-    current: ShellDestination, pendingCount: Int, navigate: (ShellDestination) -> Unit,
-    lists: @Composable () -> Unit,
+    current: ShellDestination, pendingCount: Int, destinations: List<ShellDestination>,
+    navigate: (ShellDestination) -> Unit, lists: @Composable () -> Unit,
 ) {
     ModalDrawerSheet {
         Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.your_space), style = MaterialTheme.typography.labelMedium)
             Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineMedium)
-            ShellDestination.drawer.forEach { destination ->
+            destinations.forEach { destination ->
                 NavigationDrawerItem(
                     label = { Text(stringResource(destination.title)) },
                     selected = current == destination,
@@ -205,6 +209,7 @@ private fun EthosShellPreview() {
         EthosShell(
             today = LocalDate.of(2026, 11, 11),
             pendingCount = 2,
+            gameMode = true,
             createActions = CreateActions(taskEnabled = true, habitEnabled = true, {}, {}, {}),
             drawerLists = { Text(stringResource(R.string.inbox)) },
         ) { destination, _ -> Text(stringResource(destination.title), Modifier.padding(20.dp)) }

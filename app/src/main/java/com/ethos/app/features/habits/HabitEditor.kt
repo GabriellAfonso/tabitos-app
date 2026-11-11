@@ -56,7 +56,7 @@ fun HabitEditor(state: HabitsUiState, lists: List<TaskList>, actions: HabitEdito
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     HabitError(state, actions.retry)
-                    FinancialEstimate(d.habit.difficulty, d.habit.importance)
+                    if (state.gameMode) FinancialEstimate(d.habit.difficulty, d.habit.importance)
                     HabitInput(R.string.habit_name, d.habit.name, !state.busy) {
                         actions.change(d.copy(habit = d.habit.copy(name = it))) }
                     HabitInput(R.string.habit_description, d.habit.description, !state.busy) {
@@ -77,8 +77,8 @@ fun HabitEditor(state: HabitsUiState, lists: List<TaskList>, actions: HabitEdito
                     if (d.editing) HabitChoices(R.string.habit_goal_effect,
                         listOf(R.string.habit_current_period, R.string.habit_next_period),
                         if (d.nextPeriod) 1 else 0, !state.busy) { actions.change(d.copy(nextPeriod = it == 1)) }
-                    HabitChoices(R.string.habit_difficulty, listOf(R.string.habit_easy, R.string.habit_medium,
-                        R.string.habit_hard), d.habit.difficulty, !state.busy, actions.difficulty)
+                    if (state.gameMode) HabitChoices(R.string.habit_difficulty, listOf(R.string.habit_easy,
+                        R.string.habit_medium, R.string.habit_hard), d.habit.difficulty, !state.busy, actions.difficulty)
                     HabitChoices(R.string.habit_importance, listOf(R.string.habit_low, R.string.habit_medium,
                         R.string.habit_high), d.habit.importance, !state.busy) {
                         actions.change(d.copy(habit = d.habit.copy(importance = it, importanceManual = true))) }

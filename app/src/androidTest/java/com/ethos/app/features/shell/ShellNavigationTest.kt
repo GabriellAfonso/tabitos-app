@@ -24,6 +24,7 @@ class ShellNavigationTest {
                 EthosShell(
                     today = LocalDate.of(2026, 11, 11),
                     pendingCount = pendingCount,
+                    gameMode = true,
                     createActions = CreateActions(taskEnabled = true, habitEnabled = true, {}, {}, {}),
                     drawerLists = {},
                 ) { destination, _ -> Text("page:${destination.route} " + stringResource(destination.title)) }

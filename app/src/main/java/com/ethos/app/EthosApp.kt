@@ -65,6 +65,9 @@ import com.ethos.app.features.rewards.RewardsViewModel
 import com.ethos.app.features.settings.AppearanceViewModel
 import com.ethos.app.features.settings.DemoSettingsScreen
 import com.ethos.app.features.settings.DemoViewModel
+import com.ethos.app.features.settings.GameModeSetting
+import com.ethos.app.features.settings.GameModeUiState
+import com.ethos.app.features.settings.GameModeViewModel
 import com.ethos.app.features.settings.SettingsContent
 import com.ethos.app.features.settings.TimerAlarmSetting
 import com.ethos.app.features.shell.CreateActions
@@ -109,14 +112,17 @@ private class AppViewModels(
     val tasks: TasksViewModel, val habits: HabitsViewModel, val accounting: AccountingViewModel,
     val rewards: RewardsViewModel, val reminders: ReminderViewModel, val timers: TimerViewModel,
     val trackers: TrackerViewModel, val calendar: CalendarViewModel, val demo: DemoViewModel,
+    val gameMode: GameModeViewModel,
 )
 
 /** One frame of collected state, so page functions receive values instead of collecting again. */
 private class AppState(
     val tasks: TasksUiState, val habits: HabitsUiState, val financial: AccountingUiState,
     val reminders: ReminderUiState, val timers: TimerUiState, val trackers: TrackerUiState,
-    val requestPermission: () -> Unit, val timerCards: TimerCardActions,
+    val requestPermission: () -> Unit, val timerCards: TimerCardActions, val gameMode: GameModeUiState,
 ) {
+    /** Coins, XP, rewards and their screens are shown only with game mode on (spec 017). */
+    val showsGame: Boolean = gameMode.enabled
     /** Revisão counts tasks only: habits never become pending (spec 014). */
     val pendingReviews: Int = tasks.snapshot.activeOccurrences.count { it.needsReview(tasks.today) }
 }
@@ -124,6 +130,7 @@ private class AppState(
 @Composable
 private fun appViewModels() = AppViewModels(
     viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(),
+    viewModel(),
 )
 
 /** Composition root of the app; [onDarkTheme] lets the Activity style the system bars. */
@@ -145,6 +152,7 @@ fun EthosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
         val reminders by vm.reminders.state.collectAsStateWithLifecycle()
         val timers by vm.timers.state.collectAsStateWithLifecycle()
         val trackers by vm.trackers.state.collectAsStateWithLifecycle()
+        val gameMode by vm.gameMode.state.collectAsStateWithLifecycle()
         TasksRefreshEffect(vm.tasks)
         HabitsRefreshEffect(vm.habits)
         TimerTicker(vm.timers)
@@ -158,7 +166,8 @@ fun EthosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
                     tasks.today, vm.timers.zone)?.let { vm.timers.start(it.start) }
             },
         )
-        val app = AppState(tasks, habits, financial, reminders, timers, trackers, requestPermission, timerCards)
+        val app = AppState(tasks, habits, financial, reminders, timers, trackers, requestPermission, timerCards,
+            gameMode)
         NotificationRouting(requests, vm, app)
         LaunchedEffect(tasks.snapshot.activeLists) {
             vm.habits.listIds(tasks.snapshot.activeLists.map { it.id }.toSet())
@@ -192,6 +201,7 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
     EthosShell(
         today = tasks.today,
         pendingCount = app.pendingReviews,
+        gameMode = app.showsGame,
         createActions = CreateActions(
             taskEnabled = !tasks.loading && !tasks.busy,
             habitEnabled = !habits.loading && !habits.busy,
@@ -226,10 +236,11 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
                 AccountingHistory(app.financial, vm.accounting::retry, rewards.snapshot.purchases)
             }
             ShellDestination.SETTINGS -> SettingsPage {
+                GameModeSetting(app.gameMode, vm.gameMode::request, vm.gameMode::confirmOff)
                 appearanceSettings()
                 if (BuildConfig.DEBUG) DemoSettingsScreen(vm.demo)
-                AccountingSettings(app.financial, vm.accounting::edit, vm.accounting::draft, vm.accounting::save,
-                    vm.accounting::retry)
+                if (app.showsGame) AccountingSettings(app.financial, vm.accounting::edit, vm.accounting::draft,
+                    vm.accounting::save, vm.accounting::retry)
                 ReminderSettingsContent(app.reminders, vm.reminders, app.requestPermission)
             }
         }
@@ -279,7 +290,7 @@ private fun TodayHeader(vm: AppViewModels, app: AppState, openRewards: () -> Uni
     // The shell header already shows the date (spec 010).
     Text(stringResource(R.string.one_step), style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant)
-    WalletTiles(app.financial, openRewards, vm.accounting::retry)
+    if (app.showsGame) WalletTiles(app.financial, openRewards, vm.accounting::retry)
     TimerSessionCards(app.timers, app.visibleTimerSessions(vm), vm.timers.zone, app.timerCards)
     TrackerPendingCard(app.trackers.pending.size) {
         app.trackers.pending.firstOrNull()?.let { vm.trackers.fill(it.id, app.trackers.today) }
@@ -320,6 +331,7 @@ private const val MILLIS_PER_MINUTE = 60_000L
 
 private fun AppState.visibleTimerSessions(vm: AppViewModels) =
     visibleSessions(tasks.snapshot, habits.snapshot, timers, vm.timers.zone)
+        .filter { showsGame || it.kind != TimerKind.REWARD }
 
 @Composable
 private fun SettingsPage(content: @Composable () -> Unit) {
@@ -365,6 +377,7 @@ private fun NotificationRouting(requests: AppRequests, vm: AppViewModels, app: A
     LaunchedEffect(requests.timer, timers.loading, ready) {
         val request = requests.timer ?: return@LaunchedEffect
         if (timers.loading || !ready) return@LaunchedEffect
+        if (!app.showsGame && request.first == TimerKind.REWARD) { requests.timer = null; return@LaunchedEffect }
         vm.timers.open(timerTarget(request.first, request.second, tasks.snapshot, habits.snapshot, timers.snapshot,
             tasks.today, vm.timers.zone))
         requests.timer = null

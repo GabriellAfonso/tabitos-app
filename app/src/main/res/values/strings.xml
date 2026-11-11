@@ -681,4 +681,11 @@
     <string name="habit_quick_record_description">Marcar prática de hoje: %1$s</string>
     <string name="habit_quick_occurrence_description">Registrar ocorrência de hoje: %1$s</string>
     <string name="habit_week_description">Semana atual: %1$d de 7 dias com registro</string>
+    <string name="game_mode_setting">Modo jogo</string>
+    <string name="game_mode_setting_hint">Moedas, XP, níveis e recompensas pelas tarefas e hábitos.</string>
+    <string name="game_mode_off_title">Desligar o modo jogo?</string>
+    <string name="game_mode_off_message">Moedas, XP e recompensas ficam escondidos e o que você concluir enquanto estiver desligado não conta. Nada é apagado: ao religar, tudo volta como estava.</string>
+    <string name="game_mode_off_confirm">Desligar</string>
+    <string name="game_mode_error">Não foi possível ler ou salvar o modo jogo.</string>
+    <string name="game_mode_reward_timer_running">Pause o cronômetro da recompensa antes de mudar o modo jogo.</string>
 </resources>

@@ -14,8 +14,13 @@ enum class ShellDestination(val route: String, @param:StringRes val title: Int, 
     SETTINGS("settings", R.string.settings, "⚙"),
     ;
 
+    /** Exists only with game mode on (spec 017); off, requests for it land on Hoje. */
+    val isGameOnly: Boolean get() = this == REWARDS || this == HISTORY
+
     companion object {
         val bottomBar = listOf(TODAY, TASKS, HABITS, CALENDAR)
-        val drawer = listOf(TODAY, REVIEW, REWARDS, HISTORY)
+        private val drawer = listOf(TODAY, REVIEW, REWARDS, HISTORY)
+
+        fun drawerFor(gameMode: Boolean): List<ShellDestination> = drawer.filter { gameMode || !it.isGameOnly }
     }
 }

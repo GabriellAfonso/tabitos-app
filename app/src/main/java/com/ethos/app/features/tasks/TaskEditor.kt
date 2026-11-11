@@ -78,11 +78,12 @@ fun Input(
 /**
  * Full-screen task editor (spec 013): quick capture fields first, the rest under "Mais opções".
  * Pickers write ISO text into the draft, so saving keeps the existing parsing and rules.
+ * [onDifficulty] is null while game mode is off (spec 017): difficulty and its coin/XP estimate are hidden.
  */
 @Composable
 fun TaskEditor(
     draft: TaskDraft, lists: List<TaskList>, occurrence: TaskOccurrence?, today: LocalDate, busy: Boolean,
-    error: @Composable () -> Unit, onChange: (TaskDraft) -> Unit, onDifficulty: (Int) -> Unit,
+    error: @Composable () -> Unit, onChange: (TaskDraft) -> Unit, onDifficulty: ((Int) -> Unit)?,
     onRepeat: (RepeatRule) -> Unit, onSave: () -> Unit, onClose: () -> Unit, onNewList: () -> Unit = {},
 ) {
     Dialog(onDismissRequest = { if (!busy) onClose() },
@@ -177,7 +178,7 @@ private fun QuickFields(
 @Composable
 private fun MoreOptions(
     draft: TaskDraft, today: LocalDate, busy: Boolean, onChange: (TaskDraft) -> Unit,
-    onDifficulty: (Int) -> Unit, onRepeat: (RepeatRule) -> Unit,
+    onDifficulty: ((Int) -> Unit)?, onRepeat: (RepeatRule) -> Unit,
 ) {
     Input(R.string.description_field, draft.fields.description, !busy, true) {
         onChange(draft.copy(fields = draft.fields.copy(description = it))) }
@@ -186,12 +187,14 @@ private fun MoreOptions(
     } else if (draft.fields.checklist.isNotEmpty()) {
         Text(stringResource(R.string.timed_removes_checklist), color = MaterialTheme.colorScheme.error)
     }
-    ChoiceRow(R.string.difficulty, listOf(R.string.easy, R.string.medium, R.string.hard),
-        draft.fields.difficulty, !busy, onDifficulty)
+    if (onDifficulty != null) {
+        ChoiceRow(R.string.difficulty, listOf(R.string.easy, R.string.medium, R.string.hard),
+            draft.fields.difficulty, !busy, onDifficulty)
+    }
     ChoiceRow(R.string.importance, listOf(R.string.low, R.string.medium, R.string.high),
         draft.fields.importance, !busy) {
         onChange(draft.copy(fields = draft.fields.copy(importance = it, importanceManual = true))) }
-    FinancialEstimate(draft.fields.difficulty, draft.fields.importance)
+    if (onDifficulty != null) FinancialEstimate(draft.fields.difficulty, draft.fields.importance)
     RepeatOptions(draft, today, busy, onChange, onRepeat)
 }
 

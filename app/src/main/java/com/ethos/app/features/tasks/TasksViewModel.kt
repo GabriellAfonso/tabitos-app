@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.accounting.domain.AccountingRepository
 import com.ethos.app.core.accounting.domain.FinancialPreview
+import com.ethos.app.core.preferences.GameModeSource
 import com.ethos.app.core.timers.domain.TimerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -51,6 +52,8 @@ data class TasksUiState(
     val durations: Map<String, Int> = emptyMap(),
     /** Timed occurrence waiting for "Concluir sem completar o tempo?". */
     val timedConfirmation: String? = null,
+    /** Game mode (spec 017): off hides difficulty/estimates and skips financial confirmations. */
+    val gameMode: Boolean = true,
 ) {
     fun isTimed(o: TaskOccurrence): Boolean = o.taskId in durations
 }
@@ -60,6 +63,7 @@ class TasksViewModel @Inject constructor(
     private val repository: TaskRepository, private val clock: TaskClock, private val saved: SavedStateHandle,
     private val accounting: AccountingRepository? = null,
     private val timers: TimerRepository? = null,
+    private val gameMode: GameModeSource? = null,
 ) : ViewModel() {
     private val mutable = MutableStateFlow(TasksUiState(today = clock.today(), draft = saved["taskDraft"]))
     /** Goal to store once the task itself is saved; null minutes removes it (normal variant). */
@@ -82,6 +86,13 @@ class TasksViewModel @Inject constructor(
 
     init {
         observe(); refresh()
+        gameMode?.let { source ->
+            viewModelScope.launch {
+                try { source.enabled.collect { on -> mutable.update { it.copy(gameMode = on) } }
+                } catch (e: CancellationException) { throw e
+                } catch (_: Exception) { }
+            }
+        }
         timers?.let { repository ->
             viewModelScope.launch {
                 try {
@@ -283,7 +294,9 @@ class TasksViewModel @Inject constructor(
 
     private fun execute(action: TaskAction, closeDraft: Boolean = false, confirmed: Boolean = false) {
         if (mutable.value.busy) return
-        if (!confirmed && accounting != null && (action is TaskAction.Resolve || action is TaskAction.Undo)) {
+        val asksFinancialConfirmation = accounting != null && mutable.value.gameMode &&
+            (action is TaskAction.Resolve || action is TaskAction.Undo)
+        if (!confirmed && asksFinancialConfirmation) {
             mutable.update { it.copy(busy = true, error = null) }
             viewModelScope.launch {
                 try {

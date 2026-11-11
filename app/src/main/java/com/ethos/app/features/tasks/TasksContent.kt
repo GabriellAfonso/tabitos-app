@@ -269,8 +269,9 @@ fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
     state.draft?.let { draft ->
         TaskEditor(draft, state.snapshot.activeLists,
             state.snapshot.activeOccurrences.firstOrNull { it.id == draft.id }.takeIf { draft.editing },
-            state.today, state.busy, error, viewModel::updateDraft, viewModel::difficulty, viewModel::repeatRule,
-            viewModel::saveDraft, viewModel::closeDraft, viewModel::newListForDraft)
+            state.today, state.busy, error, viewModel::updateDraft,
+            onDifficulty = if (state.gameMode) viewModel::difficulty else null, onRepeat = viewModel::repeatRule,
+            onSave = viewModel::saveDraft, onClose = viewModel::closeDraft, onNewList = viewModel::newListForDraft)
         if (state.discardConfirmation) AlertDialog(onDismissRequest = { viewModel.confirmDiscard(false) },
             title = { Text(stringResource(R.string.discard_title)) },
             text = { Text(stringResource(R.string.discard_body)) },
