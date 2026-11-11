@@ -1,5 +1,6 @@
 package com.ethos.app.features.habits
 
+import com.ethos.app.core.preferences.FixedGameMode
 import androidx.lifecycle.SavedStateHandle
 import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskClock
@@ -50,6 +51,26 @@ class HabitsViewModelTest {
         advanceUntilIdle()
         vm.confirmFinancial(true)
         advanceUntilIdle()
+        assertEquals(1, repo.snapshot.value.records.size)
+    }
+
+    @Test fun gameModeOffRecordsUnwantedHabitWithoutConfirmation() = runTest(dispatcher) {
+        val repo = FakeRepository()
+        repo.execute(HabitAction.Save(Habit("h", clock.today(), "Evitar"),
+            HabitRule("r", "h", clock.today(), HabitType.AVOID, target = 0)))
+        val accounting = object : com.ethos.app.core.accounting.domain.AccountingRepository {
+            override fun observe() = MutableStateFlow(com.ethos.app.core.accounting.domain.AccountingSnapshot())
+            override suspend fun savePrices(prices: List<com.ethos.app.core.accounting.domain.Price>) = Unit
+            override suspend fun previewTask(action: com.ethos.app.core.tasks.domain.TaskAction):
+                com.ethos.app.core.accounting.domain.FinancialPreview = error("Unexpected task")
+            override suspend fun previewHabit(action: HabitAction):
+                com.ethos.app.core.accounting.domain.FinancialPreview = error("No preview while off")
+        }
+        val vm = HabitsViewModel(repo, clock, SavedStateHandle(), accounting, gameMode = FixedGameMode(on = false))
+        advanceUntilIdle()
+        vm.quickRecord("h")
+        advanceUntilIdle()
+        assertNull(vm.state.value.financialPreview)
         assertEquals(1, repo.snapshot.value.records.size)
     }
 

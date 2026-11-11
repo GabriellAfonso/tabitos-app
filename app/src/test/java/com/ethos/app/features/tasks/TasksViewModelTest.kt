@@ -1,5 +1,6 @@
 package com.ethos.app.features.tasks
 
+import com.ethos.app.core.preferences.FixedGameMode
 import androidx.lifecycle.SavedStateHandle
 import com.ethos.app.core.accounting.domain.*
 import com.ethos.app.core.habits.domain.HabitAction
@@ -255,6 +256,24 @@ class TasksViewModelTest {
         assertEquals(2, previews)
         assertEquals(TaskStatus.DONE, repo.snapshot.value.occurrences.single().status)
         assertEquals(1, repo.snapshot.value.history.count { it.kind == AuditKind.COMPLETED })
+    }
+
+    @Test fun gameModeOffCompletesWithoutFinancialConfirmation() = runTest(dispatcher) {
+        val repo = FakeRepository(clock)
+        repo.execute(TaskAction.Create("a", TaskFields(title = "Fictitious"), RepeatRule(start = clock.today())))
+        val accounting = object : AccountingRepository {
+            override fun observe() = MutableStateFlow(AccountingSnapshot())
+            override suspend fun savePrices(prices: List<Price>) = Unit
+            override suspend fun previewTask(action: TaskAction): FinancialPreview = error("No preview while off")
+            override suspend fun previewHabit(action: HabitAction) = error("Unexpected habit mutation")
+        }
+        val vm = TasksViewModel(repo, clock, SavedStateHandle(), accounting, gameMode = FixedGameMode(on = false))
+        advanceUntilIdle()
+        assertFalse(vm.state.value.gameMode)
+        vm.notification("a:1", true)
+        advanceUntilIdle()
+        assertNull(vm.state.value.financialPreview)
+        assertEquals(TaskStatus.DONE, repo.snapshot.value.occurrences.single().status)
     }
 
     private class FakeRepository(val clock: TaskClock) : TaskRepository {
