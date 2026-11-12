@@ -98,4 +98,24 @@ class TimerRulesTest {
         assertEquals(TimerProblem.OVERLAP, problem("2026-11-05T20:20", "2026-11-05T21:00"))
         check("2026-11-05T20:30", "2026-11-05T21:00")
     }
+
+    @Test fun discardTargetsOnlyTheLatestCountedSegment() {
+        val session = TimerSession("s", TimerKind.HABIT, "h", "Ler", TimerState.RUNNING, created = 0)
+        val yesterday = closed("a", "s", "2026-11-10T10:00", 20)
+        val manual = closed("m", "s", "2026-11-11T07:00", 10).copy(manual = true)
+        val accidental = TimerSegment("b", "s", at("2026-11-11T09:00"), startElapsed = 0, created = 0)
+        val snapshot = TimerSnapshot(listOf(session), listOf(yesterday, accidental, manual))
+        assertEquals("b", TimerRules.discardable(snapshot, session)?.id)
+    }
+
+    @Test fun rewardsReachedAndFinishedSessionsCannotBeDiscarded() {
+        val segment = closed("a", "s", "2026-11-11T09:00", 5)
+        val base = TimerSession("s", TimerKind.TASK, "t", "Ler", TimerState.PAUSED, created = 0)
+        val snapshot = TimerSnapshot(listOf(base), listOf(segment))
+        assertEquals("a", TimerRules.discardable(snapshot, base)?.id)
+        listOf(base.copy(kind = TimerKind.REWARD), base.copy(reached = true), base.copy(state = TimerState.FINISHED))
+            .forEach { assertEquals(null, TimerRules.discardable(snapshot.copy(sessions = listOf(it)), it)) }
+        val onlyManual = snapshot.copy(segments = listOf(segment.copy(manual = true)))
+        assertEquals(null, TimerRules.discardable(onlyManual, base))
+    }
 }

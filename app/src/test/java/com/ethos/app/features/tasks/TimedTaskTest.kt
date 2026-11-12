@@ -120,5 +120,6 @@ class TimedTaskTest {
         override suspend fun addManual(request: TimerStart, start: Long, end: Long, bounds: TimerBounds) = Unit
         override suspend fun correct(segmentId: String, start: Long, end: Long, bounds: TimerBounds) = Unit
         override suspend fun delete(segmentId: String) = Unit
+        override suspend fun discardLatest(sessionId: String) = Unit
     }
 }

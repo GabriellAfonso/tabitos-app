@@ -133,6 +133,33 @@ class TimerDatabaseTest {
         } finally { db.close() }
     }
 
+    @Test fun discardDropsOnlyTheLatestCountAndEndsAnEmptySession() = runBlocking {
+        val db = memory()
+        try {
+            val clock = clock()
+            val repo = RoomTimerRepository(db, clock)
+            repo.start(task("a"), false)
+            clock.advance(3 * minute)
+            val accidental = repo.observe().first().running!!
+            repo.discardLatest(accidental.id)
+            var s = repo.observe().first()
+            assertNull(s.running)
+            assertNull(s.open(TimerKind.TASK, "a"))
+            assertTrue(s.audits.any { it.kind == TimerAuditKind.DISCARDED })
+            // Earlier credited time survives a later discard; the session stays open and paused.
+            repo.start(task("b"), false)
+            clock.advance(10 * minute)
+            val b = repo.observe().first().running!!
+            repo.pause(b.id)
+            repo.start(task("b"), false)
+            clock.advance(2 * minute)
+            repo.discardLatest(b.id)
+            s = repo.observe().first()
+            assertEquals(TimerState.PAUSED, s.open(TimerKind.TASK, "b")!!.state)
+            assertEquals(10 * minute, TimerRules.sessionTotal(s, b.id, TimerNow(clock.wall, clock.elapsed, 4)))
+        } finally { db.close() }
+    }
+
     @Test fun goalCapsPausesAlertsOnceAndRefusesOverrun() = runBlocking {
         val db = memory()
         try {

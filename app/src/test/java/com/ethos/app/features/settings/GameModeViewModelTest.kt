@@ -100,5 +100,6 @@ class GameModeViewModelTest {
         override suspend fun addManual(request: TimerStart, start: Long, end: Long, bounds: TimerBounds) { }
         override suspend fun correct(segmentId: String, start: Long, end: Long, bounds: TimerBounds) { }
         override suspend fun delete(segmentId: String) { }
+        override suspend fun discardLatest(sessionId: String) = Unit
     }
 }

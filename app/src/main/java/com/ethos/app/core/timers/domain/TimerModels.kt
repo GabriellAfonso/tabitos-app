@@ -10,7 +10,7 @@ enum class TimerState { RUNNING, PAUSED, FINISHED }
 enum class TimerPeriod { TOTAL, DAY, WEEK }
 enum class TimerAuditKind {
     START, PAUSE, RESUME, RECOVERED, REACHED, EXHAUSTED, MANUAL, CORRECTED, DELETED, FINISHED, CONFIRMED,
-    SOURCE_CLOSED,
+    SOURCE_CLOSED, DISCARDED,
 }
 enum class TimerProblem { INVALID_INTERVAL, FUTURE, TOO_LONG, BEFORE_SOURCE, INACTIVE, OVERLAP, NO_REMAINING }
 
@@ -84,4 +84,6 @@ interface TimerRepository {
     suspend fun addManual(request: TimerStart, start: Long, end: Long, bounds: TimerBounds)
     suspend fun correct(segmentId: String, start: Long, end: Long, bounds: TimerBounds)
     suspend fun delete(segmentId: String)
+    /** Drops the time counted since the last start/resume of an open session (spec 018). */
+    suspend fun discardLatest(sessionId: String)
 }

@@ -42,6 +42,19 @@ object TimerRules {
 
     fun endWall(segment: TimerSegment, now: TimerNow) = segment.endWall ?: (segment.startWall + duration(segment, now))
 
+    /**
+     * The segment opened by the last start/resume, if it may be discarded (spec 018). Reward time was paid for
+     * and reached objectives already completed their source, so neither offers a discard.
+     */
+    fun discardable(snapshot: TimerSnapshot, session: TimerSession): TimerSegment? {
+        if (session.kind == TimerKind.REWARD || session.state == TimerState.FINISHED || session.reached) return null
+        return snapshot.segments.filter { it.sessionId == session.id && it.active && !it.manual }
+            .maxByOrNull { it.startWall }
+    }
+
+    /** Below this, a discard loses too little to be worth a confirmation (spec 018). */
+    const val DISCARD_CONFIRM_MILLIS = 60_000L
+
     fun sessionTotal(snapshot: TimerSnapshot, sessionId: String, now: TimerNow) =
         snapshot.segments.filter { it.sessionId == sessionId && it.active }.sumOf { duration(it, now) }
 

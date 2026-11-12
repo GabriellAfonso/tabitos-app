@@ -85,6 +85,7 @@ import com.ethos.app.features.tasks.TasksViewModel
 import com.ethos.app.features.timers.TimerCardActions
 import com.ethos.app.features.timers.TimerDialogs
 import com.ethos.app.features.timers.TimerSessionCards
+import com.ethos.app.features.timers.TimerStartedFeedback
 import com.ethos.app.features.timers.TimerTicker
 import com.ethos.app.features.timers.TimerUiState
 import com.ethos.app.features.timers.TimerViewModel
@@ -166,6 +167,7 @@ fun EthosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
                 timerTarget(session.kind, session.sourceId, tasks.snapshot, habits.snapshot, timers.snapshot,
                     tasks.today, vm.timers.zone)?.let { vm.timers.start(it.start) }
             },
+            discard = vm.timers::requestDiscard,
         )
         val app = AppState(tasks, habits, financial, reminders, timers, trackers, requestPermission, timerCards,
             gameMode)
@@ -217,7 +219,9 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
                 onManage = { drawer.close(); vm.tasks.manageLists(true) })
         },
         snackbar = {
-            if (tasks.timerDone != null) TimerDoneFeedback(vm.tasks::undoTimerDone, vm.tasks::dismissTimerDone)
+            if (app.timers.startedSession != null) {
+                TimerStartedFeedback(vm.timers::undoStart, vm.timers::dismissStartUndo)
+            } else if (tasks.timerDone != null) TimerDoneFeedback(vm.tasks::undoTimerDone, vm.tasks::dismissTimerDone)
             else HabitPracticeFeedback(habits, vm.habits::undoPractice, vm.habits::dismissPracticeFeedback)
         },
     ) { destination, navigate ->

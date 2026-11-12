@@ -5,9 +5,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,6 +57,7 @@ fun TimerTicker(viewModel: TimerViewModel) {
 
 data class TimerCardActions(
     val open: (TimerSession) -> Unit = {}, val pause: (String) -> Unit = {}, val resume: (TimerSession) -> Unit = {},
+    val discard: (String) -> Unit = {},
 )
 
 /** Active and paused sessions (filtered by the host to sources still open), running first. */
@@ -64,11 +68,16 @@ fun TimerSessionCards(state: TimerUiState, sessions: List<TimerSession>, zone: Z
         val remaining = TimerRules.remaining(state.snapshot, session, state.now, zone)
         OutlinedCard(onClick = { actions.open(session) }, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(stringResource(when {
-                    session.kind == TimerKind.REWARD -> R.string.timer_reward_session
-                    session.state == TimerState.RUNNING -> R.string.timer_active
-                    else -> R.string.timer_paused
-                }), style = MaterialTheme.typography.labelLarge)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(stringResource(when {
+                        session.kind == TimerKind.REWARD -> R.string.timer_reward_session
+                        session.state == TimerState.RUNNING -> R.string.timer_active
+                        else -> R.string.timer_paused
+                    }), style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
+                    if (TimerRules.discardable(state.snapshot, session) != null) {
+                        TimerCardMenu(enabled = !state.busy) { actions.discard(session.id) }
+                    }
+                }
                 Text(session.title, style = MaterialTheme.typography.titleMedium)
                 Text(if (remaining != null) stringResource(R.string.timer_remaining_line, clockText(remaining))
                     else stringResource(R.string.timer_elapsed_line, clockText(total)))
@@ -87,6 +96,49 @@ fun TimerSessionCards(state: TimerUiState, sessions: List<TimerSession>, zone: Z
             }
         }
     }
+}
+
+/** Kept behind ⋮ rather than beside Pausar, so discarding is never one more accidental tap (spec 018). */
+@Composable
+private fun TimerCardMenu(enabled: Boolean, discard: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val description = stringResource(R.string.timer_more_actions)
+    Box {
+        IconButton({ expanded = true }, enabled = enabled,
+            modifier = Modifier.semantics { contentDescription = description }) {
+            Text("⋮", style = MaterialTheme.typography.titleLarge)
+        }
+        DropdownMenu(expanded, { expanded = false }) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.timer_discard)) },
+                onClick = { expanded = false; discard() })
+        }
+    }
+}
+
+/** "Cronômetro iniciado · Desfazer" right after ▶; it times out like a standard snackbar (spec 018). */
+@Composable
+fun TimerStartedFeedback(undo: () -> Unit, dismiss: () -> Unit) {
+    val accessibility = LocalAccessibilityManager.current
+    val timeout = accessibility?.calculateRecommendedTimeoutMillis(STARTED_FEEDBACK_MILLIS,
+        containsIcons = false, containsText = true, containsControls = true) ?: STARTED_FEEDBACK_MILLIS
+    LaunchedEffect(Unit) { delay(timeout); dismiss() }
+    Snackbar(Modifier.padding(12.dp),
+        action = { TextButton(undo) { Text(stringResource(R.string.undo)) } },
+        dismissAction = { TextButton(dismiss) { Text(stringResource(R.string.close)) } },
+    ) { Text(stringResource(R.string.timer_started)) }
+}
+
+private const val STARTED_FEEDBACK_MILLIS = 8_000L
+
+@Composable
+private fun DiscardDialog(state: TimerUiState, discard: TimerDiscard, vm: TimerViewModel) {
+    AlertDialog(onDismissRequest = { if (!state.busy) vm.cancelDiscard() },
+        title = { Text(stringResource(R.string.timer_discard_title)) },
+        text = { Text(stringResource(R.string.timer_discard_body, minutesLabel(discard.millis))) },
+        confirmButton = { TextButton(vm::confirmDiscard, enabled = !state.busy) {
+            Text(stringResource(R.string.timer_discard_confirm), color = MaterialTheme.colorScheme.error) } },
+        dismissButton = { TextButton(vm::cancelDiscard, enabled = !state.busy) {
+            Text(stringResource(R.string.cancel)) } })
 }
 
 @Composable
@@ -116,6 +168,7 @@ private val auditLabels = mapOf(
     TimerAuditKind.DELETED to R.string.timer_audit_deleted, TimerAuditKind.FINISHED to R.string.timer_audit_finished,
     TimerAuditKind.CONFIRMED to R.string.timer_audit_confirmed,
     TimerAuditKind.SOURCE_CLOSED to R.string.timer_audit_source_closed,
+    TimerAuditKind.DISCARDED to R.string.timer_audit_discarded,
 )
 
 @Composable
@@ -124,6 +177,7 @@ fun TimerDialogs(
     requestPermission: () -> Unit,
 ) {
     val zone = vm.zone
+    state.discard?.let { DiscardDialog(state, it, vm); return }
     state.conflict?.let { request ->
         val running = state.snapshot.running
         AlertDialog(onDismissRequest = { if (!state.busy) vm.cancelConflict() },
@@ -169,6 +223,10 @@ fun TimerDialogs(
                 target.canStart -> Button({ vm.start(request) }, enabled = !state.busy) {
                     Text(stringResource(if (session != null) R.string.timer_resume else R.string.timer_start)) }
                 else -> Text(stringResource(R.string.timer_source_closed))
+            }
+            if (session != null && TimerRules.discardable(state.snapshot, session) != null) {
+                TextButton({ vm.requestDiscard(session.id) }, enabled = !state.busy) {
+                    Text(stringResource(R.string.timer_discard), color = MaterialTheme.colorScheme.error) }
             }
             if (state.unavailable) Text(stringResource(R.string.timer_reached))
             if (session != null && session.kind != TimerKind.REWARD && session.state == TimerState.PAUSED) {

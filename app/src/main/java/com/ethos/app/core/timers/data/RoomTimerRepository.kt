@@ -212,4 +212,19 @@ class RoomTimerRepository(private val database: TaskDatabase, private val clock:
             store.audit(old.sessionId, TimerAuditKind.DELETED, clock.wallMillis(), before = old)
         }
     }
+
+    override suspend fun discardLatest(sessionId: String) {
+        database.withTransaction {
+            val now = clock.now()
+            val snapshot = store.snapshot()
+            val session = snapshot.sessions.firstOrNull { it.id == sessionId } ?: return@withTransaction
+            val latest = TimerRules.discardable(snapshot, session) ?: return@withTransaction
+            val discarded = latest.copy(endWall = TimerRules.endWall(latest, now), active = false)
+            dao.segment(discarded.entity())
+            // A session left without credited time ends, as if the accidental start never happened.
+            val keepsTime = snapshot.segments.any { it.sessionId == sessionId && it.active && it.id != latest.id }
+            dao.session(session.copy(state = if (keepsTime) TimerState.PAUSED else TimerState.FINISHED).entity())
+            store.audit(sessionId, TimerAuditKind.DISCARDED, now.wall, before = discarded)
+        }
+    }
 }

@@ -480,6 +480,13 @@
     <string name="timer_audit_finished">Sessão encerrada</string>
     <string name="timer_audit_confirmed">Conclusão confirmada pelo usuário</string>
     <string name="timer_audit_source_closed">Pausada porque o item foi resolvido ou pausado</string>
+    <string name="timer_audit_discarded">Contagem descartada</string>
+    <string name="timer_discard">Descartar contagem atual</string>
+    <string name="timer_discard_title">Descartar esta contagem?</string>
+    <string name="timer_discard_body">%1$s contados desde o último início serão descartados. O tempo anterior continua salvo.</string>
+    <string name="timer_discard_confirm">Descartar</string>
+    <string name="timer_started">Cronômetro iniciado</string>
+    <string name="timer_more_actions">Mais ações do cronômetro</string>
     <string name="timer_conflict_title">Pausar o cronômetro atual?</string>
     <string name="timer_conflict_body">%1$s está contando. Pausar e iniciar %2$s?</string>
     <string name="timer_conflict_confirm">Pausar e iniciar</string>

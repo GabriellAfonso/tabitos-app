@@ -25,6 +25,9 @@ data class ManualDraft(val segmentId: String?, val date: String, val start: Stri
 /** A reached duration to complete through the owning feature; consumed explicitly by the host (spec 016). */
 data class TimerCompletion(val kind: TimerKind, val sourceId: String, val date: LocalDate, val token: Long)
 
+/** A discard that loses enough time to ask first (spec 018). */
+data class TimerDiscard(val sessionId: String, val millis: Long)
+
 data class TimerUiState(
     val snapshot: TimerSnapshot = TimerSnapshot(), val now: TimerNow = TimerNow(0, 0, null),
     val loading: Boolean = true, val error: Boolean = false, val busy: Boolean = false,
@@ -32,6 +35,8 @@ data class TimerUiState(
     val manual: ManualDraft? = null,
     val completion: TimerCompletion? = null, val notificationsVisible: Boolean = true,
     val serviceBlocked: Boolean = false, val unavailable: Boolean = false,
+    /** Session just started or resumed, offering "Desfazer" until dismissed (spec 018). */
+    val startedSession: String? = null, val discard: TimerDiscard? = null,
 )
 
 @HiltViewModel
@@ -86,8 +91,33 @@ class TimerViewModel @Inject constructor(
         when (repository.start(request, pauseOther)) {
             StartResult.CONFLICT -> mutable.update { it.copy(conflict = request) }
             StartResult.UNAVAILABLE -> mutable.update { it.copy(conflict = null, unavailable = true) }
-            StartResult.STARTED -> mutable.update { it.copy(conflict = null, unavailable = false) }
+            StartResult.STARTED -> mutable.update { state ->
+                state.copy(conflict = null, unavailable = false,
+                    startedSession = repository.observe().first().open(request.kind, request.sourceId)?.id)
+            }
         }
+        coordinator.request()
+    }
+
+    /** Asks before dropping a minute or more; shorter accidental counts go straight away (spec 018). */
+    fun requestDiscard(sessionId: String) {
+        val snapshot = state.value.snapshot
+        val session = snapshot.sessions.firstOrNull { it.id == sessionId } ?: return
+        val latest = TimerRules.discardable(snapshot, session) ?: return
+        val millis = TimerRules.duration(latest, clock.now())
+        if (millis < TimerRules.DISCARD_CONFIRM_MILLIS) discard(sessionId)
+        else mutable.update { it.copy(discard = TimerDiscard(sessionId, millis)) }
+    }
+
+    fun confirmDiscard() { state.value.discard?.let { discard(it.sessionId) } }
+    fun cancelDiscard() { mutable.update { it.copy(discard = null) } }
+
+    fun undoStart() { state.value.startedSession?.let(::discard) }
+    fun dismissStartUndo() { mutable.update { it.copy(startedSession = null) } }
+
+    private fun discard(sessionId: String): Unit = write({ discard(sessionId) }) {
+        repository.discardLatest(sessionId)
+        mutable.update { it.copy(discard = null, startedSession = null) }
         coordinator.request()
     }
 
