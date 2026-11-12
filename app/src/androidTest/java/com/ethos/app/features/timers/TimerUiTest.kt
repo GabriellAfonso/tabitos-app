@@ -38,7 +38,7 @@ class TimerUiTest {
             }
         }
         compose.onNodeWithText("Sessão ativa").assertExists()
-        compose.onNodeWithText("Decorrido: 0:01:30").assertExists()
+        compose.onNodeWithText("Decorrido: 01:30").assertExists()
         compose.onNodeWithText("Restante: 1:50:00").assertExists()
         compose.onNodeWithText("Pausar").performScrollTo().performClick()
         compose.onNodeWithText("Retomar").performScrollTo().performClick()

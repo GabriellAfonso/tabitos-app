@@ -24,9 +24,13 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.coroutines.delay
 
+private const val SECONDS_PER_HOUR = 3600
+
+/** Hours appear only when there is at least one, so half an hour reads 30:00 instead of 0:30:00. */
 fun clockText(millis: Long): String {
     val seconds = millis.coerceAtLeast(0) / 1000
-    return "%d:%02d:%02d".format(seconds / 3600, (seconds / 60) % 60, seconds % 60)
+    val minutesAndSeconds = "%02d:%02d".format((seconds / 60) % 60, seconds % 60)
+    return if (seconds < SECONDS_PER_HOUR) minutesAndSeconds else "${seconds / SECONDS_PER_HOUR}:$minutesAndSeconds"
 }
 
 fun minutesLabel(millis: Long): String {
