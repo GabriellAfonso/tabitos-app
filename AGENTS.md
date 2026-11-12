@@ -205,4 +205,6 @@ Spec017: "Modo jogo" no topo de Configurações (DataStore game_mode, padrão li
 Desligado: esconde Recompensas/Histórico, carteira, preços, dificuldade/estimativa e confirmações financeiras.
 Resultados gravados desligado ficam isentos sem lançamento (nunca pagos depois); desfazer pago ainda estorna.
 Repositórios leem o modo antes da transação; troca bloqueada com cronômetro de recompensa contando.
+Spec018: descartar contagem atual (trecho desde o último ▶) no ⋮ do cartão de Hoje e no diálogo; "Cronômetro iniciado · Desfazer".
+Nunca para recompensa/objetivo atingido; ≥1 min pede confirmação; sessão sem tempo ativo é encerrada; auditoria DISCARDED.
 <!-- SPECKIT END -->
