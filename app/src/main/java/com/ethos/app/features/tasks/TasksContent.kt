@@ -32,6 +32,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
@@ -46,6 +47,7 @@ import com.ethos.app.core.ui.components.lazyReorderGestures
 import com.ethos.app.core.ui.components.moved
 import com.ethos.app.core.ui.components.reorderActions
 import com.ethos.app.core.ui.components.reorderableItem
+import com.ethos.app.core.ui.components.CHECK_ANIMATION_MILLIS
 import com.ethos.app.core.ui.components.RoundCheck
 import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.format.label
@@ -62,6 +64,9 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 enum class TaskPage { LIST, TODAY, REVIEW }
+
+private const val UNCONFIRMED_CHECK_RESET_MILLIS = 1_500L
+
 @Composable
 fun TaskError(state: TasksUiState, retry: () -> Unit, dismiss: () -> Unit) {
     val resource = when {
@@ -178,15 +183,15 @@ fun TasksContent(
                 Modifier.reorderableItem(this, drag, o.id).reorderActions(index, ids.lastIndex, dragEnabled) { to ->
                     onAction(TaskAction.Order(ids.moved(index, to)))
                 }
-            } else Modifier
+            } else Modifier.animateItem()
             TaskRow(o, state.busy, { onOpen(o.id) }, state.today, placement, o.taskId in recurring,
                 timerChip(o), onNotDone = { onNotDone(o.id) }) { onComplete(o.id) }
         }
         if (sections.weekly.isNotEmpty()) {
             item { Text(stringResource(R.string.weekly_section), style = MaterialTheme.typography.titleMedium) }
             items(sections.weekly, key = { it.id }) { o ->
-                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, recurring = o.taskId in recurring,
-                    timer = timerChip(o), onNotDone = { onNotDone(o.id) }) {
+                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, Modifier.animateItem(),
+                    recurring = o.taskId in recurring, timer = timerChip(o), onNotDone = { onNotDone(o.id) }) {
                     onComplete(o.id) }
             }
         }
@@ -195,8 +200,8 @@ fun TasksContent(
             item("completed-section") { TextButton({ collapsed = !collapsed }) {
                 Text(stringResource(R.string.resolved_section, sections.completed.size)) } }
             if (!collapsed) items(sections.completed, key = { it.id }) { o ->
-                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, recurring = o.taskId in recurring) {
-                    onComplete(o.id) }
+                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, Modifier.animateItem(),
+                    recurring = o.taskId in recurring) { onComplete(o.id) }
             }
         }
     }
@@ -211,6 +216,19 @@ fun TaskRow(
     onComplete: () -> Unit = onOpen,
 ) {
     var showCheckMenu by remember(o.id, o.status) { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
+    // The tick animates first and only then the completion is sent, so the row does not jump to another
+    // section (or close a confirmation flow) before the user sees it.
+    var completing by remember(o.id, o.status) { mutableStateOf(false) }
+    LaunchedEffect(completing) {
+        if (completing) {
+            delay(CHECK_ANIMATION_MILLIS)
+            onComplete()
+            // Status stays OPEN when a confirmation is cancelled; unticking keeps the box honest.
+            delay(UNCONFIRMED_CHECK_RESET_MILLIS)
+            completing = false
+        }
+    }
     OutlinedCard(onClick = onOpen, modifier = modifier.fillMaxWidth().testTag("task:${o.id}"), enabled = !busy,
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.outlinedCardColors(containerColor = if (o.status != TaskStatus.OPEN)
@@ -225,18 +243,27 @@ fun TaskRow(
             }, o.fields.title)
             Box {
                 Box(Modifier.size(48.dp).combinedClickable(
-                    enabled = !busy,
+                    enabled = !busy && !completing,
                     role = Role.Checkbox,
                     interactionSource = null,
                     indication = null,
                     onLongClickLabel = stringResource(R.string.task_status_options),
                     onLongClick = if (open) ({ showCheckMenu = true }) else null,
-                    onClick = { if (o.status == TaskStatus.NOT_DONE) onOpen() else onComplete() },
+                    onClick = {
+                        when (o.status) {
+                            TaskStatus.NOT_DONE -> onOpen()
+                            TaskStatus.OPEN -> {
+                                haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                                completing = true
+                            }
+                            else -> onComplete()
+                        }
+                    },
                 ).semantics {
                     contentDescription = checkLabel
                     toggleableState = ToggleableState(o.status == TaskStatus.DONE)
                 }, contentAlignment = Alignment.Center) {
-                    RoundCheck(checked = o.status == TaskStatus.DONE, crossed = o.status == TaskStatus.NOT_DONE)
+                    RoundCheck(checked = o.status == TaskStatus.DONE || completing, crossed = o.status == TaskStatus.NOT_DONE)
                 }
                 DropdownMenu(expanded = showCheckMenu && !busy, onDismissRequest = { showCheckMenu = false }) {
                     DropdownMenuItem(text = { Text(stringResource(R.string.task_mark_done)) }, onClick = {

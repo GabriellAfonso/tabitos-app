@@ -1,5 +1,10 @@
 package com.ethos.app.core.ui.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -11,12 +16,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.MotionDurationScale
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -114,16 +127,72 @@ fun WeekBars(hits: List<Boolean>, description: String, modifier: Modifier = Modi
     }
 }
 
-/** Rounded check box drawn as in the prototype; the caller supplies click semantics. */
+private const val CHECK_FILL_MILLIS = 300
+private const val CHECK_POP_UP_MILLIS = 120
+private const val CHECK_POP_DOWN_MILLIS = 260
+private const val CHECK_POP_SCALE = 1.25f
+private const val CHECK_FILL_SHARE = 0.4f
+
+/** Time the tick takes to fill, draw and settle; callers wait for it before acting on the check. */
+const val CHECK_ANIMATION_MILLIS = 400L
+
+/**
+ * App animations play at their own speed: the check is a short piece of feedback and must not vanish when the
+ * system animator scale is reduced or turned off.
+ */
+private object FixedMotionScale : MotionDurationScale {
+    override val scaleFactor = 1f
+}
+
+/**
+ * Rounded check box drawn as in the prototype; the caller supplies click semantics. Checking it fills the box,
+ * draws the tick and gives a small bounce; the first composition shows the current state without animating.
+ */
 @Composable
 fun RoundCheck(checked: Boolean, modifier: Modifier = Modifier, crossed: Boolean = false) {
     val colors = MaterialTheme.colorScheme
-    Box(modifier.size(24.dp).clip(RoundedCornerShape(7.dp))
-        .background(if (checked) colors.primary else Color.Transparent)
-        .border(1.5.dp, if (checked) colors.primary else colors.onSurfaceVariant, RoundedCornerShape(7.dp)),
+    val progress = remember { Animatable(if (checked) 1f else 0f) }
+    val pop = remember { Animatable(1f) }
+    LaunchedEffect(checked) {
+        if (!checked) progress.snapTo(0f)
+        else if (progress.value < 1f) withContext(FixedMotionScale) {
+            launch {
+                pop.animateTo(CHECK_POP_SCALE, tween(CHECK_POP_UP_MILLIS, easing = FastOutSlowInEasing))
+                pop.animateTo(1f, tween(CHECK_POP_DOWN_MILLIS, easing = BounceSettleEasing))
+            }
+            progress.animateTo(1f, tween(CHECK_FILL_MILLIS, easing = LinearEasing))
+        }
+    }
+    val fill = (progress.value / CHECK_FILL_SHARE).coerceAtMost(1f)
+    val tick = ((progress.value - CHECK_FILL_SHARE) / (1f - CHECK_FILL_SHARE)).coerceIn(0f, 1f)
+    Box(modifier.size(24.dp).graphicsLayer { scaleX = pop.value; scaleY = pop.value }
+        .clip(RoundedCornerShape(7.dp)).background(lerp(Color.Transparent, colors.primary, fill))
+        .border(1.5.dp, lerp(colors.onSurfaceVariant, colors.primary, fill), RoundedCornerShape(7.dp)),
         contentAlignment = Alignment.Center) {
-        if (checked) Text("✓", color = colors.onPrimary, fontSize = 13.sp)
+        if (tick > 0f) CheckTick(tick, colors.onPrimary)
         else if (crossed) Text("×", color = colors.onSurfaceVariant, fontSize = 20.sp)
+    }
+}
+
+/** Slight undershoot before resting at 1, so the shrink back reads as a soft bounce. */
+private val BounceSettleEasing = CubicBezierEasing(0.34f, 1.56f, 0.64f, 1f)
+
+/** Tick stroked from its short leg to the end of the long leg up to [progress] (0–1). */
+@Composable
+private fun CheckTick(progress: Float, color: Color) {
+    Canvas(Modifier.size(14.dp)) {
+        val start = Offset(size.width * 0.12f, size.height * 0.52f)
+        val corner = Offset(size.width * 0.40f, size.height * 0.80f)
+        val end = Offset(size.width * 0.90f, size.height * 0.22f)
+        val shortLeg = (corner - start).getDistance()
+        val longLeg = (end - corner).getDistance()
+        val drawn = progress * (shortLeg + longLeg)
+        val stroke = 2.dp.toPx()
+        fun lerp(from: Offset, to: Offset, fraction: Float) = from + (to - from) * fraction
+        drawLine(color, start, lerp(start, corner, (drawn / shortLeg).coerceAtMost(1f)), stroke, StrokeCap.Round)
+        if (drawn > shortLeg) {
+            drawLine(color, corner, lerp(corner, end, (drawn - shortLeg) / longLeg), stroke, StrokeCap.Round)
+        }
     }
 }
 
