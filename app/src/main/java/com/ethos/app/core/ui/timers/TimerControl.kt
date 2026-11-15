@@ -8,6 +8,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.Text
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.PaddingValues
@@ -26,6 +32,9 @@ fun TimerChipButton(chip: TimerChip, title: String, enabled: Boolean) {
         title, chip.remaining)
     FilledTonalButton(chip.onToggle, enabled = enabled, contentPadding = PaddingValues(horizontal = 12.dp),
         modifier = Modifier.sizeIn(minHeight = 48.dp).semantics { contentDescription = description }) {
-        Text((if (chip.running) "❚❚ " else "▶ ") + chip.remaining)
+        Icon(painterResource(if (chip.running) R.drawable.ic_pause else R.drawable.ic_play_arrow),
+            contentDescription = null, modifier = Modifier.size(ButtonDefaults.IconSize))
+        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+        Text(chip.remaining)
     }
 }

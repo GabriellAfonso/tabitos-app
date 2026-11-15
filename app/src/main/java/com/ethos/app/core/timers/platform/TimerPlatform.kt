@@ -78,10 +78,10 @@ class TimerNotifications @Inject constructor(@param:ApplicationContext private v
     private fun builder(channel: String): Notification.Builder {
         fun base() = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, channel)
             else Notification.Builder(context)
-        val public = base().setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+        val public = base().setSmallIcon(R.drawable.ic_notification_timer)
             .setContentTitle(context.getString(R.string.app_name))
             .setContentText(context.getString(R.string.timer_private))
-        return base().setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+        return base().setSmallIcon(R.drawable.ic_notification_timer)
             .setVisibility(Notification.VISIBILITY_PRIVATE).setPublicVersion(public.build())
     }
 

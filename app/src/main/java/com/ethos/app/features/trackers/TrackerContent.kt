@@ -425,7 +425,7 @@ fun TrackerChart(a: TrackerAnalytics) {
 fun TrackerPendingCard(count: Int, open: () -> Unit) {
     if (count == 0) return
     ActionBanner(pluralStringResource(R.plurals.tracker_pending_count, count, count),
-        "✎", open, outlined = true)
+        R.drawable.ic_edit, open, outlined = true)
 }
 
 @Preview

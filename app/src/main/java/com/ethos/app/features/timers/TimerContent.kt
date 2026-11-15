@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalAccessibilityManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
@@ -106,7 +107,7 @@ private fun TimerCardMenu(enabled: Boolean, discard: () -> Unit) {
     Box {
         IconButton({ expanded = true }, enabled = enabled,
             modifier = Modifier.semantics { contentDescription = description }) {
-            Text("⋮", style = MaterialTheme.typography.titleLarge)
+            Icon(painterResource(R.drawable.ic_more_vert), contentDescription = null)
         }
         DropdownMenu(expanded, { expanded = false }) {
             DropdownMenuItem(text = { Text(stringResource(R.string.timer_discard)) },

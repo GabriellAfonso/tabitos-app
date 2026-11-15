@@ -30,7 +30,10 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.MotionDurationScale
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import com.ethos.app.R
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -67,7 +70,7 @@ fun Eyebrow(text: String, modifier: Modifier = Modifier) {
 
 /** Tappable notice row ("Você tem 2 pendências para revisar ›"). [outlined] marks gentle reminders. */
 @Composable
-fun ActionBanner(text: String, symbol: String, onClick: () -> Unit, modifier: Modifier = Modifier,
+fun ActionBanner(text: String, @DrawableRes icon: Int, onClick: () -> Unit, modifier: Modifier = Modifier,
                  outlined: Boolean = false, urgent: Boolean = false) {
     val colors = MaterialTheme.colorScheme
     Card(onClick, modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
@@ -84,9 +87,10 @@ fun ActionBanner(text: String, symbol: String, onClick: () -> Unit, modifier: Mo
                 drawCircle(colors.onError, radius = size.minDimension / 2 - stroke, style = Stroke(stroke))
                 drawLine(colors.onError, center, Offset(center.x, size.height * 0.25f), stroke)
                 drawLine(colors.onError, center, Offset(size.width * 0.7f, size.height * 0.6f), stroke)
-            } else Text(symbol, color = colors.primary)
+            } else Icon(painterResource(icon), contentDescription = null, tint = colors.primary)
             Text(text, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-            Text("›", color = if (urgent) colors.onError else colors.onSurfaceVariant)
+            Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null,
+                tint = if (urgent) colors.onError else colors.onSurfaceVariant)
         }
     }
 }
@@ -170,7 +174,8 @@ fun RoundCheck(checked: Boolean, modifier: Modifier = Modifier, crossed: Boolean
         .border(1.5.dp, lerp(colors.onSurfaceVariant, colors.primary, fill), RoundedCornerShape(7.dp)),
         contentAlignment = Alignment.Center) {
         if (tick > 0f) CheckTick(tick, colors.onPrimary)
-        else if (crossed) Text("×", color = colors.onSurfaceVariant, fontSize = 20.sp)
+        else if (crossed) Icon(painterResource(R.drawable.ic_close), contentDescription = null,
+            modifier = Modifier.size(18.dp), tint = colors.onSurfaceVariant)
     }
 }
 
@@ -204,8 +209,8 @@ private fun ComponentsPreview() {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Eyebrow("Suas moedas")
                 CoinAmount("148")
-                ActionBanner("Você tem 2 pendências para revisar", "◷", {}, urgent = true)
-                ActionBanner("1 acompanhamento para preencher", "✎", {}, outlined = true)
+                ActionBanner("Você tem 2 pendências para revisar", R.drawable.ic_pending_actions, {}, urgent = true)
+                ActionBanner("1 acompanhamento para preencher", R.drawable.ic_edit, {}, outlined = true)
                 SegmentedControl(listOf("Tudo", "Tarefas", "Hábitos"), "Tudo", { it }, {})
                 WeekBars(listOf(true, true, false, true, false, false, false), "Semana")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { RoundCheck(false); RoundCheck(true) }

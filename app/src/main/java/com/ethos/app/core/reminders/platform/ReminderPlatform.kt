@@ -65,12 +65,12 @@ class ReminderPlatform @Inject constructor(@param:ApplicationContext private val
     private fun builder(channel: String): Notification.Builder {
         val public = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, channel)
             else Notification.Builder(context)
-        public.setSmallIcon(android.R.drawable.ic_popup_reminder)
+        public.setSmallIcon(R.drawable.ic_notification_reminder)
             .setContentTitle(context.getString(R.string.app_name))
             .setContentText(context.getString(R.string.reminder_private))
         val b = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, channel)
             else Notification.Builder(context)
-        return b.setSmallIcon(android.R.drawable.ic_popup_reminder).setAutoCancel(true)
+        return b.setSmallIcon(R.drawable.ic_notification_reminder).setAutoCancel(true)
             .setVisibility(Notification.VISIBILITY_PRIVATE).setPublicVersion(public.build())
             .setOnlyAlertOnce(true).setShowWhen(true)
     }
