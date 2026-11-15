@@ -35,7 +35,7 @@ class DataStoreGameModeRepository @Inject constructor(
     }
 }
 
-/** Mode that ignores the preference: the debug demo always seeds a scored wallet and never writes the mode. */
+/** Mode that ignores the stored preference; tests use it to choose whether outcomes are scored. */
 class FixedGameMode(on: Boolean) : GameModeSource {
     override val enabled: Flow<Boolean> = flowOf(on)
 }

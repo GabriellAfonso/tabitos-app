@@ -40,18 +40,6 @@ class ReminderCoordinator @Inject constructor(
         }
     }
     fun request() { scope.launch { reconcileSafely(false) } }
-    /** Reset and stale notification cleanup cannot race with reconciliation/delivery. */
-    suspend fun replaceLocalData(replace: suspend () -> Unit) {
-        lock.withLock {
-            val old = repository.read().deliveries
-            replace()
-            old.forEach { platform.cancel(it.key) }
-            platform.cancel(ReminderPlatform.DAILY_TAG)
-            platform.cancel(ReminderPlatform.RECOVERY_TAG)
-            platform.schedule(null)
-        }
-        request()
-    }
     suspend fun sources() =
         ReminderSources(tasks.observe().first(), habits.observe().first(), trackers.observe().first())
     suspend fun reconcileSafely(alarm: Boolean) {
