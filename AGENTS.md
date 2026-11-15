@@ -207,4 +207,11 @@ Resultados gravados desligado ficam isentos sem lançamento (nunca pagos depois)
 Repositórios leem o modo antes da transação; troca bloqueada com cronômetro de recompensa contando.
 Spec018: descartar contagem atual (trecho desde o último ▶) no ⋮ do cartão de Hoje e no diálogo; "Cronômetro iniciado · Desfazer".
 Nunca para recompensa/objetivo atingido; ≥1 min pede confirmação; sessão sem tempo ativo é encerrada; auditoria DISCARDED.
+Spec019: ícones Material Symbols Rounded como vector drawables (res/drawable/ic_*), sem dependência nova;
+índices/chaves de ícones persistidos mantêm a ordem; notificações com ícones próprios; launcher inalterado.
+Spec020: sem barra inferior nem página Hábitos; menu ☰ com Hoje/Calendário/Revisar/Recompensas e listas.
+Listas no menu: tocar abre, segurar e arrastar reordena, segurar e soltar abre Editar/Excluir; sem Gerenciar listas.
+Histórico de moedas e Hábitos excluídos são sub-páginas de Configurações (Voltar); dados de demonstração removidos.
+Concluídas da lista só mostram o resolvido hoje; + com Criar tarefa/Criar bom hábito/Quebrar mau hábito.
+Mau hábito em vermelho (errorContainer); cor Vermelho e 11 ícones de hábito acrescentados ao fim (índices estáveis).
 <!-- SPECKIT END -->
