@@ -21,10 +21,28 @@ import com.ethos.app.core.ui.components.IconPicker
 import com.ethos.app.core.ui.components.itemColors
 
 // Index is the persisted Habit.icon value; keep the order stable.
-internal val habitIcons = listOf(IconOption("❧", R.string.habit_icon_leaf),
-    IconOption("▤", R.string.habit_icon_book), IconOption("⌂", R.string.habit_icon_home),
-    IconOption("▣", R.string.habit_icon_work), IconOption("♡", R.string.habit_icon_heart),
-    IconOption("☆", R.string.habit_icon_star))
+internal val habitIcons = listOf(
+    IconOption(R.drawable.ic_eco, R.string.habit_icon_leaf),
+    IconOption(R.drawable.ic_menu_book, R.string.habit_icon_book),
+    IconOption(R.drawable.ic_home, R.string.habit_icon_home),
+    IconOption(R.drawable.ic_work, R.string.habit_icon_work),
+    IconOption(R.drawable.ic_favorite, R.string.habit_icon_heart),
+    IconOption(R.drawable.ic_star, R.string.habit_icon_star),
+    IconOption(R.drawable.ic_block, R.string.habit_icon_block),
+    IconOption(R.drawable.ic_local_bar, R.string.habit_icon_drink),
+    IconOption(R.drawable.ic_smoking_rooms, R.string.habit_icon_cigarette),
+    IconOption(R.drawable.ic_adult_content, R.string.habit_icon_adult),
+    IconOption(R.drawable.ic_app_blocking, R.string.habit_icon_screen_time),
+    IconOption(R.drawable.ic_fastfood, R.string.habit_icon_fast_food),
+    IconOption(R.drawable.ic_cookie, R.string.habit_icon_sweets),
+    IconOption(R.drawable.ic_casino, R.string.habit_icon_betting),
+    IconOption(R.drawable.ic_sports_esports, R.string.habit_icon_games),
+    IconOption(R.drawable.ic_shopping_cart, R.string.habit_icon_shopping),
+    IconOption(R.drawable.ic_bedtime, R.string.habit_icon_sleep_late),
+)
+
+/** Position of the prohibition sign in [habitIcons]; bad habits start with it. */
+internal const val BLOCK_HABIT_ICON = 6
 
 @Composable
 fun HabitInput(label: Int, value: String, enabled: Boolean = true, change: (String) -> Unit) {

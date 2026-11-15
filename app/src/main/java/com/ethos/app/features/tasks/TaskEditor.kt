@@ -15,11 +15,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -41,9 +43,14 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 // Index is the persisted TaskList.icon value; keep the order stable.
-val listIcons = listOf(IconOption("☰", R.string.icon_list), IconOption("▣", R.string.icon_work),
-    IconOption("⌂", R.string.icon_home), IconOption("▤", R.string.icon_study),
-    IconOption("♡", R.string.icon_health), IconOption("☆", R.string.icon_star))
+val listIcons = listOf(
+    IconOption(R.drawable.ic_format_list_bulleted, R.string.icon_list),
+    IconOption(R.drawable.ic_work, R.string.icon_work),
+    IconOption(R.drawable.ic_home, R.string.icon_home),
+    IconOption(R.drawable.ic_menu_book, R.string.icon_study),
+    IconOption(R.drawable.ic_favorite, R.string.icon_health),
+    IconOption(R.drawable.ic_star, R.string.icon_star),
+)
 private val weekdayLabels = listOf(R.string.monday, R.string.tuesday, R.string.wednesday,
     R.string.thursday, R.string.friday, R.string.saturday, R.string.sunday)
 private val repeatChoiceLabels = listOf(R.string.no_repeat, R.string.repeat_every_day,
@@ -108,8 +115,9 @@ fun TaskEditor(
                     QuickFields(draft, lists, today, busy, onChange, onNewList)
                     var expanded by rememberSaveable(draft.id) { mutableStateOf(hasAdvancedOptions(draft)) }
                     TextButton({ expanded = !expanded }, Modifier.testTag("more-options")) {
-                        Text(stringResource(if (expanded) R.string.fewer_options else R.string.more_options) +
-                            if (expanded) "  ▴" else "  ▾")
+                        Text(stringResource(if (expanded) R.string.fewer_options else R.string.more_options))
+                        Icon(painterResource(if (expanded) R.drawable.ic_keyboard_arrow_up
+                            else R.drawable.ic_keyboard_arrow_down), contentDescription = null)
                     }
                     if (expanded) MoreOptions(draft, today, busy, onChange, onDifficulty, onRepeat)
                     if (draft.editing && draft.recurringOriginal) {
@@ -286,18 +294,22 @@ private fun ChecklistEditor(items: List<String>, enabled: Boolean, change: (List
                 singleLine = true, label = { Text(stringResource(R.string.checklist_item, index + 1)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { if (item.isNotBlank()) add(index) }))
-            SymbolButton("✕", stringResource(R.string.checklist_remove, name), enabled) {
+            IconActionButton(R.drawable.ic_close, stringResource(R.string.checklist_remove, name), enabled) {
                 update(removeChecklistItem(items, index), ids.filterIndexed { i, _ -> i != index })
             }
         }
     }
-    TextButton({ add(items.lastIndex) }, enabled = enabled) { Text("+ " + stringResource(R.string.checklist_add)) }
+    TextButton({ add(items.lastIndex) }, enabled = enabled) {
+        Icon(painterResource(R.drawable.ic_add), contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+        Text(stringResource(R.string.checklist_add))
+    }
 }
 
 @Composable
-private fun SymbolButton(symbol: String, description: String, enabled: Boolean, onClick: () -> Unit) {
+private fun IconActionButton(@DrawableRes icon: Int, description: String, enabled: Boolean, onClick: () -> Unit) {
     IconButton(onClick, enabled = enabled, modifier = Modifier.semantics { contentDescription = description }) {
-        Text(symbol, style = MaterialTheme.typography.titleMedium)
+        Icon(painterResource(icon), contentDescription = null)
     }
 }
 

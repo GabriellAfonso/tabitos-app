@@ -155,7 +155,7 @@ object HabitRules {
             }
             is HabitAction.Save -> {
                 val h = action.habit
-                check(h.name.isNotBlank() && h.color in 0..5 && h.icon in 0..5 &&
+                check(h.name.isNotBlank() && h.color in 0 until Habit.COLOR_COUNT && h.icon in 0 until Habit.ICON_COUNT &&
                     h.difficulty in 0..2 && h.importance in 0..2)
                 check(h.listId == null || h.listId in listIds, HabitProblem.DESTINATION)
                 val old = before.habits.firstOrNull { it.id == h.id }

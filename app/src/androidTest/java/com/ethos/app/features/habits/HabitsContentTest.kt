@@ -1,6 +1,10 @@
 package com.ethos.app.features.habits
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -26,7 +30,10 @@ class HabitsContentTest {
             val vm = remember { HabitsViewModel(repo, clock, SavedStateHandle()) }
             EthosTheme {
                 HabitsScreen(vm) { state ->
-                    HabitsContent(state, HabitPage.ALL, { vm.newHabit(null) }, vm::detail, vm::retry)
+                    Column {
+                        Button({ vm.newHabit(null) }) { Text("Novo hábito") }
+                        HabitsContent(state, HabitPage.LIST, vm::detail, vm::retry)
+                    }
                     HabitDialogs(state, emptyList(), vm)
                 }
             }
@@ -51,9 +58,8 @@ class HabitsContentTest {
         val periods = HabitRules.periods(s, "h", clock.today())
         compose.setContent {
             EthosTheme { HabitsContent(HabitsUiState(snapshot = s, today = clock.today(), periods = periods,
-                loading = false), HabitPage.ALL, {}, {}, {}) }
+                loading = false), HabitPage.EXCLUDED, {}, {}) }
         }
-        compose.onNodeWithText("Hábitos excluídos").assertExists()
         compose.onNodeWithText("Evitar").assertExists()
         // Spec 014: habits never become pending, even right after exclusion.
         assertEquals(0, periods.count { it.outcome == PeriodOutcome.PENDING })
@@ -67,7 +73,7 @@ class HabitsContentTest {
         compose.setContent {
             val vm = remember { HabitsViewModel(repo, clock, SavedStateHandle()) }
             EthosTheme { HabitsScreen(vm) { state ->
-                HabitsContent(state, HabitPage.TODAY, {}, vm::detail, vm::retry, vm::quickRecord)
+                LazyColumn { habitItems(state, HabitPage.TODAY, null, vm::detail, vm::retry, vm::quickRecord) }
             } }
         }
         compose.onNodeWithText("Marcar").performClick()

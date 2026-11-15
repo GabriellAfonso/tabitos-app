@@ -40,9 +40,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import com.ethos.app.core.ui.components.ContentFilter
 import com.ethos.app.core.ui.timers.TimerChip
 import com.ethos.app.core.ui.timers.TimerChipButton
-import com.ethos.app.core.ui.components.DragHandle
 import com.ethos.app.core.ui.components.LazyReorderState
-import com.ethos.app.core.ui.components.ReorderableColumn
 import com.ethos.app.core.ui.components.lazyReorderGestures
 import com.ethos.app.core.ui.components.moved
 import com.ethos.app.core.ui.components.reorderActions
@@ -91,35 +89,10 @@ fun TaskError(state: TasksUiState, retry: () -> Unit, dismiss: () -> Unit) {
     }
 }
 
-/**
- * Lists section of the drawer. Items use the same full-width drawer rows as the destinations above, so the
- * whole row is the touch target. [highlighted] marks the open list while the tasks page is showing.
- */
-@Composable
-fun TaskDrawer(
-    state: TasksUiState, highlighted: Boolean, onSelect: (String?) -> Unit, onNew: () -> Unit, onManage: () -> Unit,
-) {
-    fun ifIdle(action: () -> Unit) { if (!state.busy) action() }
-    NavigationDrawerItem(label = { Text(stringResource(R.string.inbox)) },
-        selected = highlighted && state.selectedListId == null, onClick = { ifIdle { onSelect(null) } })
-    state.snapshot.activeLists.forEach { list ->
-        NavigationDrawerItem(
-            label = { Text(list.name) },
-            icon = { Text(listIcons[list.icon].symbol, color = itemColors[list.color]) },
-            selected = highlighted && state.selectedListId == list.id,
-            onClick = { ifIdle { onSelect(list.id) } },
-        )
-    }
-    NavigationDrawerItem(label = { Text(stringResource(R.string.new_list)) }, icon = { Text("+") },
-        selected = false, onClick = { ifIdle(onNew) })
-    NavigationDrawerItem(label = { Text(stringResource(R.string.manage_lists)) }, icon = { Text("✎") },
-        selected = false, onClick = { ifIdle(onManage) })
-}
-
 @Composable
 fun TasksContent(
     state: TasksUiState, page: TaskPage, filter: ContentFilter, onOpen: (String) -> Unit,
-    onAction: (TaskAction) -> Unit, onManage: () -> Unit, onRetry: () -> Unit, onDismissError: () -> Unit,
+    onAction: (TaskAction) -> Unit, onRetry: () -> Unit, onDismissError: () -> Unit,
     extraItems: (LazyListScope.() -> Unit)? = null,
     onComplete: (String) -> Unit = {},
     onNotDone: (String) -> Unit = {},
@@ -161,13 +134,15 @@ fun TasksContent(
             item {
                 val selectedList = state.snapshot.activeLists.firstOrNull { it.id == state.selectedListId }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    selectedList?.let { Text(listIcons[it.icon].symbol, color = itemColors[it.color]) }
+                    selectedList?.let {
+                        Icon(painterResource(listIcons[it.icon].icon), contentDescription = null,
+                            tint = itemColors[it.color])
+                    }
                     Text(selectedList?.name ?: stringResource(R.string.inbox),
                         style = MaterialTheme.typography.headlineSmall)
                 }
                 ChoiceRow(R.string.choose_list, listOf(R.string.tasks, R.string.habits), if (habits) 1 else 0) {
                     habits = it == 1 }
-                TextButton(onManage) { Text(stringResource(R.string.manage_lists)) }
             }
         }
         if (!state.loading && sections.isEmpty && !showsHabitItems) item {
@@ -294,7 +269,7 @@ fun TaskRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (timer != null && o.status == TaskStatus.OPEN) TimerChipButton(timer, o.fields.title, !busy)
-            if (recurring) Icon(painterResource(R.drawable.ic_task_repeat),
+            if (recurring) Icon(painterResource(R.drawable.ic_repeat),
                 contentDescription = stringResource(R.string.task_repeats),
                 modifier = Modifier.size(24.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f))
@@ -345,10 +320,6 @@ fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
             Text(stringResource(R.string.confirm_complete)) } },
         dismissButton = { TextButton({ viewModel.confirmCompletion(false) }) {
             Text(stringResource(R.string.cancel)) } })
-    if (state.manageLists && state.listDraft == null && state.deleteListId == null) {
-        ListManager(state, error, viewModel::newList, viewModel::listDraft, viewModel::requestDeleteList,
-            viewModel::action, { viewModel.manageLists(false) })
-    }
     state.listDraft?.let { list -> ListEditor(list, state.busy, error, viewModel::listDraft,
         viewModel::saveList, { viewModel.listDraft(null) }) }
     state.deleteListId?.let { id -> AlertDialog(onDismissRequest = { viewModel.requestDeleteList(null) },
@@ -420,35 +391,6 @@ private fun TaskDetail(
             }
         }
     }, confirmButton = { TextButton(close, enabled = !state.busy) { Text(stringResource(R.string.close)) } })
-}
-
-@Composable
-private fun ListManager(
-    state: TasksUiState, error: @Composable () -> Unit, new: () -> Unit, edit: (TaskList) -> Unit,
-    delete: (String) -> Unit, action: (TaskAction) -> Unit, close: () -> Unit,
-) {
-    AlertDialog(onDismissRequest = close, title = { Text(stringResource(R.string.manage_lists)) }, text = {
-        Column(Modifier.verticalScroll(rememberScrollState())) {
-            error()
-            ReorderableColumn(state.snapshot.activeLists, { it.id }, !state.busy,
-                onReorder = { lists -> action(TaskAction.OrderLists(lists.map { it.id })) }) { list, handle ->
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        DragHandle(handle)
-                        Text(listIcons[list.icon].symbol, color = itemColors[list.color],
-                            modifier = Modifier.padding(end = 10.dp))
-                        Text(list.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-                    }
-                    Row {
-                        TextButton({ edit(list) }, enabled = !state.busy) { Text(stringResource(R.string.edit)) }
-                        TextButton({ delete(list.id) }, enabled = !state.busy) { Text(stringResource(R.string.delete)) }
-                    }
-                    HorizontalDivider()
-                }
-            }
-            TextButton(new, enabled = !state.busy) { Text(stringResource(R.string.new_list)) }
-        }
-    }, confirmButton = { TextButton(close) { Text(stringResource(R.string.close)) } })
 }
 
 @Composable

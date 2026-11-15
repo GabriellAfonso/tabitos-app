@@ -34,7 +34,7 @@ class TaskDragTest {
                         committed.add(action)
                         snapshot = TaskRules.apply(snapshot, action, day, 1)
                         saved = snapshot
-                    }, {}, {}, {})
+                    }, {}, {})
             }
         }
     }

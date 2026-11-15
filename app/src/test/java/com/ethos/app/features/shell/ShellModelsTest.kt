@@ -4,10 +4,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class ShellModelsTest {
-    @Test fun drawerHidesRewardsAndHistoryOnlyWithGameModeOff() {
-        assertEquals(listOf(ShellDestination.TODAY, ShellDestination.REVIEW, ShellDestination.REWARDS,
-            ShellDestination.HISTORY), ShellDestination.drawerFor(gameMode = true))
-        assertEquals(listOf(ShellDestination.TODAY, ShellDestination.REVIEW),
+    @Test fun drawerHidesRewardsOnlyWithGameModeOff() {
+        assertEquals(listOf(ShellDestination.TODAY, ShellDestination.CALENDAR, ShellDestination.REVIEW,
+            ShellDestination.REWARDS), ShellDestination.drawerFor(gameMode = true))
+        assertEquals(listOf(ShellDestination.TODAY, ShellDestination.CALENDAR, ShellDestination.REVIEW),
             ShellDestination.drawerFor(gameMode = false))
+    }
+
+    @Test fun settingsSubPagesReturnToSettings() {
+        assertEquals(ShellDestination.SETTINGS, ShellDestination.HISTORY.parent)
+        assertEquals(ShellDestination.SETTINGS, ShellDestination.EXCLUDED_HABITS.parent)
     }
 }

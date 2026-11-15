@@ -11,12 +11,11 @@ import org.junit.Test
 class SettingsNavigationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
-    @Test fun settingsOpensAndDemoResetCanBeCanceledWithoutWriting() {
+    @Test fun excludedHabitsOpenFromSettingsAndBackReturns() {
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.open_settings)).performClick()
-        compose.onNodeWithText(compose.activity.getString(R.string.demo_reset)).performScrollTo().performClick()
-        compose.onNodeWithText(compose.activity.getString(R.string.demo_confirmation)).assertExists()
-        compose.onNodeWithText(compose.activity.getString(R.string.cancel)).performClick()
-        compose.onNodeWithText(compose.activity.getString(R.string.demo_title)).assertExists()
-        compose.onNodeWithText(compose.activity.getString(R.string.demo_confirmation)).assertDoesNotExist()
+        compose.onNodeWithText(compose.activity.getString(R.string.habit_excluded)).performScrollTo().performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).assertIsDisplayed()
+            .performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.appearance)).assertExists()
     }
 }

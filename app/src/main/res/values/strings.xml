@@ -12,14 +12,13 @@
     <string name="settings">Configurações</string>
     <string name="open_menu">Abrir menu</string>
     <string name="open_settings">Abrir configurações</string>
-    <string name="open_destination">Abrir %1$s</string>
+    <string name="back">Voltar</string>
     <string name="your_space">SEU ESPAÇO</string>
     <string name="your_lists">Minhas listas</string>
     <string name="all">Tudo</string>
     <string name="one_step">Um passo de cada vez</string>
     <string name="habits_empty_detail">Nenhum hábito corresponde a esta seleção.</string>
     <string name="review_empty_detail">Nenhuma pendência para revisar.</string>
-    <string name="review_hint">Pode ter sido só um esquecimento. Revise antes de aplicar qualquer consequência.</string>
     <plurals name="pending_count">
         <item quantity="one">Você tem %1$d pendência para revisar</item>
         <item quantity="other">Você tem %1$d pendências para revisar</item>
@@ -39,7 +38,7 @@
     <string name="new_task">Nova tarefa</string>
     <string name="edit_task">Editar tarefa</string>
     <string name="new_list">Criar lista</string>
-    <string name="manage_lists">Gerenciar listas</string>
+    <string name="list_actions">Editar ou excluir lista</string>
     <string name="list_name">Nome da lista</string>
     <string name="title_field">Título</string>
     <string name="description_field">Descrição (opcional)</string>
@@ -135,7 +134,6 @@
     <string name="task_not_open">Este registro já foi resolvido. Desfaça o registro para reabrir.</string>
     <string name="color_label">Cor</string>
     <string name="create_item">Criar tarefa ou hábito</string>
-    <string name="create_plus">+</string>
     <string name="icon_label">Ícone</string>
     <string name="color_sage">Sálvia</string>
     <string name="color_blue">Azul</string>
@@ -143,6 +141,7 @@
     <string name="color_orange">Laranja</string>
     <string name="color_rose">Rosa</string>
     <string name="color_gray">Cinza</string>
+    <string name="color_red">Vermelho</string>
     <string name="icon_list">Lista</string>
     <string name="icon_work">Trabalho</string>
     <string name="icon_home">Casa</string>
@@ -169,7 +168,9 @@
     <string name="habit_name">Nome do hábito</string>
     <string name="habit_description">Descrição (opcional)</string>
     <string name="habit_type">Tipo de hábito</string>
-    <string name="break_habit">Quebrar hábito</string>
+    <string name="create_task">Criar tarefa</string>
+    <string name="create_good_habit">Criar bom hábito</string>
+    <string name="break_bad_habit">Quebrar mau hábito</string>
     <string name="habit_frequency">Frequência</string>
     <string name="habit_every_day">Diário</string>
     <string name="habit_chosen_days">Dias escolhidos</string>
@@ -214,6 +215,17 @@
     <string name="habit_icon_work">Trabalho</string>
     <string name="habit_icon_heart">Coração</string>
     <string name="habit_icon_star">Estrela</string>
+    <string name="habit_icon_block">Proibido</string>
+    <string name="habit_icon_drink">Bebida</string>
+    <string name="habit_icon_cigarette">Cigarro</string>
+    <string name="habit_icon_adult">Conteúdo +18</string>
+    <string name="habit_icon_screen_time">Tempo de tela</string>
+    <string name="habit_icon_fast_food">Fast food</string>
+    <string name="habit_icon_sweets">Doces</string>
+    <string name="habit_icon_betting">Apostas</string>
+    <string name="habit_icon_games">Jogos</string>
+    <string name="habit_icon_shopping">Compras</string>
+    <string name="habit_icon_sleep_late">Dormir tarde</string>
     <string name="habit_days_progress">Dias distintos: %1$d / %2$d</string>
     <string name="habit_events_progress">Ocorrências: %1$d · limite: %2$d</string>
     <string name="habit_period_range">%1$s a %2$s</string>
@@ -224,6 +236,7 @@
     <string name="habit_empty_real">Nenhum hábito corresponde a esta seleção.</string>
     <string name="habit_loading">Carregando hábitos…</string>
     <string name="habit_excluded">Hábitos excluídos</string>
+    <string name="habit_excluded_empty">Nenhum hábito excluído.</string>
     <string name="habit_paused">Pausado</string>
     <string name="habit_streak">Sequência: %1$d · Recorde: %2$d · unidade: %3$s</string>
     <string name="habit_calendar">Calendário de registros</string>
@@ -289,7 +302,14 @@
     <string name="finance_penalty_label">Penalidade · importância %1$s</string>
     <string name="finance_invalid">Informe apenas números inteiros de 0 a 10.000 em todos os campos.</string>
     <string name="finance_history_empty">Nenhuma moeda ganha ou gasta ainda.</string>
-    <string name="finance_related">Relacionado a: %1$s · lançamento de %2$s</string>
+    <string name="history_line">%1$s · %2$s</string>
+    <string name="history_xp">%1$s XP</string>
+    <string name="history_kind_gain">Ganho</string>
+    <string name="history_kind_penalty">Penalidade</string>
+    <string name="history_kind_reversal">Estorno</string>
+    <string name="history_kind_reapply">Confirmado de novo</string>
+    <string name="history_kind_correction">Correção de data</string>
+    <string name="history_kind_purchase">Recompensa</string>
     <string name="finance_estimate_unavailable">Estimativa financeira indisponível enquanto a carteira carrega.</string>
     <string name="finance_estimate">+%1$d ◈ · +%2$d XP ao concluir · −%3$d ◈ se não fizer</string>
     <string name="finance_how">Como funcionam os ganhos e penalidades</string>
@@ -630,7 +650,7 @@
     <string name="task_resolved_open">Abrir %1$s</string>
     <string name="task_repeats">Tarefa recorrente</string>
     <string name="habit_quick_record">Marcar</string>
-    <string name="habit_quick_occurrence">Registrar</string>
+    <string name="habit_quick_occurrence">Recaída</string>
     <string name="habit_quick_done">✓ Feito hoje</string>
     <string name="habit_quick_unmark_description">Desmarcar prática de hoje: %1$s</string>
     <string name="habit_marked_today">Prática de hoje marcada.</string>
@@ -641,51 +661,8 @@
         <item quantity="one">Hoje: %1$d ocorrência</item>
         <item quantity="other">Hoje: %1$d ocorrências</item>
     </plurals>
-    <string name="demo_title">Dados de demonstração · versão de teste</string>
-    <string name="demo_hint">Carregue dados de exemplo para testar o app.</string>
-    <string name="demo_reset">Resetar progresso e restaurar demonstração</string>
-    <string name="demo_confirmation">Apaga tudo e coloca os dados de exemplo. Não dá para desfazer. Tema e permissões ficam.</string>
-    <string name="demo_confirm">Apagar dados e restaurar</string>
-    <string name="demo_busy">Restaurando a base de demonstração…</string>
-    <string name="demo_success">Demonstração restaurada. Os exemplos estão prontos para testar.</string>
-    <string name="demo_error">Não deu para restaurar. Seus dados continuam como estavam.</string>
-    <string name="demo_timer_running">Pause o cronômetro antes de restaurar a demonstração.</string>
-    <string-array name="demo_content">
-        <item>Casa</item>
-        <item>Trabalho</item>
-        <item>Saúde e bem-estar</item>
-        <item>Estudos</item>
-        <item>Ler algumas páginas</item>
-        <item>Caminhar ao ar livre</item>
-        <item>Beber água ao acordar</item>
-        <item>Evitar refrigerante</item>
-        <item>Limitar cafés</item>
-        <item>Alongamento pela manhã</item>
-        <item>Como estava sua energia?</item>
-        <item>Baixa</item>
-        <item>Alta</item>
-        <item>Onde caminhou?</item>
-        <item>Parque</item>
-        <item>Rua</item>
-        <item>Como foi a caminhada?</item>
-        <item>Organizar a mesa</item>
-        <item>Caminhada tranquila para espairecer.</item>
-        <item>Fazer compras da semana</item>
-        <item>Frutas e verduras</item>
-        <item>Arroz e feijão</item>
-        <item>Produtos de limpeza</item>
-        <item>Revisar proposta do projeto</item>
-        <item>Marcar consulta no dentista</item>
-        <item>Assistir à próxima aula do curso</item>
-        <item>Conferir conta de energia</item>
-        <item>Separar roupas para doação</item>
-        <item>Enviar resumo da reunião</item>
-        <item>Café especial</item>
-        <item>30 minutos de videogame</item>
-        <item>Noite de filme</item>
-    </string-array>
     <string name="habit_quick_record_description">Marcar prática de hoje: %1$s</string>
-    <string name="habit_quick_occurrence_description">Registrar ocorrência de hoje: %1$s</string>
+    <string name="habit_quick_occurrence_description">Registrar recaída de hoje: %1$s</string>
     <string name="habit_week_description">Semana atual: %1$d de 7 dias com registro</string>
     <string name="game_mode_setting">Modo jogo</string>
     <string name="game_mode_setting_hint">Moedas, XP, níveis e recompensas pelas tarefas e hábitos.</string>

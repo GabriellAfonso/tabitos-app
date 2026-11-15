@@ -1,5 +1,6 @@
 package com.ethos.app.features.habits
 
+import com.ethos.app.core.ui.components.RED_ITEM_COLOR
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -136,7 +137,8 @@ class HabitsViewModel @Inject constructor(
     /** [breaking] opens the "Quebrar hábito" group (avoid/limit) instead of practice (spec 014). */
     fun newHabit(listId: String?, breaking: Boolean = false) {
         val id = UUID.randomUUID().toString()
-        draft(HabitDraft(Habit(id, clock.today(), "", listId = listId),
+        val habit = Habit(id, clock.today(), "", listId = listId)
+        draft(HabitDraft(if (breaking) habit.copy(color = RED_ITEM_COLOR, icon = BLOCK_HABIT_ICON) else habit,
             HabitRule(UUID.randomUUID().toString(), id, clock.today(),
                 type = if (breaking) HabitType.AVOID else HabitType.PRACTICE),
             target = if (breaking) "0" else "1"))

@@ -125,7 +125,9 @@ object TaskRules {
         fun run(action: TaskAction): TaskSnapshot {
             when (action) {
                 is TaskAction.SaveList -> {
-                    requireInput(action.list.name.isNotBlank() && action.list.color in 0..5 && action.list.icon in 0..5)
+                    val list = action.list
+                    requireInput(list.name.isNotBlank() && list.color in 0 until TaskList.COLOR_COUNT &&
+                        list.icon in 0 until TaskList.ICON_COUNT)
                     val i = lists.indexOfFirst { it.id == action.list.id }
                     val value = action.list.copy(name = action.list.name.trim())
                     if (i < 0) lists.add(value.copy(position = lists.size)) else lists[i] = value

@@ -1,6 +1,8 @@
-﻿package com.ethos.app.features.shell
+package com.ethos.app.features.shell
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.assertIsDisplayed
@@ -27,15 +29,25 @@ class ShellNavigationTest {
                     gameMode = true,
                     createActions = CreateActions(taskEnabled = true, habitEnabled = true, {}, {}, {}),
                     drawerLists = {},
-                ) { destination, _ -> Text("page:${destination.route} " + stringResource(destination.title)) }
+                ) { destination, navigate ->
+                    Column {
+                        Text("page:${destination.route} " + stringResource(destination.title))
+                        if (destination == ShellDestination.SETTINGS) {
+                            Button({ navigate(ShellDestination.HISTORY) }) { Text("go:history") }
+                        }
+                    }
+                }
             }
         }
     }
 
     @Test fun repeatedRootsReturnToTodayWithoutDuplicates() {
         launch()
-        repeat(10) { compose.onNodeWithContentDescription("Abrir Tarefas").performClick() }
-        compose.onNodeWithText("page:tasks", substring = true).assertIsDisplayed()
+        repeat(10) {
+            compose.onNodeWithContentDescription("Abrir menu").performClick()
+            compose.onNodeWithText("Calendário").performClick()
+        }
+        compose.onNodeWithText("page:calendar", substring = true).assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("page:today", substring = true).assertIsDisplayed()
     }
@@ -47,15 +59,24 @@ class ShellNavigationTest {
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.onNodeWithText("2").assertIsNotDisplayed()
         compose.onNodeWithContentDescription("Abrir menu").performClick()
-        compose.onNodeWithText("Histórico de moedas").performClick()
+        compose.onNodeWithText("Recompensas").performClick()
+        compose.onNodeWithText("page:rewards", substring = true).assertIsDisplayed()
+    }
+
+    @Test fun settingsSubPageShowsBackAndReturnsToSettings() {
+        launch()
+        compose.onNodeWithContentDescription("Abrir configurações").performClick()
+        compose.onNodeWithText("go:history").performClick()
         compose.onNodeWithText("page:history", substring = true).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Voltar").performClick()
+        compose.onNodeWithText("page:settings", substring = true).assertIsDisplayed()
     }
 
     @Test fun createMenuOffersTaskHabitAndBreakingHabit() {
         launch()
         compose.onNodeWithContentDescription("Criar", substring = true).performClick()
-        compose.onNodeWithText("Nova tarefa").assertIsDisplayed()
-        compose.onNodeWithText("Novo hábito").assertIsDisplayed()
-        compose.onNodeWithText("Quebrar hábito").assertIsDisplayed()
+        compose.onNodeWithText("Criar tarefa").assertIsDisplayed()
+        compose.onNodeWithText("Criar bom hábito").assertIsDisplayed()
+        compose.onNodeWithText("Quebrar mau hábito").assertIsDisplayed()
     }
 }

@@ -3,7 +3,12 @@ package com.ethos.app.features.habits
 import com.ethos.app.core.preferences.FixedGameMode
 import androidx.lifecycle.SavedStateHandle
 import com.ethos.app.core.habits.domain.*
+import androidx.compose.ui.graphics.Color
+import com.ethos.app.R
 import com.ethos.app.core.tasks.domain.TaskClock
+import com.ethos.app.core.tasks.domain.TaskList
+import com.ethos.app.core.ui.components.itemColors
+import com.ethos.app.features.tasks.listIcons
 import java.io.IOException
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -126,6 +131,26 @@ class HabitsViewModelTest {
         assertEquals(1, repo.snapshot.value.habits.size)
         assertNull(vm.state.value.draft)
         assertFalse(vm.state.value.storageError)
+    }
+    @Test fun badHabitStartsRedWithProhibitionIconAndNewestIconSaves() = runTest(dispatcher) {
+        val repo = FakeRepository()
+        val vm = HabitsViewModel(repo, clock, SavedStateHandle())
+        advanceUntilIdle()
+        vm.newHabit(null, breaking = true)
+        val d = vm.state.value.draft!!
+        assertEquals(R.drawable.ic_block, habitIcons[d.habit.icon].icon)
+        assertEquals(Color(0xFFB3261E), itemColors[d.habit.color])
+        vm.draft(d.copy(habit = d.habit.copy(name = "Rede social", icon = habitIcons.lastIndex)))
+        vm.preview()
+        vm.save()
+        advanceUntilIdle()
+        assertEquals(habitIcons.lastIndex, repo.snapshot.value.habits.single().icon)
+    }
+    @Test fun editorChoicesMatchTheIndicesTheRulesAccept() {
+        assertEquals(Habit.COLOR_COUNT, itemColors.size)
+        assertEquals(Habit.ICON_COUNT, habitIcons.size)
+        assertEquals(TaskList.COLOR_COUNT, itemColors.size)
+        assertEquals(TaskList.ICON_COUNT, listIcons.size)
     }
     @Test fun readFailureIsNotSuccessfulEmptyAndManualImportanceRestores() = runTest(dispatcher) {
         val repo = FakeRepository().apply { failRead = true }

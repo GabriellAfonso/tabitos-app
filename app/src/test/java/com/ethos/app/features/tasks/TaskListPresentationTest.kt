@@ -32,7 +32,7 @@ class TaskListPresentationTest {
         assertFalse(s.sections(TaskPage.REVIEW, ContentFilter.ALL, day, null, false).showsHabits)
     }
 
-    @Test fun completedSectionsIncludeNotDoneAndRespectResolutionDayListAndReview() {
+    @Test fun completedSectionsShowOnlyTodaysOutcomesPerListAndReview() {
         val day = LocalDate.of(2026, 11, 10)
         val base = TaskOccurrence("done", "t", 1, TaskFields(title = "Done", listId = "a"),
             day.minusDays(2), day.minusDays(2), day.minusDays(2), TaskStatus.DONE, completedDate = day)
@@ -49,7 +49,7 @@ class TaskListPresentationTest {
                 TaskAudit("old-outcome", oldFailure.id, AuditKind.NOT_DONE,
                     day.minusDays(1).atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()),
             ))
-        assertEquals(setOf("done", "old", "today", "failure", "old-failure"),
+        assertEquals(setOf("done", "today", "failure"),
             s.completedOccurrences(TaskPage.LIST, day, "a")
             .map { it.id }.toSet())
         assertEquals(setOf("done", "other", "today", "failure"), s.completedOccurrences(TaskPage.TODAY, day, "a")

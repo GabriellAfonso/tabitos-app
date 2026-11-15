@@ -39,7 +39,7 @@ class TaskEditorTest {
                             onNewTask = vm::newTask, onNewHabit = {}, onBreakHabit = {},
                         ))
                         TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::detail, vm::action,
-                            {}, vm::retry, vm::dismissError)
+                            vm::retry, vm::dismissError)
                     }
                 }
             }

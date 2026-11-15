@@ -64,16 +64,16 @@ import com.ethos.app.features.reminders.rememberNotificationPermissionRequest
 import com.ethos.app.features.rewards.RewardsScreen
 import com.ethos.app.features.rewards.RewardsViewModel
 import com.ethos.app.features.settings.AppearanceViewModel
-import com.ethos.app.features.settings.DemoSettingsScreen
-import com.ethos.app.features.settings.DemoViewModel
 import com.ethos.app.features.settings.GameModeSetting
 import com.ethos.app.features.settings.GameModeUiState
 import com.ethos.app.features.settings.GameModeViewModel
 import com.ethos.app.features.settings.SettingsContent
+import com.ethos.app.features.settings.SettingsLink
 import com.ethos.app.features.settings.TimerAlarmSetting
 import com.ethos.app.features.shell.CreateActions
 import com.ethos.app.features.shell.EthosShell
 import com.ethos.app.features.shell.ShellDestination
+import com.ethos.app.features.tasks.DrawerListCallbacks
 import com.ethos.app.features.tasks.TaskDialogs
 import com.ethos.app.features.tasks.TaskDrawer
 import com.ethos.app.features.tasks.TimerDoneFeedback
@@ -113,8 +113,7 @@ class AppRequests {
 private class AppViewModels(
     val tasks: TasksViewModel, val habits: HabitsViewModel, val accounting: AccountingViewModel,
     val rewards: RewardsViewModel, val reminders: ReminderViewModel, val timers: TimerViewModel,
-    val trackers: TrackerViewModel, val calendar: CalendarViewModel, val demo: DemoViewModel,
-    val gameMode: GameModeViewModel,
+    val trackers: TrackerViewModel, val calendar: CalendarViewModel, val gameMode: GameModeViewModel,
 )
 
 /** One frame of collected state, so page functions receive values instead of collecting again. */
@@ -132,7 +131,6 @@ private class AppState(
 @Composable
 private fun appViewModels() = AppViewModels(
     viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(),
-    viewModel(),
 )
 
 /** Composition root of the app; [onDarkTheme] lets the Activity style the system bars. */
@@ -213,10 +211,13 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
             onBreakHabit = { vm.habits.newHabit(tasks.selectedListId, breaking = true) },
         ),
         drawerLists = { drawer ->
-            TaskDrawer(tasks, drawer.tasksOpen,
+            TaskDrawer(tasks, drawer.tasksOpen, DrawerListCallbacks(
                 onSelect = { vm.tasks.selectList(it); drawer.openTasks() },
                 onNew = { drawer.close(); vm.tasks.newList() },
-                onManage = { drawer.close(); vm.tasks.manageLists(true) })
+                onEdit = { drawer.close(); vm.tasks.listDraft(it) },
+                onDelete = { drawer.close(); vm.tasks.requestDeleteList(it.id) },
+                onReorder = { lists -> vm.tasks.action(TaskAction.OrderLists(lists.map { it.id })) },
+            ))
         },
         snackbar = {
             if (app.timers.startedSession != null) {
@@ -229,23 +230,24 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
             ShellDestination.TODAY -> TaskDestination(vm, app, TaskPage.TODAY, navigate)
             ShellDestination.TASKS -> TaskDestination(vm, app, TaskPage.LIST, navigate)
             ShellDestination.REVIEW -> TaskDestination(vm, app, TaskPage.REVIEW, navigate)
-            ShellDestination.HABITS -> HabitsContent(habits, HabitPage.ALL, { vm.habits.newHabit(null) },
-                vm.habits::detail, vm.habits::retry, vm.habits::quickRecord,
-                newBreaking = { vm.habits.newHabit(null, breaking = true) },
-                timerChip = { app.timerChip(vm, TimerKind.HABIT, it.id, habits.durations[it.id]) })
             ShellDestination.CALENDAR -> CalendarScreen(vm.calendar, vm.tasks::detail, vm.habits::detail,
                 vm.trackers::fill, vm.trackers::editEntry)
             ShellDestination.REWARDS -> RewardsScreen(vm.rewards) { RewardSessions(vm, app) }
-            ShellDestination.HISTORY -> {
-                val rewards by vm.rewards.state.collectAsStateWithLifecycle()
-                AccountingHistory(app.financial, vm.accounting::retry, rewards.snapshot.purchases)
-            }
+            ShellDestination.HISTORY -> AccountingHistory(app.financial, vm.accounting::retry, tasks.today,
+                vm.timers.zone)
+            ShellDestination.EXCLUDED_HABITS -> HabitsContent(habits, HabitPage.EXCLUDED, vm.habits::detail,
+                vm.habits::retry)
             ShellDestination.SETTINGS -> SettingsPage {
                 GameModeSetting(app.gameMode, vm.gameMode::request, vm.gameMode::confirmOff)
                 appearanceSettings()
-                if (BuildConfig.DEBUG) DemoSettingsScreen(vm.demo)
-                if (app.showsGame) AccountingSettings(app.financial, vm.accounting::edit, vm.accounting::draft,
-                    vm.accounting::save, vm.accounting::retry)
+                if (app.showsGame) {
+                    AccountingSettings(app.financial, vm.accounting::edit, vm.accounting::draft,
+                        vm.accounting::save, vm.accounting::retry)
+                    SettingsLink(R.string.history, ShellDestination.HISTORY.icon) {
+                        navigate(ShellDestination.HISTORY) }
+                }
+                SettingsLink(R.string.habit_excluded, ShellDestination.EXCLUDED_HABITS.icon) {
+                    navigate(ShellDestination.EXCLUDED_HABITS) }
                 ReminderSettingsContent(app.reminders, vm.reminders, app.requestPermission)
             }
         }
@@ -267,13 +269,13 @@ private fun TaskDestination(
     TasksContent(
         state = tasks, page = page, filter = filter,
         onOpen = vm.tasks::detail, onAction = vm.tasks::action,
-        onManage = { vm.tasks.manageLists(true) }, onRetry = vm.tasks::retry,
+        onRetry = vm.tasks::retry,
         onDismissError = vm.tasks::dismissError, onComplete = vm.tasks::quickCheck,
         onNotDone = { vm.tasks.action(TaskAction.Resolve(it, false, tasks.today)) },
         timerChip = { app.timerChip(vm, TimerKind.TASK, it.id, tasks.durations[it.taskId]) },
         extraItems = {
-            habitItems(app.habits, habitPage, tasks.selectedListId, { vm.habits.newHabit(tasks.selectedListId) },
-                vm.habits::detail, vm.habits::retry, vm.habits::quickRecord,
+            habitItems(app.habits, habitPage, tasks.selectedListId, vm.habits::detail, vm.habits::retry,
+                vm.habits::quickRecord,
                 timerChip = { app.timerChip(vm, TimerKind.HABIT, it.id, app.habits.durations[it.id]) })
         },
     ) {
@@ -283,8 +285,7 @@ private fun TaskDestination(
                     TodayHeader(vm, app, { navigate(ShellDestination.REWARDS) }, { navigate(ShellDestination.REVIEW) })
                     FilterRow(filter) { filter = it }
                 }
-                TaskPage.REVIEW -> Text(stringResource(R.string.review_hint))
-                TaskPage.LIST -> Unit
+                TaskPage.REVIEW, TaskPage.LIST -> Unit
             }
         }
     }
@@ -303,7 +304,8 @@ private fun TodayHeader(vm: AppViewModels, app: AppState, openRewards: () -> Uni
     }
     val pending = app.pendingReviews
     if (pending > 0) {
-        ActionBanner(pluralStringResource(R.plurals.pending_count, pending, pending), "◷", openReview, urgent = true)
+        ActionBanner(pluralStringResource(R.plurals.pending_count, pending, pending), R.drawable.ic_pending_actions,
+            openReview, urgent = true)
     }
 }
 

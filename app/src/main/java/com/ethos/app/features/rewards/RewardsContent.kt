@@ -20,7 +20,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,7 +35,7 @@ import androidx.compose.foundation.background
 import com.ethos.app.core.rewards.domain.*
 import com.ethos.app.core.ui.components.IconOption
 import com.ethos.app.core.ui.components.IconPicker
-import com.ethos.app.core.ui.rewards.rewardSymbol
+import com.ethos.app.core.ui.rewards.rewardIcon
 import kotlinx.coroutines.delay
 
 data class RewardActions(
@@ -45,7 +47,7 @@ data class RewardActions(
 
 // Same order as RewardRules.icons, whose keys are what gets persisted.
 private val rewardIconOptions = RewardRules.icons.map { key ->
-    IconOption(rewardSymbol(key), when (key) {
+    IconOption(rewardIcon(key), when (key) {
         "GAME" -> R.string.reward_game
         "FOOD" -> R.string.reward_food
         "REST" -> R.string.reward_rest
@@ -118,16 +120,16 @@ fun RewardsContent(state: RewardsUiState, actions: RewardActions, sessions: @Com
                     containerColor = MaterialTheme.colorScheme.surfaceContainerLow)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
-                        Text(rewardSymbol(reward.icon), Modifier
-                            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(14.dp))
-                            .padding(10.dp),
-                            style = MaterialTheme.typography.titleLarge)
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Icon(painterResource(rewardIcon(reward.icon)), contentDescription = null,
+                            modifier = Modifier
+                                .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(14.dp))
+                                .padding(10.dp))
                         Text(reward.name, style = MaterialTheme.typography.titleMedium)
                     }
                     if (reward.description.isNotEmpty()) Text(reward.description)
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        verticalAlignment = Alignment.CenterVertically) {
                         CoinGlyph()
                         Text(stringResource(R.string.reward_price, reward.cost),
                             color = MaterialTheme.colorScheme.tertiary)
@@ -230,7 +232,11 @@ private fun PurchaseDialog(state: RewardsUiState, intent: PurchaseIntent, action
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 val reward = receipt?.reward ?: intent.reward
-                Text("${rewardSymbol(reward.icon)} ${reward.name}")
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(painterResource(rewardIcon(reward.icon)), contentDescription = null)
+                    Text(reward.name)
+                }
                 if (reward.description.isNotEmpty()) Text(reward.description)
                 Text(stringResource(R.string.reward_price, reward.cost))
                 reward.minutes?.let { Text(stringResource(R.string.reward_minutes_line, durationLabel(it))) }

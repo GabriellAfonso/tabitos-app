@@ -42,7 +42,7 @@ class TasksContentTest {
                             onNewTask = vm::newTask, onNewHabit = {}, onBreakHabit = {},
                         ))
                         TasksContent(state, TaskPage.LIST, ContentFilter.ALL, vm::detail, vm::action,
-                            { vm.manageLists(true) }, vm::retry, vm::dismissError)
+                            vm::retry, vm::dismissError)
                     }
                 }
             }
@@ -76,7 +76,7 @@ class TasksContentTest {
             var filter by remember { mutableStateOf(ContentFilter.ALL) }
             EthosTheme {
                 TasksContent(TasksUiState(s, day, loading = false), TaskPage.TODAY, filter,
-                    {}, {}, {}, {}, {}) {
+                    {}, {}, {}, {}) {
                     FilterRow(filter) { filter = it }
                 }
             }

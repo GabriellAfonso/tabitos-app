@@ -5,6 +5,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 // Ameixa palette (spec 010): plum highlights, lilac-tinted neutrals; tertiary amber is reserved for coins.
@@ -64,10 +66,23 @@ private val DarkColors = darkColorScheme(
     outlineVariant = Color(0xFF372F3D),
 )
 
+/** Colors outside the Material scheme; [growth] marks good habits being built (seedling in the "+" menu). */
+data class EthosExtraColors(val growth: Color)
+
+private val LightExtra = EthosExtraColors(growth = Color(0xFF3D6B4A))
+private val DarkExtra = EthosExtraColors(growth = Color(0xFF9FD0AB))
+private val LocalEthosExtraColors = staticCompositionLocalOf { LightExtra }
+
+object EthosColors {
+    val growth: Color @Composable get() = LocalEthosExtraColors.current.growth
+}
+
 @Composable
 fun EthosTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
-        content = content,
-    )
+    CompositionLocalProvider(LocalEthosExtraColors provides if (darkTheme) DarkExtra else LightExtra) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) DarkColors else LightColors,
+            content = content,
+        )
+    }
 }

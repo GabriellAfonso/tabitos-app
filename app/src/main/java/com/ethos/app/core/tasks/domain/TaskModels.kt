@@ -14,7 +14,13 @@ class TaskRuleException(val problem: TaskProblem) : IllegalArgumentException(pro
 data class TaskList(
     val id: String, val name: String, val color: Int = 0, val icon: Int = 0,
     val position: Int = 0, val deleted: Boolean = false,
-) : java.io.Serializable
+) : java.io.Serializable {
+    companion object {
+        /** Sizes of the color and icon choices shown in the list editor; saved indices must stay inside them. */
+        const val COLOR_COUNT = 7
+        const val ICON_COUNT = 6
+    }
+}
 
 data class TaskFields(
     val title: String = "", val description: String = "", val listId: String? = null,

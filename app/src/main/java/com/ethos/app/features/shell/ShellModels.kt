@@ -1,25 +1,34 @@
 package com.ethos.app.features.shell
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.ethos.app.R
 
-enum class ShellDestination(val route: String, @param:StringRes val title: Int, val symbol: String) {
-    TODAY("today", R.string.today, "◉"),
-    TASKS("tasks", R.string.tasks, "☰"),
-    HABITS("habits", R.string.habits, "◇"),
-    CALENDAR("calendar", R.string.calendar, "▦"),
-    REVIEW("review", R.string.review, "◷"),
-    REWARDS("rewards", R.string.rewards, "◇"),
-    HISTORY("history", R.string.history, "↔"),
-    SETTINGS("settings", R.string.settings, "⚙"),
+/**
+ * Pages of the app. There is no bottom bar: the drawer reaches the main pages and lists, Settings reaches
+ * its sub-pages. [parent] marks a sub-page whose header shows Back instead of the menu.
+ */
+enum class ShellDestination(
+    val route: String,
+    @param:StringRes val title: Int,
+    @param:DrawableRes val icon: Int,
+    val parent: ShellDestination? = null,
+) {
+    TODAY("today", R.string.today, R.drawable.ic_today),
+    TASKS("tasks", R.string.tasks, R.drawable.ic_checklist),
+    CALENDAR("calendar", R.string.calendar, R.drawable.ic_calendar_month),
+    REVIEW("review", R.string.review, R.drawable.ic_pending_actions),
+    REWARDS("rewards", R.string.rewards, R.drawable.ic_redeem),
+    SETTINGS("settings", R.string.settings, R.drawable.ic_settings),
+    HISTORY("history", R.string.history, R.drawable.ic_history, parent = SETTINGS),
+    EXCLUDED_HABITS("excluded-habits", R.string.habit_excluded, R.drawable.ic_self_improvement, parent = SETTINGS),
     ;
 
     /** Exists only with game mode on (spec 017); off, requests for it land on Hoje. */
     val isGameOnly: Boolean get() = this == REWARDS || this == HISTORY
 
     companion object {
-        val bottomBar = listOf(TODAY, TASKS, HABITS, CALENDAR)
-        private val drawer = listOf(TODAY, REVIEW, REWARDS, HISTORY)
+        private val drawer = listOf(TODAY, CALENDAR, REVIEW, REWARDS)
 
         fun drawerFor(gameMode: Boolean): List<ShellDestination> = drawer.filter { gameMode || !it.isGameOnly }
     }

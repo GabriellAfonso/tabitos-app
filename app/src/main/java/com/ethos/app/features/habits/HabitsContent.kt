@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.platform.LocalDensity
@@ -30,6 +31,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import com.ethos.app.core.ui.components.WeekBars
+import com.ethos.app.core.ui.components.itemColors
 import com.ethos.app.core.habits.domain.*
 import java.time.LocalDate
 import java.time.YearMonth
@@ -84,7 +86,8 @@ fun HabitCalendar(
     }
 }
 
-enum class HabitPage { ALL, TODAY, REVIEW, LIST, HISTORY }
+/** Where habit cards appear; [EXCLUDED] is the Settings sub-page that keeps excluded habits restorable. */
+enum class HabitPage { TODAY, REVIEW, LIST, EXCLUDED }
 
 @Composable
 fun HabitPracticeFeedback(state: HabitsUiState, undo: () -> Unit, dismiss: () -> Unit) {
@@ -133,13 +136,21 @@ fun outcomeLabel(p: HabitPeriod, today: LocalDate): Int = when {
 }
 
 fun LazyListScope.habitItems(
-    state: HabitsUiState, page: HabitPage, listId: String?, new: () -> Unit,
+    state: HabitsUiState, page: HabitPage, listId: String?,
     open: (String) -> Unit, retry: () -> Unit, record: ((String) -> Unit)? = null,
-    newBreaking: (() -> Unit)? = null, timerChip: (Habit) -> TimerChip? = { null },
+    timerChip: (Habit) -> TimerChip? = { null },
 ) {
     // Revisão is for tasks only (spec 014).
     if (page == HabitPage.REVIEW) return
-    val row: @Composable (Habit, HabitPeriod?) -> Unit = { h, period ->
+    item("habit-errors") { HabitError(state, retry) }
+    if (state.loading) item("habit-loading") { Text(stringResource(R.string.habit_loading)) }
+    val habits = visibleHabits(state, page, listId)
+    if (!state.loading && habits.isEmpty()) item("habit-empty") {
+        Text(stringResource(if (page == HabitPage.EXCLUDED) R.string.habit_excluded_empty
+            else R.string.habit_empty_real))
+    }
+    items(habits, key = { "habit:${it.id}" }) { h ->
+        val period = state.periods.lastOrNull { it.habitId == h.id }
         HabitRow(h, period, state.busy, { open(h.id) }, today = state.today,
             consistency = state.streaks[h.id]?.current?.let { it to state.rates[h.id] }, timer = timerChip(h),
             quick = record?.let { r -> quickAction(state, h, period) { r(h.id) } },
@@ -147,42 +158,19 @@ fun LazyListScope.habitItems(
             todayCount = if (page == HabitPage.TODAY) state.snapshot.records.count {
                 it.habitId == h.id && it.date == state.today && !it.deleted } else null)
     }
-    val habits = state.snapshot.habits.filter { h -> when (page) {
-        HabitPage.HISTORY -> true
-        HabitPage.LIST -> h.status != HabitStatus.EXCLUDED && h.listId == listId
-        HabitPage.TODAY -> h.status == HabitStatus.ACTIVE
-        HabitPage.REVIEW -> false
-        else -> h.status != HabitStatus.EXCLUDED
-    } }
-    item("habit-errors") { HabitError(state, retry) }
-    if (state.loading) item("habit-loading") { Text(stringResource(R.string.habit_loading)) }
-    if (page == HabitPage.ALL) item("new-habit") {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(new, enabled = !state.busy && !state.loading) { Text(stringResource(R.string.new_habit)) }
-            newBreaking?.let { OutlinedButton(it, enabled = !state.busy && !state.loading) {
-                Text(stringResource(R.string.break_habit)) } }
-        }
-    }
-    if (!state.loading && habits.isEmpty()) item("habit-empty") {
-        Text(stringResource(R.string.habit_empty_real))
-    }
-    run {
-        val visible = habits.filter { h -> page != HabitPage.TODAY || state.periods.any {
-            it.habitId == h.id && state.today in it.start..it.end
-        } }
-        items(visible.filter { it.status != HabitStatus.EXCLUDED },
-            key = { "habit:${it.id}" }) { h ->
-            row(h, state.periods.lastOrNull { it.habitId == h.id })
-        }
-        if (page == HabitPage.HISTORY || page == HabitPage.ALL) {
-            item("excluded-habits-label") { Text(stringResource(R.string.habit_excluded)) }
-            items(state.snapshot.habits.filter { it.status == HabitStatus.EXCLUDED },
-                key = { "excluded:${it.id}" }) { h ->
-                row(h, state.periods.lastOrNull { it.habitId == h.id })
-            }
-        }
-    }
 }
+
+/** Hoje shows active habits whose period includes today; a list page its own; Settings the excluded ones. */
+internal fun visibleHabits(state: HabitsUiState, page: HabitPage, listId: String?): List<Habit> =
+    state.snapshot.habits.filter { h ->
+        when (page) {
+            HabitPage.TODAY -> h.status == HabitStatus.ACTIVE &&
+                state.periods.any { it.habitId == h.id && state.today in it.start..it.end }
+            HabitPage.LIST -> h.status != HabitStatus.EXCLUDED && h.listId == listId
+            HabitPage.EXCLUDED -> h.status == HabitStatus.EXCLUDED
+            HabitPage.REVIEW -> false
+        }
+    }
 
 /** Quick action on a habit card; null when the habit cannot be recorded today. */
 data class HabitQuick(val label: Int, val description: Int, val done: Boolean, val run: () -> Unit)
@@ -207,30 +195,31 @@ fun weekHits(state: HabitsUiState, h: Habit): List<Boolean>? {
     }
 }
 
-private val habitColors = listOf(0xFF54745C, 0xFF426B96, 0xFF79568E, 0xFFA45B25, 0xFFA04D68, 0xFF657078)
 
-/** Model B habit card (spec 010). Avoid and limit habits use the warm amber container. */
+/** Model B habit card (spec 010). Avoid and limit habits use the red error container so they read as "stop". */
 @Composable
 fun HabitRow(
     habit: Habit, period: HabitPeriod?, busy: Boolean, open: () -> Unit, quick: HabitQuick? = null,
     week: List<Boolean>? = null, todayCount: Int? = null, today: LocalDate,
     consistency: Pair<Int, Int?>? = null, timer: TimerChip? = null,
 ) {
-    val warm = period?.rule?.type?.let { it != HabitType.PRACTICE } == true
+    val breaking = period?.rule?.type?.let { it != HabitType.PRACTICE } == true
     val colors = MaterialTheme.colorScheme
     OutlinedCard(open, Modifier.fillMaxWidth(), enabled = !busy, shape = RoundedCornerShape(17.dp),
         colors = CardDefaults.outlinedCardColors(
-            containerColor = if (warm) colors.tertiaryContainer else colors.surfaceContainerLow),
-        border = BorderStroke(1.dp, if (warm) colors.tertiaryContainer else colors.outlineVariant)) {
+            containerColor = if (breaking) colors.errorContainer else colors.surfaceContainerLow),
+        border = BorderStroke(1.dp, if (breaking) colors.errorContainer else colors.outlineVariant)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(Color(habitColors[habit.color])),
-                    contentAlignment = Alignment.Center) { Text(habitIcons[habit.icon].symbol, color = Color.White) }
+                Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(itemColors[habit.color]),
+                    contentAlignment = Alignment.Center) {
+                    Icon(painterResource(habitIcons[habit.icon].icon), contentDescription = null, tint = Color.White)
+                }
                 Column(Modifier.weight(1f)) {
                     Text(habit.name, style = MaterialTheme.typography.titleSmall)
                     if (habit.status == HabitStatus.PAUSED) Text(stringResource(R.string.habit_paused),
                         style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-                    if (todayCount != null && warm) Text(
+                    if (todayCount != null && breaking) Text(
                         pluralStringResource(R.plurals.habit_today_occurrences, todayCount, todayCount),
                         style = MaterialTheme.typography.bodySmall)
                     if (todayCount == null) period?.let { p ->
@@ -243,15 +232,15 @@ fun HabitRow(
                 if (timer != null && quick?.done != true) TimerChipButton(timer, habit.name, !busy)
                 quick?.let { q ->
                     val description = stringResource(q.description, habit.name)
-                    val accent = if (warm) colors.tertiary else colors.primary
+                    val accent = if (breaking) colors.error else colors.primary
                     OutlinedButton(q.run,
                         Modifier.semantics { contentDescription = description }, enabled = !busy,
                         shape = RoundedCornerShape(10.dp),
-                        border = BorderStroke(1.dp, if (warm) colors.tertiary else colors.outlineVariant),
+                        border = BorderStroke(1.dp, if (breaking) colors.error else colors.outlineVariant),
                         colors = ButtonDefaults.outlinedButtonColors(
                             containerColor = when {
                                 q.done -> colors.primary
-                                warm -> Color.Transparent
+                                breaking -> Color.Transparent
                                 else -> colors.secondaryContainer
                             },
                             contentColor = if (q.done) colors.onPrimary else accent),
@@ -280,14 +269,10 @@ fun HabitRow(
 }
 
 @Composable
-fun HabitsContent(
-    state: HabitsUiState, page: HabitPage, new: () -> Unit, open: (String) -> Unit, retry: () -> Unit,
-    record: ((String) -> Unit)? = null, newBreaking: (() -> Unit)? = null,
-    timerChip: (Habit) -> TimerChip? = { null },
-) {
+fun HabitsContent(state: HabitsUiState, page: HabitPage, open: (String) -> Unit, retry: () -> Unit) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        habitItems(state, page, null, new, open, retry, record, newBreaking, timerChip)
+        habitItems(state, page, null, open, retry)
     }
 }
 

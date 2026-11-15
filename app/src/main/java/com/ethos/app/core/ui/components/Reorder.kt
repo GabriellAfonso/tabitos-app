@@ -5,14 +5,18 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -31,10 +35,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -45,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.ethos.app.R
 import kotlinx.coroutines.isActive
+import kotlin.math.abs
 import kotlin.coroutines.coroutineContext
 
 /** Springs shared by every reorderable list, so neighbours always slide the same way. */
@@ -60,7 +69,8 @@ fun DragHandle(modifier: Modifier) {
     val description = stringResource(R.string.drag_to_reorder)
     Box(modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
         .semantics { contentDescription = description }, contentAlignment = Alignment.Center) {
-        Text("⠿", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(painterResource(R.drawable.ic_drag_indicator), contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -87,9 +97,16 @@ fun Modifier.reorderActions(index: Int, lastIndex: Int, enabled: Boolean, onMove
 }
 
 /**
- * Drag-to-reorder for short lists inside a scrolling [Column] (dialogs, editors). The order changes only on
- * release; while dragging, the item follows the finger and the neighbours it passes slide out of the way.
- * Dragging starts from [content]'s `handle` modifier so text fields inside items keep their own gestures.
+ * Whole-row gesture for rows without a visible grip (drawer lists): tap opens the item, holding and moving
+ * reorders, holding and releasing in place opens the item's actions ([onHold]).
+ */
+class HoldGesture<T>(val onTap: (T) -> Unit, val onHold: (T) -> Unit, val onLift: () -> Unit = {})
+
+/**
+ * Drag-to-reorder for short lists inside a scrolling [Column] (dialogs, editors, drawer). The order changes
+ * only on release; while dragging, the item follows the finger and the neighbours it passes slide out of the
+ * way. Dragging starts from [content]'s `handle` modifier so text fields inside items keep their own gestures;
+ * with [hold], the handle uses [HoldGesture] instead of an immediate drag.
  */
 @Composable
 fun <T> ReorderableColumn(
@@ -99,8 +116,10 @@ fun <T> ReorderableColumn(
     onReorder: (List<T>) -> Unit,
     modifier: Modifier = Modifier,
     spacing: Dp = 8.dp,
+    hold: HoldGesture<T>? = null,
     content: @Composable (item: T, handle: Modifier) -> Unit,
 ) {
+    val holdActions by rememberUpdatedState(hold)
     val current by rememberUpdatedState(items)
     val change by rememberUpdatedState(onReorder)
     val tops = remember { mutableStateMapOf<Any, Float>() }
@@ -144,13 +163,34 @@ fun <T> ReorderableColumn(
                 LaunchedEffect(shift, dragged == null) {
                     if (dragged == null) slide.snapTo(0f) else slide.animateTo(shift, slideSpring)
                 }
-                val handle = if (!enabled) Modifier else Modifier.pointerInput(id) {
-                    detectDragGestures(
-                        onDragStart = { dragged = id; dragY = 0f },
-                        onDragEnd = ::finish,
-                        onDragCancel = { dragged = null; dragY = 0f },
-                        onDrag = { pointer, amount -> pointer.consume(); dragY += amount.y },
-                    )
+                val handle = when {
+                    !enabled -> Modifier
+                    hold != null -> Modifier.pointerInput(id) {
+                        // Looked up on use: the gesture outlives recompositions that rename or recolor the item.
+                        fun latest() = current.firstOrNull { itemKey(it) == id }
+                        detectHoldGesture(
+                            onTap = { latest()?.let { holdActions?.onTap?.invoke(it) } },
+                            onLift = { dragged = id; dragY = 0f; holdActions?.onLift?.invoke() },
+                            onDrag = { dragY += it },
+                            onRelease = { moved ->
+                                if (moved) finish()
+                                else {
+                                    dragged = null
+                                    dragY = 0f
+                                    latest()?.let { holdActions?.onHold?.invoke(it) }
+                                }
+                            },
+                            onCancel = { dragged = null; dragY = 0f },
+                        )
+                    }
+                    else -> Modifier.pointerInput(id) {
+                        detectDragGestures(
+                            onDragStart = { dragged = id; dragY = 0f },
+                            onDragEnd = ::finish,
+                            onDragCancel = { dragged = null; dragY = 0f },
+                            onDrag = { pointer, amount -> pointer.consume(); dragY += amount.y },
+                        )
+                    }
                 }
                 Box(Modifier
                     .onGloballyPositioned { if (dragged == null) { tops[id] = it.positionInParent().y
@@ -162,12 +202,40 @@ fun <T> ReorderableColumn(
                         scaleX = if (lifted) LIFTED_SCALE else 1f
                         scaleY = scaleX
                     }
+                    // A held row is one focusable item: its own actions and the move actions together.
+                    .then(if (hold != null) Modifier.semantics(mergeDescendants = true) {} else Modifier)
                     .reorderActions(index, items.lastIndex, enabled) { change(current.moved(index, it)) }) {
                     content(item, handle)
                 }
             }
         }
     }
+}
+
+/**
+ * Tap, or long press followed by an optional drag. A press that moves before the long-press timeout is left to
+ * the parent (the drawer scrolls). [onRelease] reports whether the finger travelled past the touch slop.
+ */
+private suspend fun PointerInputScope.detectHoldGesture(
+    onTap: () -> Unit, onLift: () -> Unit, onDrag: (Float) -> Unit, onRelease: (moved: Boolean) -> Unit,
+    onCancel: () -> Unit,
+) = awaitEachGesture {
+    val down = awaitFirstDown(requireUnconsumed = false)
+    val press = awaitLongPressOrCancellation(down.id)
+    if (press == null) {
+        val up = currentEvent.changes.firstOrNull { it.id == down.id }
+        if (up != null && up.changedToUp() && !up.isConsumed) { up.consume(); onTap() }
+        return@awaitEachGesture
+    }
+    onLift()
+    var travelled = 0f
+    val released = drag(press.id) { change ->
+        val dy = change.positionChange().y
+        travelled += abs(dy)
+        change.consume()
+        onDrag(dy)
+    }
+    if (released) onRelease(travelled > viewConfiguration.touchSlop) else onCancel()
 }
 
 /**

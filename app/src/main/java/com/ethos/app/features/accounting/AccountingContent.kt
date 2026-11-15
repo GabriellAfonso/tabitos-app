@@ -7,7 +7,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalDensity
@@ -16,10 +19,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.ethos.app.R
 import com.ethos.app.core.ui.accounting.*
 import com.ethos.app.core.accounting.domain.*
-import com.ethos.app.core.rewards.domain.Purchase
-import com.ethos.app.core.ui.rewards.rewardSymbol
 import com.ethos.app.core.ui.components.CoinAmount
 import com.ethos.app.core.ui.components.Eyebrow
+import com.ethos.app.core.ui.format.EthosDates
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 
@@ -115,29 +120,57 @@ fun AccountingSettings(state: AccountingUiState, edit: () -> Unit, change: (List
     }
 }
 
+/** Coin history kept simple: one line per entry under a day header, amounts on the right. */
 @Composable
-fun AccountingHistory(state: AccountingUiState, retry: () -> Unit, purchases: List<Purchase> = emptyList()) {
-    LazyColumn(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+fun AccountingHistory(state: AccountingUiState, retry: () -> Unit, today: LocalDate, zone: ZoneId) {
+    val days = remember(state.snapshot.entries, zone) { historyDays(state.snapshot.entries, zone) }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(20.dp)) {
         item { AccountingStatus(state, retry) }
-        if (!state.loading && !state.error && state.snapshot.entries.isEmpty()) {
+        if (!state.loading && !state.error && days.isEmpty()) {
             item { Text(stringResource(R.string.finance_history_empty)) }
         }
-        items(state.snapshot.entries.asReversed(), key = { it.sequence }) { entry ->
-            OutlinedCard(Modifier.fillMaxWidth()) { Column(Modifier.padding(12.dp)) {
-                FinancialEntryContent(entry)
-                purchases.firstOrNull { it.ledgerSequence == entry.sequence }?.let { purchase ->
-                    Text(rewardSymbol(purchase.reward.icon))
-                    if (purchase.reward.description.isNotEmpty()) Text(purchase.reward.description)
-                    Text(stringResource(R.string.reward_reference, purchase.id))
-                }
-                entry.related?.let { id ->
-                    val original = state.snapshot.entries.firstOrNull { it.sequence == id }
-                    if (original != null) Text(stringResource(R.string.finance_related, original.title,
-                        financialTime(original.time)))
-                }
-            } }
+        days.forEach { day ->
+            item(key = "day:${day.date}") {
+                Eyebrow(EthosDates.longPlain(day.date, today), Modifier.padding(top = 16.dp, bottom = 4.dp))
+            }
+            items(day.entries, key = { it.sequence }) { entry ->
+                HistoryRow(entry, zone)
+                HorizontalDivider()
+            }
         }
     }
+}
+
+@Composable
+private fun HistoryRow(entry: LedgerEntry, zone: ZoneId) {
+    val moment = Instant.ofEpochMilli(entry.time).atZone(zone)
+    Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f)) {
+            Text(entry.title, style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(R.string.history_line, stringResource(historyKind(entry.kind)),
+                EthosDates.time(moment.hour * MINUTES_PER_HOUR + moment.minute)),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            CoinAmount(signed(entry.coins), style = MaterialTheme.typography.titleSmall)
+            if (entry.xp != 0L) Text(stringResource(R.string.history_xp, signed(entry.xp)),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+private const val MINUTES_PER_HOUR = 60
+
+private fun signed(value: Long): String = if (value > 0) "+$value" else value.toString()
+
+private fun historyKind(kind: String): Int = when (kind) {
+    "REVERSAL" -> R.string.history_kind_reversal
+    "REAPPLY" -> R.string.history_kind_reapply
+    "CORRECTION" -> R.string.history_kind_correction
+    "PENALTY" -> R.string.history_kind_penalty
+    "PURCHASE" -> R.string.history_kind_purchase
+    else -> R.string.history_kind_gain
 }
 
 @Preview

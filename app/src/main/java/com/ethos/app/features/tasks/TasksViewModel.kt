@@ -43,7 +43,7 @@ data class TasksUiState(
     val storageError: Boolean = false, val draft: TaskDraft? = null, val detailId: String? = null,
     val completionText: String = "", val uncheckedConfirmation: Int? = null,
     val listDraft: TaskList? = null, val deleteListId: String? = null, val deleteTaskId: String? = null,
-    val manageLists: Boolean = false, val selectedListId: String? = null,
+    val selectedListId: String? = null,
     val financialPreview: FinancialPreview? = null,
     val discardConfirmation: Boolean = false,
     /** Occurrence just completed by its timer, offered for undo (spec 016). */
@@ -290,7 +290,6 @@ class TasksViewModel @Inject constructor(
         if (confirm) completionAction?.let { execute(it) }
         completionAction = null
     }
-    fun manageLists(show: Boolean) { mutable.update { it.copy(manageLists = show) } }
     fun listDraft(list: TaskList?) {
         if (list == null) listForDraft = false
         mutable.update { it.copy(listDraft = list) }

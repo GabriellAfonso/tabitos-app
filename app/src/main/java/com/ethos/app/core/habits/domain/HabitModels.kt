@@ -12,7 +12,13 @@ data class Habit(
     val listId: String? = null, val color: Int = 0, val icon: Int = 0,
     val difficulty: Int = 1, val importance: Int = 1, val importanceManual: Boolean = false,
     val status: HabitStatus = HabitStatus.ACTIVE,
-) : java.io.Serializable
+) : java.io.Serializable {
+    companion object {
+        /** Sizes of the color and icon choices shown in the editor; saved indices must stay inside them. */
+        const val COLOR_COUNT = 7
+        const val ICON_COUNT = 17
+    }
+}
 
 data class HabitRule(
     val id: String, val habitId: String, val effective: LocalDate,

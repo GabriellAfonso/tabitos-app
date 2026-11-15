@@ -1,6 +1,8 @@
 package com.ethos.app.features.shell
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,13 +19,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Scaffold
@@ -35,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -59,7 +61,7 @@ private val headerDate = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale
 data class DrawerListActions(val openTasks: () -> Unit, val close: () -> Unit, val tasksOpen: Boolean)
 
 /**
- * App frame: header, drawer, bottom bar and navigation. Each destination's content comes from [page];
+ * App frame: header, drawer and navigation. Each destination's content comes from [page];
  * the shell owns no feature state. [today] comes from the injected clock, never from the system clock.
  */
 @Composable
@@ -78,7 +80,12 @@ fun EthosShell(
         ?: ShellDestination.TODAY
     val drawer = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    /** Sub-pages stack above their parent so Back returns to it; main pages replace each other. */
     fun navigate(destination: ShellDestination) {
+        if (destination.parent != null) {
+            navController.navigate(destination.route) { launchSingleTop = true }
+            return
+        }
         navController.navigate(destination.route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
@@ -105,9 +112,12 @@ fun EthosShell(
                 }
             },
             topBar = {
-                ShellHeader(today, current, { scope.launch { drawer.open() } }) { navigate(ShellDestination.SETTINGS) }
+                ShellHeader(today, current, HeaderActions(
+                    openMenu = { scope.launch { drawer.open() } },
+                    back = { navController.popBackStack() },
+                    openSettings = { navigate(ShellDestination.SETTINGS) },
+                ))
             },
-            bottomBar = { ShellBottomBar(current, ::navigate) },
         ) { padding ->
             NavHost(navController, startDestination = ShellDestination.TODAY.route,
                 modifier = Modifier.padding(padding)) {
@@ -134,6 +144,7 @@ private fun ShellDrawer(
             destinations.forEach { destination ->
                 NavigationDrawerItem(
                     label = { Text(stringResource(destination.title)) },
+                    icon = { Icon(painterResource(destination.icon), contentDescription = null) },
                     selected = current == destination,
                     badge = {
                         if (destination == ShellDestination.REVIEW && pendingCount > 0) Text(pendingCount.toString())
@@ -147,6 +158,7 @@ private fun ShellDrawer(
             HorizontalDivider()
             NavigationDrawerItem(
                 label = { Text(stringResource(R.string.settings)) },
+                icon = { Icon(painterResource(ShellDestination.SETTINGS.icon), contentDescription = null) },
                 selected = current == ShellDestination.SETTINGS,
                 onClick = { navigate(ShellDestination.SETTINGS) },
             )
@@ -154,44 +166,37 @@ private fun ShellDrawer(
     }
 }
 
-/** Model B header: date eyebrow over a large title (spec 010). */
+private class HeaderActions(val openMenu: () -> Unit, val back: () -> Unit, val openSettings: () -> Unit)
+
+/** Model B header: date eyebrow over a large title (spec 010). Sub-pages show Back and no settings button. */
 @Composable
-private fun ShellHeader(today: LocalDate, current: ShellDestination, openMenu: () -> Unit, openSettings: () -> Unit) {
+private fun ShellHeader(today: LocalDate, current: ShellDestination, actions: HeaderActions) {
+    val isSubPage = current.parent != null
     Row(
         Modifier.fillMaxWidth()
             .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
             .padding(horizontal = 4.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        LabeledSymbol("☰", R.string.open_menu, onClick = openMenu)
+        if (isSubPage) HeaderButton(R.drawable.ic_arrow_back, R.string.back, onClick = actions.back)
+        else HeaderButton(R.drawable.ic_menu, R.string.open_menu, onClick = actions.openMenu)
         Column(Modifier.weight(1f).padding(horizontal = 4.dp)) {
             Text(today.format(headerDate).uppercase(Locale.forLanguageTag("pt-BR")),
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(stringResource(current.title), style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold)
         }
-        LabeledSymbol("⚙", R.string.open_settings, outlined = true, onClick = openSettings)
-    }
-}
-
-@Composable
-private fun ShellBottomBar(current: ShellDestination, navigate: (ShellDestination) -> Unit) {
-    NavigationBar {
-        ShellDestination.bottomBar.forEach { destination ->
-            val description = stringResource(R.string.open_destination, stringResource(destination.title))
-            NavigationBarItem(
-                selected = current == destination,
-                onClick = { navigate(destination) },
-                icon = { Text(destination.symbol) },
-                label = { Text(stringResource(destination.title)) },
-                modifier = Modifier.semantics { contentDescription = description },
-            )
+        if (!isSubPage) {
+            HeaderButton(ShellDestination.SETTINGS.icon, R.string.open_settings, outlined = true,
+                onClick = actions.openSettings)
         }
     }
 }
 
 @Composable
-private fun LabeledSymbol(symbol: String, label: Int, outlined: Boolean = false, onClick: () -> Unit) {
+private fun HeaderButton(
+    @DrawableRes icon: Int, @StringRes label: Int, outlined: Boolean = false, onClick: () -> Unit,
+) {
     val description = stringResource(label)
     val modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).semantics { contentDescription = description }
     if (outlined) OutlinedIconButton(
@@ -200,9 +205,9 @@ private fun LabeledSymbol(symbol: String, label: Int, outlined: Boolean = false,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         colors = IconButtonDefaults.outlinedIconButtonColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
-    ) { Text(symbol, style = MaterialTheme.typography.titleMedium) }
+    ) { Icon(painterResource(icon), contentDescription = null) }
     else IconButton(onClick = onClick, modifier = modifier) {
-        Text(symbol, style = MaterialTheme.typography.titleLarge)
+        Icon(painterResource(icon), contentDescription = null)
     }
 }
 

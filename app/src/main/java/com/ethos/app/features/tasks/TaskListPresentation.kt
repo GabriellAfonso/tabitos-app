@@ -10,6 +10,7 @@ import java.time.LocalDate
 import java.time.Instant
 import java.time.ZoneId
 
+/** "Concluídas" on every page shows only what was resolved today; older outcomes stay in the history. */
 internal fun TaskSnapshot.completedOccurrences(page: TaskPage, today: LocalDate, listId: String?):
     List<TaskOccurrence> {
     val outcomeDates = history.associate { it.id to Instant.ofEpochMilli(it.recordedAt)
@@ -17,7 +18,7 @@ internal fun TaskSnapshot.completedOccurrences(page: TaskPage, today: LocalDate,
     fun resolvedDate(o: TaskOccurrence): LocalDate? = o.completedDate ?: outcomeDates[o.activeOutcome]
     return activeOccurrences.filter { o ->
         (o.status == TaskStatus.DONE || o.status == TaskStatus.NOT_DONE) && when (page) {
-            TaskPage.LIST -> o.fields.listId == listId
+            TaskPage.LIST -> o.fields.listId == listId && resolvedDate(o) == today
             TaskPage.TODAY -> resolvedDate(o) == today
             TaskPage.REVIEW -> resolvedDate(o) == today && o.dueDate?.isBefore(today) == true
         }

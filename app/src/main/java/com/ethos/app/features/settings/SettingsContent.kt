@@ -1,6 +1,7 @@
 ﻿package com.ethos.app.features.settings
 
 import androidx.compose.material3.Switch
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,7 +11,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -22,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
@@ -98,4 +103,22 @@ fun TimerAlarmSetting(enabled: Boolean, onChange: (Boolean) -> Unit) {
         }
         Switch(enabled, onCheckedChange = null)
     }
+}
+
+/** Row that opens a settings sub-page (coin history, excluded habits); the whole row is the touch target. */
+@Composable
+fun SettingsLink(@StringRes title: Int, @DrawableRes icon: Int, onClick: () -> Unit) {
+    Row(Modifier.fillMaxWidth().sizeIn(minHeight = 56.dp).clickable(role = Role.Button, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Text(stringResource(title), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+        Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Preview
+@Composable
+private fun SettingsLinkPreview() {
+    EthosTheme { SettingsLink(R.string.history, R.drawable.ic_history) {} }
 }
