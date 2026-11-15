@@ -1,0 +1,866 @@
+<title>Mapa do Ethos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: guia de campo do app — cabeçalho, abas (Mapa · Telas · Regras · Ajustes); em Telas, índice | celular | ficha da tela. */
+:root{
+  --paper:#f5f4f7; --sheet:#ffffff; --ink:#1e1a23; --muted:#625b6b; --line:#e3dee8;
+  --plum:#6e4a8e; --plum-soft:#efe6f6; --amber:#93601a; --amber-soft:#fbf0e0; --warn:#a2402f; --warn-soft:#fbe9e5; --ok:#3d6b4a;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif; --body:Inter,ui-sans-serif,system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; --warn:#f0a897; --warn-soft:#3a221e; --ok:#9fd0ab; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; --warn:#f0a897; --warn-soft:#3a221e; --ok:#9fd0ab; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--body)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.wrap{max-width:1440px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 14px}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+h1{font:800 clamp(30px,4.4vw,46px)/1.05 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+h2{font:700 22px/1.2 var(--display);margin:0 0 6px;text-wrap:balance}
+h3{font:700 16px/1.3 var(--display);margin:0}
+.lede{max-width:70ch;color:var(--muted);margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:16px}
+.ctl{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--sheet)}
+.seg button{border:0;background:none;padding:5px 12px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--plum);color:var(--sheet);font-weight:600}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+nav.tabs .wrap{display:flex;gap:4px;overflow-x:auto}
+nav.tabs a{padding:12px 14px;text-decoration:none;color:var(--muted);font-weight:600;border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--plum)}
+.count{display:inline-block;min-width:20px;padding:0 6px;margin-left:6px;border-radius:999px;background:var(--amber-soft);color:var(--amber);font-size:12px;text-align:center}
+main{padding-block:22px 60px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+code,.mono{font-family:var(--mono);font-size:12.5px}
+
+/* MAPA */
+.band{margin-bottom:26px}
+.band-head{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}
+.band-head p{margin:0;color:var(--muted);font-size:14px}
+.nodes{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.node{display:flex;flex-direction:column;gap:6px;text-align:left;background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.node:hover{border-color:var(--plum)}
+.node .sym{font-size:18px;color:var(--plum);width:28px}
+.node-title{display:flex;gap:8px;align-items:center;font-weight:700}
+.node small{color:var(--muted);font-size:12.5px;line-height:1.45}
+.node .tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:11px;padding:2px 7px;border-radius:999px;background:var(--plum-soft);color:var(--plum);white-space:nowrap}
+.tag.game{background:var(--amber-soft);color:var(--amber)}
+.tag.note{background:var(--warn-soft);color:var(--warn)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin:0 0 20px}
+.shell-diagram{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:24px;align-items:start;margin-bottom:30px}
+.frame{border:1.5px solid var(--ink);border-radius:26px;padding:12px;background:var(--sheet);font-size:12.5px}
+.frame div{border:1px dashed var(--line);border-radius:8px;padding:8px;margin:6px 0;text-align:center;cursor:pointer}
+.frame div:hover{border-color:var(--plum);color:var(--plum)}
+.frame .body{height:180px;display:grid;place-items:center;color:var(--muted)}
+.frame-notes ol{margin:0;padding-left:20px;display:grid;gap:8px}
+.frame-notes b{font-family:var(--display)}
+
+/* TELAS */
+.screens{display:grid;grid-template-columns:220px 392px minmax(0,1fr);gap:22px;align-items:start}
+.index{position:sticky;top:calc(env(safe-area-inset-top,0px) + 60px);display:flex;flex-direction:column;gap:2px;max-height:calc(100vh - 80px);overflow:auto}
+.index h4{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 8px 6px}
+.index button{display:flex;justify-content:space-between;gap:6px;border:0;background:none;text-align:left;padding:6px 8px;border-radius:8px;font-size:14px}
+.index button:hover{background:var(--plum-soft)}
+.index button[aria-current="true"]{background:var(--plum-soft);color:var(--plum);font-weight:600}
+.phone-col{position:sticky;top:calc(env(safe-area-inset-top,0px) + 60px)}
+.phone-hint{font-size:12.5px;color:var(--muted);text-align:center;margin-top:10px}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:20px;min-width:0}
+.sheet section{padding-block:14px;border-top:1px solid var(--line)}
+.sheet section:first-of-type{border-top:0;padding-top:4px}
+.sheet h5{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.sheet ul{margin:0;padding-left:18px;display:grid;gap:5px}
+.sheet .attn li::marker{content:"! ";color:var(--warn);font-weight:700}
+.links{display:flex;flex-wrap:wrap;gap:6px}
+.links button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 11px;font-size:13px}
+.links button:hover{border-color:var(--plum);color:var(--plum)}
+.reach{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.notes-box textarea{width:100%;min-height:84px;border:1px solid var(--line);border-radius:10px;background:var(--paper);padding:10px;resize:vertical}
+.btn{border:0;border-radius:10px;padding:8px 14px;background:var(--plum);color:var(--sheet);font-weight:600;font-size:14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:none;color:var(--muted);border:1px solid var(--line)}
+.btn.danger{background:var(--warn);color:var(--sheet)}
+.row-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.note{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;gap:6px;background:var(--paper)}
+.note.done{opacity:.65}
+.note.done p{text-decoration:line-through}
+.note p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.note-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)}
+.note-meta button{border:0;background:none;color:var(--plum);font-size:12px;padding:0}
+.note-meta button.del{color:var(--warn)}
+.notes-list{display:grid;gap:8px;margin-top:12px}
+.status{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* REGRAS */
+.rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px}
+.rule{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:18px;min-width:0}
+.rule ul{margin:10px 0 0;padding-left:18px;display:grid;gap:5px}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:12px;font-size:13px}
+.flow .st{border:1px solid var(--line);border-radius:8px;padding:3px 9px;background:var(--paper);white-space:nowrap}
+.flow .st.good{border-color:var(--ok);color:var(--ok)}
+.flow .st.bad{border-color:var(--warn);color:var(--warn)}
+.flow .st.coin{border-color:var(--amber);color:var(--amber)}
+.flow .ar{color:var(--muted)}
+.flow .why{flex-basis:100%;color:var(--muted);font-size:12.5px;margin-top:-2px}
+table.prices{border-collapse:collapse;margin-top:12px;font-size:13px;font-variant-numeric:tabular-nums;width:100%}
+table.prices th,table.prices td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+table.prices th{color:var(--muted);font-weight:600}
+.spec{font-family:var(--mono);font-size:12px;color:var(--muted)}
+
+/* AJUSTES */
+.adjust-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:end;margin-bottom:16px}
+.adjust-group{margin-bottom:20px}
+.adjust-group h3 button{border:0;background:none;padding:0;font:inherit;color:var(--plum)}
+
+/* CELULAR — tokens Ameixa do app (core/ui/theme/EthosTheme.kt) */
+.phone{--p:#6E4A8E;--onp:#fff;--pc:#F1E7F8;--onpc:#2E1A40;--sc:#F1E7F8;--t:#93601A;--tc:#FBF0E0;--bg:#FBF8FC;--on:#231D29;--onv:#655C6E;--low:#fff;--cont:#F3EEF6;--high:#F1E9F5;--ol:#8F8498;--olv:#E6DEEB;--err:#B3261E;
+  width:100%;max-width:380px;height:780px;margin:0 auto;border:8px solid #26212b;border-radius:44px;background:var(--bg);color:var(--on);position:relative;overflow:hidden;display:flex;flex-direction:column;font:14px/1.4 Roboto,system-ui,sans-serif;box-shadow:0 18px 40px rgba(30,20,40,.18)}
+.phone.dark{--p:#D7B8F2;--onp:#3B1F55;--pc:#44325A;--onpc:#F1E2FC;--sc:#3A2D47;--t:#E8BE7A;--tc:#352A1F;--bg:#171419;--on:#ECE4F0;--onv:#B1A6B8;--low:#211C25;--cont:#1F1A23;--high:#2A2430;--ol:#82788A;--olv:#372F3D;--err:#F2B8B5}
+.phone *{box-sizing:border-box}
+.p-status{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;font-weight:600}
+.p-head{display:flex;align-items:center;gap:4px;padding:6px 6px 8px;flex:none}
+.p-head .ib{width:44px;height:44px;border:0;background:none;font-size:20px;border-radius:50%;display:grid;place-items:center;color:var(--on)}
+.p-head .ib.ol{border:1px solid var(--olv);background:var(--low);font-size:16px;width:40px;height:40px;margin-right:6px}
+.p-head .tt{flex:1;min-width:0}
+.p-head .dt{font-size:10px;letter-spacing:.06em;color:var(--onv)}
+.p-head .h{font-size:22px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-body{flex:1;overflow-y:auto;padding:4px 18px 90px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
+.p-body.nopad{padding-bottom:20px}
+.p-nav{position:absolute;left:0;right:0;bottom:0;display:flex;background:var(--cont);padding:8px 4px 16px;z-index:3}
+.p-nav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;color:var(--onv)}
+.p-nav .ic{padding:3px 18px;border-radius:16px;font-size:15px}
+.p-nav .on{color:var(--on);font-weight:600}
+.p-nav .on .ic{background:var(--sc)}
+.p-fab{position:absolute;right:16px;bottom:88px;width:56px;height:56px;border-radius:16px;border:0;background:var(--pc);color:var(--onpc);font-size:28px;box-shadow:0 4px 10px rgba(0,0,0,.18);z-index:3}
+.p-menu{position:absolute;right:16px;bottom:150px;background:var(--high);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.25);padding:6px 0;z-index:7;min-width:170px}
+.p-menu div{padding:12px 16px;font-size:14px;cursor:pointer}
+.p-menu div:hover{background:var(--cont)}
+.m-sub{color:var(--onv);font-size:15px}
+.m-sec{font-size:15px;font-weight:600;margin-top:4px}
+.m-card{border:1px solid var(--olv);background:var(--low);border-radius:14px;padding:10px 12px}
+.m-task{display:flex;align-items:center;gap:6px;border:1px solid var(--olv);background:var(--low);border-radius:14px;padding:4px 10px 4px 2px;cursor:pointer}
+.m-task.res{background:var(--bg)}
+.m-task.res .m-tt{text-decoration:line-through;color:var(--onv)}
+.m-ck{width:44px;height:44px;flex:none;display:grid;place-items:center;border:0;background:none}
+.m-ck span{width:22px;height:22px;border-radius:50%;border:2px solid var(--ol);display:grid;place-items:center;font-size:13px;color:var(--onp)}
+.m-ck.on span{background:var(--p);border-color:var(--p)}
+.m-tb{flex:1;min-width:0;padding:8px 0}
+.m-tt{font-size:14px;font-weight:600}
+.m-meta{font-size:12px;color:var(--onv)}
+.m-rep{color:var(--onv);font-size:16px}
+.m-chip{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--olv);border-radius:8px;padding:5px 9px;font-size:12px;background:var(--low);white-space:nowrap;color:var(--on)}
+.m-chip.sel{background:var(--sc);border-color:var(--sc);font-weight:600}
+.m-chip.run{background:var(--p);color:var(--onp);border-color:var(--p)}
+.m-chips{display:flex;gap:6px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+.m-lab{font-size:13px;font-weight:600;margin-top:4px}
+.m-habit{border:1px solid var(--olv);background:var(--low);border-radius:17px;padding:12px;display:grid;gap:5px;cursor:pointer}
+.m-habit.warm{background:var(--tc);border-color:var(--tc)}
+.m-hrow{display:flex;align-items:center;gap:10px}
+.m-hic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#fff;flex:none}
+.m-hb{flex:1;min-width:0}
+.m-hn{font-weight:600}
+.m-q{border:1px solid var(--olv);border-radius:10px;background:var(--sc);color:var(--p);padding:8px 12px;font-size:13px;white-space:nowrap}
+.m-q.done{background:var(--p);color:var(--onp);border-color:var(--p)}
+.m-habit.warm .m-q{background:transparent;color:var(--t);border-color:var(--t)}
+.m-small{font-size:11px;color:var(--onv);padding-left:46px}
+.m-week{display:flex;gap:4px;padding-left:46px}
+.m-week i{height:5px;flex:1;border-radius:3px;background:var(--olv)}
+.m-week i.h{background:var(--p)}
+.m-wallet{display:flex;gap:8px}
+.m-wallet>div{flex:1;border:1px solid var(--olv);border-radius:14px;padding:10px;background:var(--low);cursor:pointer}
+.m-wallet b{display:block;font-size:20px}
+.m-coin{color:var(--t)}
+.m-bar{height:4px;border-radius:4px;background:var(--olv);overflow:hidden;margin-top:6px}
+.m-bar i{display:block;height:100%;background:var(--p)}
+.m-banner{display:flex;gap:10px;align-items:center;border-radius:12px;padding:12px;background:var(--tc);color:var(--on);font-size:13px;cursor:pointer}
+.m-tbtn{border:0;background:none;color:var(--p);font-weight:600;font-size:14px;padding:8px 4px;text-align:left}
+.m-btn{border:0;border-radius:20px;background:var(--p);color:var(--onp);padding:9px 18px;font-weight:600;font-size:14px}
+.m-obtn{border:1px solid var(--ol);border-radius:20px;background:none;color:var(--p);padding:8px 16px;font-weight:600;font-size:14px}
+.m-field{border:1px solid var(--ol);border-radius:6px;padding:14px 12px 10px;position:relative;font-size:14px}
+.m-field small{position:absolute;top:-8px;left:9px;background:var(--bg);padding:0 4px;font-size:11px;color:var(--onv)}
+.m-field.typed{border-color:var(--t)}
+.m-step{display:flex;align-items:center;gap:10px}
+.m-step span{width:36px;height:36px;border-radius:50%;border:1px solid var(--ol);display:grid;place-items:center}
+.m-scrim{position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:6;display:flex;align-items:center;justify-content:center;padding:22px}
+.m-dialog{background:var(--high);border-radius:28px;padding:22px 20px 14px;width:100%;max-height:88%;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.m-dialog h6{font-size:20px;font-weight:500;margin:0 0 4px}
+.m-dactions{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+.m-full{position:absolute;inset:0;background:var(--bg);z-index:6;display:flex;flex-direction:column}
+.m-fhead{display:flex;align-items:center;gap:6px;padding:36px 8px 8px;border-bottom:1px solid var(--olv)}
+.m-fhead b{flex:1;font-size:19px}
+.m-drawer{position:absolute;inset:0 18% 0 0;background:var(--low);z-index:7;border-radius:0 18px 18px 0;padding:40px 12px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:2px}
+.m-di{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-radius:28px;font-size:14px;cursor:pointer;gap:10px}
+.m-di.sel{background:var(--sc);font-weight:600}
+.m-di:hover{background:var(--cont)}
+.m-hr{height:1px;background:var(--olv);margin:8px 0}
+.m-segc{display:flex;border:1px solid var(--ol);border-radius:20px;overflow:hidden}
+.m-segc span{flex:1;text-align:center;padding:7px;font-size:13px;border-left:1px solid var(--ol)}
+.m-segc span:first-child{border-left:0}
+.m-segc span.sel{background:var(--sc);font-weight:600}
+.m-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;text-align:center;font-size:12px}
+.m-grid .wd{color:var(--onv);font-size:11px}
+.m-grid .c{border-radius:10px;padding:5px 0;min-height:42px;display:flex;flex-direction:column;align-items:center;gap:1px}
+.m-grid .c.today{background:var(--sc)}
+.m-grid .c.sel{outline:2px solid var(--p)}
+.m-grid .c.out{color:var(--onv);opacity:.5}
+.m-grid .n{font-size:10px;color:var(--onv)}
+.m-grid .dot{width:6px;height:6px;border-radius:50%;background:var(--t)}
+.m-switch{width:46px;height:26px;border-radius:13px;background:var(--p);position:relative;flex:none}
+.m-switch::after{content:"";position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--onp)}
+.m-switch.off{background:var(--olv)}
+.m-switch.off::after{right:auto;left:3px;background:var(--ol)}
+.m-big{font-size:40px;font-weight:300;text-align:center;font-variant-numeric:tabular-nums}
+.m-notif{background:var(--high);border-radius:20px;padding:12px 14px;display:grid;gap:4px}
+.m-notif .app{font-size:11px;color:var(--onv)}
+.m-notif .acts{display:flex;gap:14px;color:var(--p);font-weight:600;font-size:13px;margin-top:4px}
+.m-snack{position:absolute;left:12px;right:12px;bottom:86px;background:#322d36;color:#f3eff6;border-radius:6px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;font-size:13px;z-index:5}
+.m-snack b{color:#d7b8f2}
+.m-err{color:var(--err);font-size:13px}
+.m-hidden{border:1px dashed var(--ol);border-radius:14px;padding:16px;color:var(--onv);font-size:13px;text-align:center}
+[data-go],[data-tog],[data-hab],[data-filt]{cursor:pointer}
+
+@media (max-width:1180px){.screens{grid-template-columns:392px minmax(0,1fr)}.index{grid-column:1/-1;position:static;flex-direction:row;flex-wrap:wrap;max-height:none}.index h4{flex-basis:100%;margin:8px 4px 2px}}
+@media (max-width:820px){.screens{grid-template-columns:minmax(0,1fr)}.phone-col{position:static}.shell-diagram{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:420px){.phone{height:720px;border-width:6px;border-radius:36px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="top wrap">
+  <div class="eyebrow">Ethos · Android · guia do app como está hoje</div>
+  <h1>Mapa do Ethos</h1>
+  <p class="lede">Todas as telas, como se chega em cada uma e as regras que valem nelas, montado a partir do código atual (specs 001 a 018). Os celulares usam a paleta Ameixa do app e dados fictícios da base de demonstração. Em cada tela dá para anotar o que você quer ajustar; essas notas ficam salvas aqui e eu consigo ler depois.</p>
+  <div class="controls">
+    <div class="ctl">Celulares
+      <div class="seg" id="theme-seg" role="group" aria-label="Tema dos celulares">
+        <button data-theme-opt="page">Igual à página</button><button data-theme-opt="light">Claro</button><button data-theme-opt="dark">Escuro</button>
+      </div>
+    </div>
+    <div class="ctl">Modo jogo
+      <div class="seg" id="game-seg" role="group" aria-label="Modo jogo">
+        <button data-game="on">Ligado</button><button data-game="off">Desligado</button>
+      </div>
+    </div>
+  </div>
+</header>
+<nav class="tabs" aria-label="Seções"><div class="wrap" id="tabs"></div></nav>
+<main class="wrap" id="main"></main>
+
+<script>
+"use strict";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const S = {theme:"page", game:true, view:"mapa", screen:"hoje", tasks:{}, habits:{read:true}, filter:"Tudo", fab:false, drafts:{}, confirmDel:null};
+try { const t = localStorage.getItem("mapa-theme"); if (t) S.theme = t; } catch (e) {}
+
+/* ---------- Telas: o que o código mostra hoje ---------- */
+const GROUPS = [
+  ["moldura","Moldura do app"],["destino","Destinos (páginas)"],["camada","Abre por cima"],["fora","Fora do app"],
+];
+const SCREENS = [
+ {id:"hoje", g:"destino", sym:"◉", name:"Hoje", nav:"hoje", reach:["Barra inferior · Hoje","Menu ☰ · Hoje","Abre ao iniciar o app"],
+  opens:["criar","detalhe-tarefa","detalhe-habito","cronometro","acompanhamento","revisao","recompensas","confirmacao"],
+  what:["Frase “Um passo de cada vez”","Moedas e nível lado a lado (só com modo jogo)","Cartões de cronômetros em andamento, com ⋮ para descartar a contagem","Aviso “N acompanhamentos para preencher”","Faixa âmbar “Você tem N pendências para revisar”","Filtro Tudo · Tarefas · Hábitos","Tarefas do dia, depois “Nesta semana · sem dia definido”","Hábitos do período atual","“Concluídas (N)”: o que foi resolvido hoje, recolhível","Botão + (Tarefa, Hábito, Quebrar hábito)"],
+  actions:["Tocar no círculo conclui a tarefa (o ✓ anima antes de mover o cartão)","Segurar o círculo abre Feito / Não será feito","Tocar no cartão abre os detalhes","“Marcar” registra o hábito de hoje; “✓ Feito hoje” desmarca, com Desfazer","“Registrar” anota uma ocorrência em hábitos de evitar/limitar","▶ no cartão inicia o cronômetro de tarefas/hábitos com tempo","Tocar nas moedas abre Recompensas; a faixa âmbar abre a Revisão"],
+  rules:["Tarefa entra em Hoje se estiver aberta e: prazo “Dia específico” = hoje, ou hoje cai dentro de “Até domingo”/“Até sexta”","Prazos de semana vão para a seção “Nesta semana · sem dia definido”","Hábitos aparecem quando estão ativos e o período deles inclui hoje","Concluídas mostra tarefas resolvidas hoje (feitas ou não feitas)","A contagem da revisão é só de tarefas: hábito nunca vira pendência"],
+  attn:["Tarefa “Sem data” nunca aparece em Hoje; só na página da lista","A ordem é fixa: tarefas do dia → semana → hábitos → concluídas. Não dá para intercalar hábitos e tarefas","O topo pode empilhar até 4 blocos (moedas, cronômetros, acompanhamentos, pendências) antes da primeira tarefa"],
+  specs:["010 paleta Ameixa e modelo B","011 marcar hábito direto","012 checkbox direto","016 cronômetro no cartão","018 descartar contagem"], code:["EthosApp.kt · TaskDestination/TodayHeader","features/tasks/TaskListPresentation.kt"]},
+ {id:"tarefas", g:"destino", sym:"☰", name:"Tarefas (página da lista)", nav:"tarefas", reach:["Barra inferior · Tarefas (abre a lista escolhida por último; começa na Caixa de entrada)","Menu ☰ · Minhas listas · uma lista"],
+  opens:["criar","detalhe-tarefa","listas","editor-tarefa","detalhe-habito"],
+  what:["Ícone e nome da lista","Seletor Tarefas | Hábitos, com o rótulo “Lista” em cima","Botão de texto “Gerenciar listas”","Tarefas abertas, na ordem que você arrastou","Recorrentes mostram só a ocorrência atual","Hábitos desta lista (na aba Hábitos)","Concluídas (N) da lista inteira"],
+  actions:["Segurar e arrastar reordena; com TalkBack, ações Mover para cima/baixo","Mesmo círculo e menu de segurar de Hoje","+ cria tarefa ou hábito"],
+  rules:["Reordenar só nesta página (Hoje e Revisão não reordenam)","Uma série recorrente aparece uma vez: a ocorrência aberta mais antiga","A ordem é salva no Room (TaskAction.Order)"],
+  attn:["O seletor Tarefas/Hábitos está rotulado “Lista” (reaproveita a string choose_list)","O topo diz “Tarefas”; o nome da lista só aparece dentro do conteúdo","“Gerenciar listas” aparece aqui e também no menu","Concluídas da lista mostram todas já resolvidas, não só as de hoje"],
+  specs:["003 listas e tarefas","012 checkbox","015 arrastar para reordenar"], code:["features/tasks/TasksContent.kt","features/tasks/TaskListPresentation.kt · listOccurrences"]},
+ {id:"habitos", g:"destino", sym:"◇", name:"Hábitos", nav:"habitos", reach:["Barra inferior · Hábitos"],
+  opens:["editor-habito","detalhe-habito","cronometro"],
+  what:["Botões “Novo hábito” e “Quebrar hábito” no topo da lista","Cartões com ícone colorido, nome e progresso (“Dias distintos: 3 / 5”)","Sequência e % de constância","Estado do período: Em andamento, Feito, Perdido ou “Ainda dá para registrar”","Barrinhas da semana (seg a dom) para hábitos de praticar","Botão Marcar / Registrar","Seção “Hábitos excluídos”"],
+  actions:["Marcar/desmarcar a prática de hoje","Registrar ocorrência (evitar/limitar)","Tocar no cartão abre os detalhes"],
+  rules:["Evitar e Limitar usam cartão âmbar","Hábito pausado continua na lista com “Pausado”","Excluídos ficam com histórico, separados no fim"],
+  attn:["O rótulo “Hábitos excluídos” aparece mesmo quando não há nenhum","O ícone ◇ da barra é o mesmo de Recompensas no código","Sem botão +: aqui a criação é por botões no topo, diferente de Hoje e Tarefas","Hoje mostra “Hoje: N ocorrências”; aqui mostra o total do período. A mesma informação muda de forma entre telas"],
+  specs:["004 hábitos e metas","011 marcar direto","014 hábitos sem dívida"], code:["features/habits/HabitsContent.kt"]},
+ {id:"calendario", g:"destino", sym:"▦", name:"Calendário", nav:"calendario", reach:["Barra inferior · Calendário"],
+  opens:["detalhe-tarefa","detalhe-habito","acompanhamento"],
+  what:["Título do período (mês, semana ou dia)","Anterior · Ir para hoje · Próximo","Mês | Semana | Dia","Filtros: Tipos (Tarefas, Hábitos, Acompanhamentos), Lista, Hábito","Grade com número do dia, contagem e ponto âmbar quando há acompanhamento","Detalhes do dia escolhido: tarefas, registros de hábitos, acompanhamentos e “Preencher acompanhamento”"],
+  actions:["Tocar num dia seleciona e mostra os detalhes abaixo","Tocar num item abre tarefa, hábito ou registro"],
+  rules:["Mostra tarefas pelo mesmo critério de Hoje (inDay), então “Sem data” não aparece","Com Acompanhamentos ligado, dia vazio diz “Sem dados”","Substituiu a antiga busca por data"],
+  attn:["São três linhas de filtros antes da grade; no celular a grade fica abaixo da dobra","Os detalhes do dia ficam embaixo da grade, sem indicação visual de que há mais conteúdo"],
+  specs:["009 calendário e acompanhamentos"], code:["features/calendar/CalendarContent.kt","features/calendar/CalendarModel.kt"]},
+ {id:"revisao", g:"destino", sym:"◷", name:"Revisar pendências", nav:null, reach:["Menu ☰ · Revisar pendências (com contador)","Faixa âmbar em Hoje"],
+  opens:["detalhe-tarefa","confirmacao","editor-tarefa"],
+  what:["Dica “Pode ter sido só um esquecimento. Revise antes de aplicar qualquer consequência.”","Tarefas abertas com prazo antes de hoje","Concluídas hoje que estavam vencidas"],
+  actions:["Concluir pelo círculo","Segurar → “Não será feito” (com modo jogo, pede confirmação da penalidade)","Abrir e reagendar: registra “prazo perdido” sem penalidade"],
+  rules:["Só tarefas; hábitos fecham sozinhos e nunca chegam aqui","Sem botão + nesta página"],
+  attn:["Não fica na barra inferior; só pelo menu ou pela faixa de Hoje"],
+  specs:["003 revisão","014 hábitos sem dívida"], code:["TaskOccurrence.needsReview"]},
+ {id:"recompensas", g:"destino", game:true, sym:"◇", name:"Recompensas", nav:null, reach:["Menu ☰ · Recompensas","Tocar nas moedas em Hoje"],
+  opens:["compra","cronometro"],
+  what:["Moedas e nível","Nova recompensa","Cartões com ícone, nome, preço, limite no período e duração","Comprar","“Tempo comprado”: sessões de recompensas com tempo"],
+  actions:["Comprar → confirmação com saldo depois e compras restantes","Editar e excluir recompensa (compras feitas ficam no histórico)"],
+  rules:["Comprar usa na hora; não tem devolução","Sem saldo para o preço completo, o botão bloqueia","Limite opcional por dia, semana (seg a dom) ou mês","Com duração: confirmar cobra e já começa a contar; pausar não cobra de novo","Se outro cronômetro estiver contando, pede para pausá-lo antes"],
+  attn:["Só existe com modo jogo ligado; desligado, o app manda para Hoje"],
+  specs:["006 recompensas","008 recompensas com tempo"], code:["features/rewards/RewardsContent.kt"]},
+ {id:"historico", g:"destino", game:true, sym:"↔", name:"Histórico de moedas", nav:null, reach:["Menu ☰ · Histórico de moedas"],
+  opens:[],
+  what:["Lançamentos do mais novo para o mais antigo","Tipo: Ganho por cumprimento, Penalidade confirmada, Estorno por correção, Resultado confirmado novamente, Compra de recompensa","Relacionado a + data do lançamento","Variação em moedas e XP e saldo depois"],
+  actions:["Só leitura"],
+  rules:["Desfazer uma conclusão gera estorno, nunca apaga o lançamento","Saldo nunca passa de −300 ◈; o lançamento mostra quanto foi aplicado"],
+  attn:["Só existe com modo jogo ligado","Não há filtro nem agrupamento por dia"],
+  specs:["005 moedas, XP e níveis"], code:["features/accounting/AccountingContent.kt · AccountingHistory"]},
+ {id:"config", g:"destino", sym:"⚙", name:"Configurações", nav:null, reach:["⚙ no topo de qualquer página","Menu ☰ · Configurações"],
+  opens:["confirmacao"],
+  what:["Modo jogo (liga/desliga)","Aparência: Seguir o sistema, Claro, Escuro","Alarme ao terminar o cronômetro","Dados de demonstração (só na versão de teste)","Ganhos e penalidades: tabela e edição (só com modo jogo)","Lembretes: permissão, horário preciso, canais e Resumo diário"],
+  actions:["Desligar o modo jogo pede confirmação","Editar a tabela de ganhos (0 a 10.000, vale para os próximos registros)","Ativar resumo diário escolhendo o horário"],
+  rules:["Tema troca sem reiniciar o app (DataStore)","Modo jogo não muda com cronômetro de recompensa contando","Restaurar demonstração apaga tudo, exceto tema e permissões; bloqueado com cronômetro contando"],
+  attn:["Página única e longa, sem divisão em seções","“Resetar progresso e restaurar demonstração” fica no meio das configurações (só no debug, mas apaga a rotina real)"],
+  specs:["001 fundação","005 tabela","007 lembretes","017 modo jogo"], code:["EthosApp.kt · SettingsPage","features/settings/"]},
+ {id:"menu", g:"moldura", sym:"☰", name:"Menu lateral", nav:null, reach:["☰ no topo de qualquer página"],
+  opens:["hoje","revisao","recompensas","historico","tarefas","listas","config"],
+  what:["SEU ESPAÇO / Ethos","Hoje","Revisar pendências (com número)","Recompensas e Histórico de moedas (só modo jogo)","Minhas listas: Caixa de entrada, suas listas, Criar lista, Gerenciar listas","Configurações"],
+  actions:["Tocar numa lista abre a página Tarefas nela"],
+  rules:["Destinos do modo jogo somem quando ele está desligado"],
+  attn:["Tarefas, Hábitos e Calendário não estão no menu; Hoje está no menu e na barra","Configurações aparece aqui e no ⚙"],
+  specs:["002 interface e navegação"], code:["features/shell/EthosShell.kt · ShellDrawer","features/shell/ShellModels.kt"]},
+ {id:"criar", g:"moldura", sym:"+", name:"Botão + (criar)", nav:"hoje", reach:["Hoje e Tarefas"],
+  opens:["editor-tarefa","editor-habito"],
+  what:["Menu com Nova tarefa, Novo hábito, Quebrar hábito"],
+  actions:["Cada opção abre o editor correspondente"],
+  rules:["Na página de lista, o hábito novo já nasce naquela lista"],
+  attn:["Não aparece em Hábitos, Calendário nem Revisão"],
+  specs:["014 + com três opções"], code:["features/shell/TodayCreateButton.kt"]},
+ {id:"editor-tarefa", g:"camada", sym:"✎", name:"Editor de tarefa", nav:"hoje", reach:["+ · Nova tarefa","Detalhes · Editar"],
+  opens:["listas"],
+  what:["Voltar · Nova tarefa · Salvar no topo","Título (já com o teclado aberto)","Tipo: Normal | Com cronômetro (minutos de 5 a 600, padrão 25)","Prazo: Sem data, Dia específico, Até domingo, Até sexta","Data (seletor) e Horário (rodas de hora e minuto)","Lista + Criar lista","Mais opções: Descrição, Checklist, Dificuldade*, Importância, estimativa de moedas*, Repetição, Termina"],
+  actions:["Voltar com mudanças pergunta “Descartar alterações?”","Ao editar uma recorrente: “Só esta ocorrência” ou “Esta e as próximas”"],
+  rules:["Com repetição, “Sem data” some do Prazo","Com cronômetro não há checklist; os itens são removidos ao salvar","Repetição: Não repete, Diário (todos/dias úteis), Semanal (dias), Mensal (dia N), A cada N dias (da data prevista ou da conclusão)","Mudar a data de uma tarefa vencida exige marcar “Entendi, registrar o prazo perdido” (sem penalidade)","* Dificuldade e estimativa só aparecem com modo jogo"],
+  attn:["Importância fica visível com modo jogo desligado, mas só serve para penalidade"],
+  specs:["003","013 editor e seletores","016 com cronômetro"], code:["features/tasks/TaskEditor.kt"]},
+ {id:"detalhe-tarefa", g:"camada", sym:"▢", name:"Detalhes da tarefa", nav:"hoje", reach:["Tocar num cartão de tarefa (Hoje, Tarefas, Revisão, Calendário)","Notificação de lembrete"],
+  opens:["editor-tarefa","cronometro","lembretes","confirmacao"],
+  what:["Título, descrição, data e horário","Checklist marcável","Cronômetro (se for com tempo)","Lembretes","Data em que foi feita","Concluir tarefa · Não será feita · Editar","Lista (mover)","Excluir","Registros e correções (histórico)"],
+  actions:["Concluir com itens desmarcados pergunta “Restam N itens. Concluir mesmo assim?”","Já resolvida: “Desfazer registro” reabre","Excluir recorrente pergunta o escopo"],
+  rules:["Data em que foi feita: entre a criação e hoje","Excluir guarda o histórico"],
+  attn:["É um diálogo comprido com ~10 botões empilhados no mesmo peso","Excluir fica no mesmo nível visual de Concluir","O histórico usa a posição do enum (ordinal) para escolher o texto, o que o AGENTS.md proíbe"],
+  specs:["003","012"], code:["features/tasks/TasksContent.kt · TaskDetail"]},
+ {id:"listas", g:"camada", sym:"≡", name:"Gerenciar listas", nav:"tarefas", reach:["Menu ☰ · Gerenciar listas / Criar lista","Página da lista · Gerenciar listas","Editor de tarefa · + Criar lista"],
+  opens:[],
+  what:["Listas com alça de arrastar, Editar e Excluir","Criar lista","Editar lista: nome, cor e ícone"],
+  actions:["Arrastar reordena as listas no menu"],
+  rules:["Excluir a lista apaga as tarefas dela; os hábitos vão para Hábitos excluídos, com histórico","Caixa de entrada não pode ser editada nem excluída"],
+  attn:["Excluir uma lista com tarefas é a ação mais destrutiva do app e fica a um toque de Editar"],
+  specs:["003","015"], code:["TasksContent.kt · ListManager/ListEditor"]},
+ {id:"editor-habito", g:"camada", sym:"✎", name:"Editor de hábito", nav:"habitos", reach:["+ · Novo hábito / Quebrar hábito","Hábitos · botões no topo","Detalhes · Editar hábito"],
+  opens:[],
+  what:["Estimativa de moedas no topo*","Nome, Descrição","Praticar: Tipo Normal | Com cronômetro; Frequência Diário, Dias escolhidos, Semanal (N vezes), Mensal (N vezes)","Quebrar: Evitar | Limitar, Período e “No máximo N”","Com cronômetro: Diário (dias) ou Semanal + minutos","Ao editar: “Quando alterar a meta?”","Dificuldade*, Importância, Ícone, Lista","Voltar · Salvar no fim"],
+  actions:["Salvar cria ou altera; mudar tipo ou período vale do próximo período"],
+  rules:["Meta semanal/mensal não pode pedir mais dias do que existem","Período parcial (criado no meio da semana) pode pedir a meta deste trecho"],
+  attn:["Botões Voltar/Salvar ficam no fim; no editor de tarefa ficam no topo","Não tem “Mais opções”: tudo aparece de uma vez"],
+  specs:["004","014 frequências simples","016 com cronômetro"], code:["features/habits/HabitEditor.kt"]},
+ {id:"detalhe-habito", g:"camada", sym:"▢", name:"Detalhes do hábito", nav:"habitos", reach:["Tocar num cartão de hábito","Calendário","Notificação de lembrete"],
+  opens:["editor-habito","cronometro","acompanhamento","lembretes"],
+  what:["Sequência, recorde e constância","Calendário de registros (✓ feito, ✕ perdido, • registro)","“Dá para registrar até 2 dias depois”","Data real (AAAA-MM-DD) + Hoje / Fiz ontem","Registrar ocorrência/prática","Lista de registros com Corrigir / Excluir registro incorreto","Progresso por período","Cronômetro, Acompanhamento, Lembretes","Editar hábito · Pausar · Excluir do acompanhamento"],
+  actions:["Pausar/Retomar/Excluir abre confirmação com “O histórico fica guardado”"],
+  rules:["Dias pausados não contam como perdidos","Período fecha sozinho 2 dias após o fim"],
+  attn:["A data do registro é digitada (AAAA-MM-DD); as tarefas já usam seletor","“Excluir do acompanhamento” confunde com o botão “Acompanhamento” (formulário)","Mês anterior / Próximo mês ficam empilhados acima da grade","Datas do progresso aparecem como 2026-11-09"],
+  specs:["004","009","014"], code:["features/habits/HabitsScreen.kt · HabitDialogs"]},
+ {id:"cronometro", g:"camada", sym:"▶", name:"Cronômetro", nav:"hoje", reach:["Cartão de cronômetro em Hoje","Detalhes · Cronômetro","Notificação · Abrir"],
+  opens:[],
+  what:["Tempo restante (ou decorrido) grande","Progresso: Hoje / Nesta semana / Acumulado","Iniciar · Pausar · Retomar","Encerrar sessão (o tempo registrado é mantido)","Descartar contagem atual","Tempo por período","Sessões e trechos com Corrigir / Excluir","Adicionar tempo esquecido","Histórico de alterações"],
+  actions:["Iniciar com outro contando: “Pausar e iniciar”","Descartar ≥1 min pede confirmação; mostra “Cronômetro iniciado · Desfazer” logo após iniciar"],
+  rules:["Só um cronômetro conta por vez","Ao zerar, a tarefa/hábito conclui sozinho, com Desfazer","Concluir antes do fim pede confirmação","Reiniciar o aparelho retoma pausado no último tempo salvo","Notificação privada com Pausar/Abrir; alarme opcional"],
+  attn:["Tempo esquecido usa data e horários digitados (AAAA-MM-DD e HH:MM)"],
+  specs:["008","016","018"], code:["features/timers/TimerContent.kt"]},
+ {id:"lembretes", g:"camada", sym:"⏰", name:"Lembretes do item", nav:"hoje", reach:["Detalhes da tarefa / do hábito · Lembretes"],
+  opens:[],
+  what:["Lembretes já criados, com Editar e Excluir","Adicionar: Data e horário escolhidos, Antecedência, Dias da semana e horário","Escopo da série (esta / esta e futuras)","“O lembrete não altera o prazo nem a meta do item.”"],
+  actions:["Na notificação: Concluir, Adiar, Abrir"],
+  rules:["Vários lembretes por item","Sem acesso a alarme preciso, o horário é aproximado","Concluir pela notificação abre o app e passa pelas mesmas confirmações","Para hábito, nunca registra pela notificação"],
+  attn:["Data digitada (AAAA-MM-DD) e antecedência em minutos digitada (até 525600)"],
+  specs:["007"], code:["features/reminders/ReminderContent.kt"]},
+ {id:"acompanhamento", g:"camada", sym:"✍", name:"Acompanhamento", nav:"habitos", reach:["Detalhes do hábito · Acompanhamento","Hoje · aviso para preencher","Calendário · Preencher","Notificação · Preencher"],
+  opens:[],
+  what:["Formulário: Um por dia | Vários por dia","Perguntas: + Escala, + Escolha única, + Escolha múltipla, + Texto livre","Obrigatória, Indicador principal","Lembrete diário","Preencher hoje / Preencher esta data / Ontem","Registros","Evolução e frequência (gráfico do indicador principal e contagem das opções)","Arquivar"],
+  actions:["Editar formulário cria nova versão; registros antigos guardam a versão deles"],
+  rules:["Nunca mexe em moedas, XP, metas nem sequência","Um por dia é garantido por índice único","Arquivar substitui excluir: fica só para consulta"],
+  attn:["Data digitada (aaaa-mm-dd)","Só se chega pelo hábito: não existe lista de todos os acompanhamentos"],
+  specs:["009"], code:["features/trackers/TrackerContent.kt"]},
+ {id:"confirmacao", g:"camada", game:true, sym:"◈", name:"Confirmação de moedas", nav:"revisao", reach:["Não será feita","Registrar ocorrência de evitar/limitar","Desfazer algo que já pagou","Desligar modo jogo (confirmação própria)"],
+  opens:[],
+  what:["“Confirmar efeito financeiro”","Lançamento e variação","Saldo depois e XP acumulados","Confirmar / Voltar"],
+  actions:["Voltar cancela a ação inteira"],
+  rules:["Concluir normalmente não pede confirmação; só o que tira moedas ou estorna","Com modo jogo desligado não aparece"],
+  attn:["Texto técnico (“Variação em moedas: −10 · XP: 0 · saldo: 135”)"],
+  specs:["005","017"], code:["core/ui/accounting/AccountingConsequences.kt"]},
+ {id:"compra", g:"camada", game:true, sym:"◈", name:"Compra de recompensa", nav:"recompensas", reach:["Recompensas · Comprar"],
+  opens:[],
+  what:["“Confirmar compra e uso?”","Saldo em moedas após a compra","Compras ainda permitidas após esta","Depois: “Compra registrada” com referência e Entendi"],
+  actions:["Se preço ou saldo mudou: “Algo mudou. Confira preço e saldo antes de confirmar.”"],
+  rules:["Débito, recibo e sessão de tempo gravados juntos"],
+  attn:["Duas telas seguidas (confirmar e recibo) para uma compra simples"],
+  specs:["006","008"], code:["features/rewards/RewardsContent.kt"]},
+ {id:"notificacoes", g:"fora", sym:"🔔", name:"Notificações", nav:null, reach:["Fora do app, na gaveta do Android"],
+  opens:["detalhe-tarefa","detalhe-habito","acompanhamento","cronometro"],
+  what:["Lembrete: texto privado “Você tem uma atualização no Ethos.”, com Concluir / Adiar / Abrir","Acompanhamento: Preencher / Adiar","Cronômetro em andamento: Pausar / Abrir","Resumo diário: “Hoje — Tarefas: N · Hábitos: N · Revisões pendentes: N”","Lembretes após sua ausência (sem rajada)"],
+  actions:["Abrir leva para o item dentro do app"],
+  rules:["Conteúdo das tarefas nunca vai para a notificação","Resumo diário vem desligado","Permissão é pedida só depois de configurar um lembrete"],
+  attn:["Força-parada e restrições de fabricante podem atrasar avisos (não contornável)"],
+  specs:["007","008","009"], code:["core/reminders/platform/","core/timers/platform/TimerPlatform.kt"]},
+];
+const BY = Object.fromEntries(SCREENS.map(s => [s.id, s]));
+
+/* ---------- Regras de negócio, por assunto ---------- */
+const flow = (...xs) => `<div class="flow">${xs.map(x => typeof x === "string" ? (x === "→" ? '<span class="ar">→</span>' : `<span class="st">${esc(x)}</span>`) : x.why ? `<span class="why">${esc(x.why)}</span>` : `<span class="st ${x.c}">${esc(x.t)}</span>`).join("")}</div>`;
+const RULES = [
+ {t:"Tarefas", specs:"003 · 012 · 013", body: `
+  ${flow("Aberta","→",{t:"Concluída",c:"good"},{why:"círculo, botão Concluir tarefa ou cronômetro zerado; ganha moedas e XP pela dificuldade"})}
+  ${flow("Aberta","→",{t:"Não será feita",c:"bad"},{why:"segurar o círculo ou botão nos detalhes; com modo jogo, confirma a penalidade pela importância"})}
+  ${flow("Aberta com prazo passado","→",{t:"Revisão",c:"coin"},{why:"fica em Revisar pendências até concluir, marcar não feita ou reagendar"})}
+  ${flow({t:"Concluída / Não feita",c:""},"→","Aberta",{why:"Desfazer registro: estorna o que foi pago ou cobrado"})}
+  <ul>
+   <li>Prazos: Sem data, Dia específico (com horário opcional), Até domingo, Até sexta (dias úteis).</li>
+   <li>Repetição gera uma ocorrência por vez; a próxima nasce quando a atual é resolvida.</li>
+   <li>Reagendar uma vencida registra “prazo perdido revisado”, sem penalidade.</li>
+   <li>Checklist com itens desmarcados pede confirmação ao concluir.</li>
+   <li>Excluir guarda o histórico; recorrente pergunta “Só esta” ou “Esta e as próximas”.</li>
+   <li>Tudo vira auditoria em “Registros e correções”.</li>
+  </ul>`},
+ {t:"Hábitos", specs:"004 · 011 · 014", body: `
+  ${flow("Praticar","·","Evitar","·","Limitar")}
+  ${flow("Período aberto","→","fim do período","→",{t:"+2 dias para registrar",c:"coin"},"→",{t:"Feito",c:"good"},"ou",{t:"Perdido",c:"bad"},{why:"fecha sozinho; nunca vira pendência"})}
+  <ul>
+   <li>Praticar: Diário, Dias escolhidos, N vezes por semana, N vezes por mês.</li>
+   <li>Evitar: qualquer ocorrência no dia falha. Limitar: “No máximo N” por dia, semana ou mês.</li>
+   <li>Evitar/Limitar sem ocorrência no período conta como sucesso automático.</li>
+   <li>Hábito perdido não tira moedas; ocorrências de evitar/limitar podem tirar (com confirmação).</li>
+   <li>Pausado: dias não contam como perdidos. Excluído: vai para “Hábitos excluídos”, com histórico, e pode ser restaurado.</li>
+   <li>Mudar tipo ou período vale do próximo período; mudar a meta pode valer já neste.</li>
+   <li>Cartão mostra sequência e % de constância.</li>
+  </ul>`},
+ {t:"Moedas, XP e níveis", specs:"005", game:true, body: `
+  <table class="prices"><thead><tr><th>Dificuldade</th><th>Ganho ◈</th><th>XP</th><th>Importância</th><th>Penalidade ◈</th></tr></thead>
+  <tbody><tr><td>Fácil</td><td>+5</td><td>+10</td><td>Baixa</td><td>−5</td></tr><tr><td>Média</td><td>+10</td><td>+20</td><td>Média</td><td>−10</td></tr><tr><td>Difícil</td><td>+20</td><td>+40</td><td>Alta</td><td>−20</td></tr></tbody></table>
+  <ul>
+   <li>Valores padrão; dá para editar em Configurações (0 a 10.000, valem para os próximos registros).</li>
+   <li>XP nunca é perdido por falha. Saldo mínimo: −300 ◈ (o excesso não é cobrado).</li>
+   <li>Nível 1→2 com 100 XP; cada nível seguinte pede 50 XP a mais (100, 150, 200…).</li>
+   <li>Cada resultado gera no máximo um lançamento ativo; corrigir gera estorno e, se for o caso, “confirmado novamente”.</li>
+  </ul>`},
+ {t:"Recompensas", specs:"006 · 008", game:true, body: `
+  ${flow("Comprar","→","Confirmar compra e uso?","→",{t:"−preço ◈",c:"coin"},"→","Compra registrada")}
+  ${flow("Com duração","→","pausar o cronômetro atual?","→",{t:"cobra e começa a contar",c:"coin"},{why:"pausar não cobra de novo; acabou o tempo, encerra"})}
+  <ul><li>Uso imediato, sem devolução. Limite opcional por dia, semana ou mês.</li><li>Saldo insuficiente bloqueia a compra.</li><li>Excluir a recompensa mantém as compras no histórico.</li></ul>`},
+ {t:"Modo jogo", specs:"017", body: `
+  ${flow({t:"Ligado",c:"good"},"→","Desligar","→","confirmação","→",{t:"Desligado",c:""})}
+  <ul>
+   <li>Desligado esconde: Recompensas, Histórico, carteira em Hoje, preços, dificuldade, estimativas e confirmações financeiras.</li>
+   <li>O que você conclui desligado fica isento e nunca é pago depois, nem ao religar.</li>
+   <li>Desfazer algo que já tinha sido pago continua estornando.</li>
+   <li>Não troca com cronômetro de recompensa contando. Padrão: ligado.</li>
+  </ul>`},
+ {t:"Cronômetros", specs:"008 · 016 · 018", body: `
+  ${flow("Parado","→",{t:"Contando",c:"good"},"⇄","Pausado","→","Meta atingida","→",{t:"Concluída sozinha",c:"good"},{why:"aparece “Concluída pelo cronômetro · Desfazer”"})}
+  <ul>
+   <li>Escolhido ao criar: tarefa ou hábito “Com cronômetro” (sem checklist). ▶ no cartão.</li>
+   <li>Só um conta por vez; iniciar outro pede “Pausar e iniciar”.</li>
+   <li>Concluir antes de acabar pede confirmação.</li>
+   <li>Descartar contagem atual tira só o trecho desde o último ▶; ≥1 min pede confirmação. Nunca depois de atingir a meta.</li>
+   <li>Tempo é medido por relógio monotônico com pontos de salvamento; reinício retoma pausado.</li>
+   <li>Dá para corrigir trechos e adicionar tempo esquecido (até 24 h por trecho, sem sobrepor).</li>
+  </ul>`},
+ {t:"Lembretes e notificações", specs:"007", body: `
+  ${flow("Data e horário","·","Antecedência","·","Dias da semana")}
+  ${flow("Aviso","→","Concluir / Adiar / Abrir","→",{t:"app revalida",c:""},{why:"Concluir passa pelas confirmações normais; hábito nunca registra pela notificação"})}
+  <ul><li>Vários por item, com escopo de série.</li><li>Adiar substitui o mesmo aviso, não cria outro.</li><li>Sem alarme preciso, o aviso é aproximado.</li><li>Resumo diário: desligado por padrão, horário escolhido, contagens reais.</li></ul>`},
+ {t:"Acompanhamentos", specs:"009", body: `
+  ${flow("Formulário v1","→","editar","→","Formulário v2",{why:"registros antigos continuam ligados à versão em que foram respondidos"})}
+  <ul><li>Pertence a um hábito. Perguntas de escala, escolha única/múltipla e texto livre.</li><li>Um ou vários registros por dia.</li><li>Não muda moedas, XP, metas nem sequência.</li><li>Lembrete diário neutro, some ao salvar. Arquivar em vez de excluir.</li><li>Evolução do indicador principal e frequência das opções.</li></ul>`},
+ {t:"Calendário", specs:"009", body: `
+  <ul><li>Mês, semana e dia, com Anterior / Ir para hoje / Próximo.</li><li>Filtros por tipo, lista e hábito.</li><li>Tarefas pelo mesmo critério de Hoje (aberta e no dia ou na semana do prazo).</li><li>Mostra registros de hábitos e de acompanhamentos; “Sem dados” quando vazio.</li></ul>`},
+ {t:"Dados e proteção da rotina", specs:"001 · constituição", body: `
+  <ul><li>Room é a fonte de verdade (schema 7, migrações preservadoras testadas). DataStore guarda tema, modo jogo e alarme.</li><li>Sem login, backend nem sincronização: tudo fica no aparelho.</li><li>Nada de conteúdo de tarefas em logs ou notificações.</li><li>Restaurar demonstração (só debug) apaga tudo; bloqueado com cronômetro contando.</li></ul>`},
+];
+
+/* ---------- Dados fictícios (base de demonstração) ---------- */
+const TODAY_TASKS = [
+  {id:"t1", title:"Revisar proposta do projeto", meta:"10:00 · Hoje"},
+  {id:"t2", title:"Enviar resumo da reunião", meta:"Hoje"},
+  {id:"t3", title:"Conferir conta de energia", meta:"Hoje", rep:true},
+  {id:"t4", title:"Assistir à próxima aula do curso", meta:"Hoje", timer:"25:00"},
+];
+const WEEK_TASKS = [{id:"t5", title:"Fazer compras da semana", meta:"Até dom, 15 nov"}];
+const DONE_TODAY = [{id:"t6", title:"Organizar a mesa", meta:"Hoje · Concluída"}];
+const REVIEW_TASKS = [{id:"r1", title:"Marcar consulta no dentista", meta:"Ontem · Pendente"},{id:"r2", title:"Separar roupas para doação", meta:"9 nov · Pendente"}];
+const HABITS = [
+  {id:"read", name:"Ler algumas páginas", ic:"▤", col:"#426B96", kind:"p", prog:"Dias distintos: 3 / 5", streak:"Sequência: 4 · 80% de constância", week:[1,1,0,1,0,0,0]},
+  {id:"walk", name:"Caminhar ao ar livre", ic:"❧", col:"#54745C", kind:"p", prog:"Dias distintos: 2 / 4", streak:"Sequência: 2 · 67% de constância", week:[1,0,1,0,0,0,0], timer:"30:00"},
+  {id:"soda", name:"Evitar refrigerante", ic:"♡", col:"#A04D68", kind:"w", prog:"Ocorrências: 0 · limite: 0", streak:"Sequência: 6", today:0},
+  {id:"coffee", name:"Limitar cafés", ic:"☆", col:"#A45B25", kind:"w", prog:"Ocorrências: 1 · limite: 2", streak:"Sequência: 3", today:1},
+];
+const NAV = [["hoje","◉","Hoje"],["tarefas","☰","Tarefas"],["habitos","◇","Hábitos"],["calendario","▦","Calendário"]];
+
+/* ---------- Peças do celular ---------- */
+const task = (t, opts = {}) => {
+  const on = opts.done || S.tasks[t.id];
+  return `<div class="m-task ${opts.done ? "res" : ""}" data-go="detalhe-tarefa">
+    <button class="m-ck ${on ? "on" : ""}" data-tog="${t.id}" aria-label="Concluir ${esc(t.title)}"><span>${on ? "✓" : ""}</span></button>
+    <div class="m-tb"><div class="m-tt">${esc(t.title)}</div><div class="m-meta">${esc(t.meta)}${opts.done ? "" : " · Pendente"}</div></div>
+    ${t.timer && !on ? `<span class="m-chip" data-go="cronometro">▶ ${t.timer}</span>` : ""}${t.rep ? '<span class="m-rep" title="Tarefa recorrente">↻</span>' : ""}</div>`;
+};
+const habit = (h, page) => {
+  const warm = h.kind === "w", done = S.habits[h.id];
+  const q = warm ? "Registrar" : done ? "✓ Feito hoje" : "Marcar";
+  const sub = page === "hoje" ? (warm ? `Hoje: ${h.today} ocorrência${h.today === 1 ? "" : "s"}` : "") : h.prog;
+  return `<div class="m-habit ${warm ? "warm" : ""}" data-go="detalhe-habito">
+    <div class="m-hrow"><div class="m-hic" style="background:${h.col}">${h.ic}</div>
+      <div class="m-hb"><div class="m-hn">${esc(h.name)}</div>${sub ? `<div class="m-meta">${sub}</div>` : ""}</div>
+      ${h.timer && !done ? `<span class="m-chip" data-go="cronometro">▶ ${h.timer}</span>` : ""}
+      <button class="m-q ${done ? "done" : ""}" data-hab="${h.id}">${q}</button></div>
+    <div class="m-small">${h.streak}</div>
+    ${page !== "hoje" ? `<div class="m-small">Em andamento</div>` : ""}
+    ${page !== "hoje" && h.week ? `<div class="m-week">${h.week.map(x => `<i class="${x ? "h" : ""}"></i>`).join("")}</div>` : ""}</div>`;
+};
+const wallet = () => S.game ? `<div class="m-wallet"><div data-go="recompensas"><div class="m-meta">Suas moedas</div><b class="m-coin">◈ 145</b><div class="m-meta" style="color:var(--p)">Ver recompensas ›</div></div>
+  <div><div class="m-meta">Seu progresso</div><b>Nível 3</b><div class="m-meta">60/200</div><div class="m-bar"><i style="width:30%"></i></div></div></div>` : "";
+const chips = (label, items, sel) => `${label ? `<div class="m-lab">${label}</div>` : ""}<div class="m-chips">${items.map((x, i) => `<span class="m-chip ${i === sel ? "sel" : ""}">${i === sel ? "✓ " : ""}${x}</span>`).join("")}</div>`;
+const field = (label, value, typed) => `<div class="m-field ${typed ? "typed" : ""}"><small>${label}</small>${value}</div>`;
+const dialog = (title, body, actions = "Fechar") => `<div class="m-scrim"><div class="m-dialog">${title ? `<h6>${title}</h6>` : ""}${body}<div class="m-dactions">${actions.split("|").map(a => `<button class="m-tbtn">${a}</button>`).join("")}</div></div></div>`;
+const full = (title, body, right = '<button class="m-btn">Salvar</button>') => `<div class="m-full"><div class="m-fhead"><button class="m-tbtn">Voltar</button><b>${title}</b>${right}</div><div class="p-body nopad">${body}</div></div>`;
+const hiddenGame = () => `<div class="m-hidden">Com modo jogo desligado esta página não existe: o app volta para Hoje.</div>`;
+
+function todayBody() {
+  const f = S.filter, showT = f !== "Hábitos", showH = f !== "Tarefas";
+  return `<div class="m-sub">Um passo de cada vez</div>${wallet()}
+   <div class="m-card"><div class="m-meta">Sessão ativa · ⋮</div><b>Caminhar ao ar livre</b><div class="m-meta">Restante: 18:42</div><div style="display:flex;gap:8px;margin-top:6px"><button class="m-btn" data-go="cronometro">Pausar</button><button class="m-tbtn" data-go="cronometro">Abrir</button></div></div>
+   <div class="m-banner" data-go="acompanhamento">✍ 1 acompanhamento para preencher</div>
+   <div class="m-banner" data-go="revisao">◷ Você tem 2 pendências para revisar</div>
+   <div class="m-chips">${["Tudo","Tarefas","Hábitos"].map(x => `<span class="m-chip ${f === x ? "sel" : ""}" data-filt="${x}">${f === x ? "✓ " : ""}${x}</span>`).join("")}</div>
+   ${showT ? TODAY_TASKS.map(t => task(t)).join("") + `<div class="m-sec">Nesta semana · sem dia definido</div>` + WEEK_TASKS.map(t => task(t)).join("") : ""}
+   ${showH ? HABITS.map(h => habit(h, "hoje")).join("") : ""}
+   ${showT ? `<button class="m-tbtn">Concluídas (1)</button>` + DONE_TODAY.map(t => task(t, {done:true})).join("") : ""}`;
+}
+function listBody() {
+  return `<div style="display:flex;gap:10px;align-items:center;font-size:22px"><span style="color:#426B96">▣</span>Trabalho</div>
+   ${chips("Lista", ["Tarefas","Hábitos"], 0)}<button class="m-tbtn" data-go="listas">Gerenciar listas</button>
+   ${[TODAY_TASKS[0], TODAY_TASKS[1], {id:"t7", title:"Preparar apresentação trimestral", meta:"Sem data"}].map(t => task(t)).join("")}
+   <button class="m-tbtn">Concluídas (3)</button>`;
+}
+function habitsBody() {
+  return `<div style="display:flex;gap:8px"><button class="m-btn" data-go="editor-habito">Novo hábito</button><button class="m-obtn" data-go="editor-habito">Quebrar hábito</button></div>
+   ${HABITS.map(h => habit(h, "all")).join("")}<div>Hábitos excluídos</div>`;
+}
+function calBody() {
+  const days = []; for (let i = 0; i < 6; i++) days.push('<div class="c out">' + (26 + i - (i > 4 ? 31 : 0)) + "</div>");
+  const counts = {2:2,3:1,4:3,5:2,6:1,9:2,10:3,11:2,12:4,13:1,15:1,18:1,20:1};
+  for (let d = 1; d <= 30; d++) days.push(`<div class="c ${d === 12 ? "today sel" : ""}">${d}${counts[d] ? `<span class="n">${counts[d]}</span>` : ""}${[3,6,9,10,11].includes(d) ? '<span class="dot"></span>' : ""}</div>`);
+  return `<div style="font-size:20px">Novembro de 2026</div>
+   <div style="display:flex;gap:6px"><button class="m-tbtn">Anterior</button><button class="m-tbtn">Ir para hoje</button><button class="m-tbtn">Próximo</button></div>
+   <div class="m-segc"><span class="sel">Mês</span><span>Semana</span><span>Dia</span></div>
+   ${chips("Tipos", ["Tarefas","Hábitos","Acompanhamentos"], -1).replace(/m-chip "/g, 'm-chip sel "')}
+   ${chips("Lista", ["Todas as listas","Caixa de entrada","Casa","Trabalho"], 0)}
+   ${chips("Hábito", ["Todos os hábitos","Ler algumas páginas","Caminhar"], 0)}
+   <div class="m-grid">${["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"].map(w => `<div class="wd">${w}</div>`).join("")}${days.join("")}</div>
+   <div style="font-weight:600">quinta-feira, 12/11/2026</div>
+   <div class="m-lab">Tarefas</div><div class="m-card" data-go="detalhe-tarefa">Revisar proposta do projeto</div><div class="m-card" data-go="detalhe-tarefa">Enviar resumo da reunião</div>
+   <div class="m-lab">Hábitos</div><div class="m-card" data-go="detalhe-habito">Ler algumas páginas · registros: 1</div>
+   <div class="m-lab">Acompanhamentos</div><div class="m-meta">Sem dados</div><button class="m-obtn" data-go="acompanhamento">Preencher acompanhamento: Caminhar ao ar livre</button>`;
+}
+function reviewBody() {
+  return `<div>Pode ter sido só um esquecimento. Revise antes de aplicar qualquer consequência.</div>${REVIEW_TASKS.map(t => task(t)).join("")}`;
+}
+function rewardsBody() {
+  if (!S.game) return hiddenGame();
+  const r = (ic, n, p, extra) => `<div class="m-card" style="display:grid;gap:4px"><div style="display:flex;gap:10px;align-items:center"><span style="font-size:22px">${ic}</span><b style="flex:1">${n}</b><span class="m-tbtn">✎</span></div><div class="m-meta">Preço em moedas: ${p}</div>${extra}<div><button class="m-btn" data-go="compra">Comprar</button></div></div>`;
+  return `${wallet()}<button class="m-obtn">Nova recompensa</button><div class="m-meta">Comprar usa na hora. Não tem devolução.</div>
+   ${r("☕","Café especial",40,'<div class="m-meta">Compras no período: 1 · limite: 3 · Semana (segunda a domingo)</div>')}
+   ${r("🎮","30 minutos de videogame",60,'<div class="m-meta">Duração: 30 min</div>')}
+   ${r("🎬","Noite de filme",120,"")}`;
+}
+function historyBody() {
+  if (!S.game) return hiddenGame();
+  const e = (k, t, v, b) => `<div class="m-card"><b>${k}</b><div class="m-meta">Relacionado a: ${t}</div><div class="m-meta">Variação em moedas: ${v} · saldo em moedas: ${b}</div></div>`;
+  return e("Ganho por cumprimento","Organizar a mesa · lançamento de Hoje","+10 · XP: +20",145) + e("Compra de recompensa · uso imediato","Café especial · lançamento de Ontem","−40",135) + e("Penalidade confirmada","Evento proibido ou excedente: Evitar refrigerante","−10",175) + e("Estorno por correção","Enviar relatório · lançamento de 9 nov","−5",185);
+}
+function settingsBody() {
+  return `<div class="m-card" style="display:flex;gap:12px;align-items:center"><div style="flex:1"><b>Modo jogo</b><div class="m-meta">Moedas, XP, níveis e recompensas pelas tarefas e hábitos.</div></div><div class="m-switch ${S.game ? "" : "off"}"></div></div>
+   <b>Aparência</b>${chips("", ["Seguir o sistema","Claro","Escuro"], 0)}<div class="m-meta">A aparência escolhida vale para todo o app e fica salva neste aparelho.</div>
+   <div class="m-card" style="display:flex;gap:12px;align-items:center"><div style="flex:1"><b>Alarme ao terminar o cronômetro</b><div class="m-meta">Toca como despertador quando o tempo acaba.</div></div><div class="m-switch off"></div></div>
+   <div class="m-card"><b>Dados de demonstração · versão de teste</b><div class="m-meta">Carregue dados de exemplo para testar o app.</div><button class="m-obtn" style="margin-top:6px">Resetar progresso e restaurar demonstração</button></div>
+   ${S.game ? `<div class="m-card"><b>Como funcionam ganhos e penalidades</b><div class="m-meta">Fácil +5 ◈ +10 XP · Média +10 ◈ +20 XP · Difícil +20 ◈ +40 XP</div><div class="m-meta">XP nunca é perdido por falha · Saldo mínimo: −300 ◈</div><button class="m-tbtn">Editar ganhos e penalidades</button></div>` : ""}
+   <b>Lembretes</b><div class="m-meta">Notificações de lembretes permitidas.</div><div class="m-meta">Horário aproximado. Permita alarmes precisos para avisos na hora exata.</div><button class="m-tbtn">Permitir alarmes precisos</button><button class="m-tbtn">Configurações do canal Lembretes</button>
+   <b>Resumo diário</b><div class="m-meta">Desativado. Escolha um horário para ativar.</div>${field("Horário","08:00")}<button class="m-obtn">Salvar horário e ativar resumo</button>`;
+}
+
+/* Cada tela: base (página por baixo) + camada por cima */
+function phoneContent(id) {
+  const base = {hoje:todayBody, tarefas:listBody, habitos:habitsBody, calendario:calBody, revisao:reviewBody, recompensas:rewardsBody, historico:historyBody, config:settingsBody};
+  const titles = {hoje:"Hoje", tarefas:"Tarefas", habitos:"Hábitos", calendario:"Calendário", revisao:"Revisar pendências", recompensas:"Recompensas", historico:"Histórico de moedas", config:"Configurações"};
+  const sc = BY[id];
+  let page = base[id] ? id : ({criar:"hoje", menu:"hoje", "editor-tarefa":"hoje", "detalhe-tarefa":"hoje", listas:"tarefas", "editor-habito":"habitos", "detalhe-habito":"habitos", cronometro:"hoje", lembretes:"hoje", acompanhamento:"habitos", confirmacao:"revisao", compra:"recompensas"}[id] || "hoje");
+  let over = "";
+  if (id === "menu") over = drawer();
+  if (id === "criar" || S.fab) over += `<div class="p-menu"><div data-go="editor-tarefa">Nova tarefa</div><div data-go="editor-habito">Novo hábito</div><div data-go="editor-habito">Quebrar hábito</div></div>`;
+  if (id === "editor-tarefa") over = full("Nova tarefa", `${field("Título","Revisar proposta do projeto")}${chips("Tipo",["Normal","Com cronômetro"],0)}
+    ${chips("Prazo",["Sem data","Dia específico","Até domingo · 9–15 nov","Até sexta · 9–13 nov"],1)}${field("Data","Hoje, 12 nov")}${field("Horário","10:00 · rodas de hora e minuto")}
+    ${chips("Lista",["Caixa de entrada","Casa","Trabalho","Estudos","+ Criar lista"],2)}<button class="m-tbtn">Menos opções ▴</button>
+    ${field("Descrição (opcional)","Conferir valores e prazo com o cliente")}<div class="m-lab">Checklist</div><div class="m-meta">⠿ Item 1: Ler o rascunho · ✕</div><div class="m-meta">⠿ Item 2: Anotar dúvidas · ✕</div><button class="m-tbtn">+ Adicionar item</button>
+    ${S.game ? chips("Dificuldade",["Fácil","Média","Difícil"],1) : ""}${chips("Importância",["Baixa","Média","Alta"],2)}
+    ${S.game ? `<div class="m-meta m-coin">+10 ◈ · +20 XP ao concluir · −20 ◈ se não fizer</div>` : ""}
+    ${chips("Repetição",["Não repete","Diário","Semanal","Mensal","A cada N dias"],0)}`);
+  if (id === "detalhe-tarefa") over = dialog("Revisar proposta do projeto", `<div>Conferir valores e prazo com o cliente</div><div>Hoje, quinta-feira, 12 de novembro · 10:00</div>
+    <label><input type="checkbox" checked> Ler o rascunho</label><label><input type="checkbox"> Anotar dúvidas</label>
+    <button class="m-tbtn" data-go="lembretes">Lembretes</button>${field("Data em que foi feita","Hoje, 12 nov")}
+    <div><button class="m-btn">Concluir tarefa</button></div><button class="m-tbtn" data-go="confirmacao">Não será feita</button><button class="m-tbtn" data-go="editor-tarefa">Editar</button>
+    ${chips("Lista",["Caixa de entrada","Casa","Trabalho"],2)}<button class="m-tbtn">Excluir</button>
+    <b style="font-size:14px">Registros e correções</b><div class="m-meta">Alteração · registrado em Hoje 08:12</div><div class="m-meta">Criada · registrado em 10 nov 19:40</div>`);
+  if (id === "listas") over = dialog("Gerenciar listas", ["Casa","Trabalho","Saúde e bem-estar","Estudos"].map(n => `<div style="display:flex;gap:8px;align-items:center"><span>⠿</span><b style="flex:1">${n}</b></div><div><button class="m-tbtn">Editar</button> <button class="m-tbtn">Excluir</button></div><div class="m-hr"></div>`).join("") + `<button class="m-tbtn">Criar lista</button>`);
+  if (id === "editor-habito") over = full("Novo hábito", `${S.game ? `<div class="m-meta m-coin">+10 ◈ · +20 XP ao concluir · −10 ◈ se não fizer</div>` : ""}${field("Nome do hábito","Ler algumas páginas")}${field("Descrição (opcional)","")}
+    ${chips("Tipo",["Normal","Com cronômetro"],0)}${chips("Frequência",["Diário","Dias escolhidos","Semanal","Mensal"],2)}
+    <div class="m-step"><span>−</span><b>5</b><span>+</span> vezes por semana</div>${S.game ? chips("Dificuldade",["Fácil","Média","Difícil"],1) : ""}${chips("Importância",["Baixa","Média","Alta"],1)}
+    ${chips("Ícone",["❧","▤","⌂","▣","♡","☆"],1)}${chips("Lista",["Caixa de entrada","Estudos"],1)}<div style="display:flex;justify-content:flex-end;gap:8px"><button class="m-tbtn">Voltar</button><button class="m-btn">Salvar</button></div>`, "");
+  if (id === "detalhe-habito") over = dialog("Ler algumas páginas", `<div>Sequência: 4 · Recorde: 9 · unidade: Semana</div><div>Sequência: 4 · 80% de constância</div>
+    <div>Calendário de registros</div><button class="m-tbtn">Mês anterior</button><button class="m-tbtn">Próximo mês</button><div>Novembro de 2026</div>
+    <div class="m-grid">${Array.from({length:14},(_,i)=>`<div class="c">${i+2}${[0,1,3,7,9,10].includes(i)?"✓":i===5?"✕":""}</div>`).join("")}</div>
+    <div class="m-meta">Dá para registrar até 2 dias depois. Depois o período fecha sozinho.</div>${field("Data real (AAAA-MM-DD)","2026-11-12",true)}
+    <div><button class="m-tbtn">Hoje</button><button class="m-tbtn">Fiz ontem</button></div><div><button class="m-btn">Registrar ocorrência/prática</button></div>
+    <div>2026-11-11 <button class="m-tbtn">Corrigir registro</button><button class="m-tbtn">Excluir registro incorreto</button></div>
+    <div>Progresso por período</div><div class="m-meta">Dias distintos: 3 / 5 · 2026-11-09 a 2026-11-15 · Em andamento</div>
+    <button class="m-tbtn" data-go="acompanhamento">Acompanhamento</button><button class="m-tbtn" data-go="lembretes">Lembretes</button><button class="m-tbtn" data-go="editor-habito">Editar hábito</button><button class="m-tbtn">Pausar hábito</button><button class="m-tbtn">Excluir do acompanhamento</button>`);
+  if (id === "cronometro") over = dialog("Caminhar ao ar livre", `<div class="m-meta">Sessão ativa</div><div class="m-big">18:42</div><div class="m-meta" style="text-align:center">Tempo restante</div>
+    <div>Hoje: 11 min de 30 min</div><div style="display:flex;gap:8px"><button class="m-btn">Pausar</button><button class="m-tbtn">Descartar contagem atual</button></div>
+    <button class="m-tbtn">Encerrar sessão (o tempo registrado é mantido)</button><b style="font-size:14px">Tempo por período</b><div class="m-meta">12 nov: 11 min · 11 nov: 30 min</div>
+    <b style="font-size:14px">Sessões e trechos</b><div class="m-meta">07:10 – 07:21 · 11 min <span style="color:var(--p)">Corrigir trecho · Excluir trecho</span></div>
+    <button class="m-tbtn">Adicionar tempo esquecido</button>${field("Data de início (AAAA-MM-DD)","2026-11-11",true)}<b style="font-size:14px">Histórico de alterações</b><div class="m-meta">Iniciada · Hoje 07:10</div>`);
+  if (id === "lembretes") over = dialog("Lembretes", `<div class="m-card">Hoje, 09:30 · Data e horário escolhidos<div><button class="m-tbtn">Editar</button><button class="m-tbtn">Excluir</button></div></div>
+    <b style="font-size:14px">Adicionar ou editar lembrete</b>${chips("",["Data e horário escolhidos","Antecedência","Dias da semana e horário"],1)}
+    ${field("Antecedência em minutos (até 525600)","30",true)}${field("Horário de referência se não houver horário no prazo","09:00")}
+    <div class="m-meta">Escopo: esta e futuras ocorrências · toque para mudar</div><div class="m-meta">O lembrete não altera o prazo nem a meta do item.</div>`, "Fechar|Salvar");
+  if (id === "acompanhamento") over = dialog("Acompanhamento · Caminhar ao ar livre", `<div class="m-meta">Não muda moedas, XP nem sequência.</div>
+    <div><button class="m-btn">Preencher hoje</button> <button class="m-tbtn">Ontem</button></div>${field("Data de referência (aaaa-mm-dd)","2026-11-12",true)}
+    <div class="m-card"><b>Pergunta 1 · Escala numérica</b><div>Como estava sua energia? (obrigatória)</div><div class="m-meta">1 = Baixa · 5 = Alta</div><div class="m-chips">${[1,2,3,4,5].map(n=>`<span class="m-chip ${n===4?"sel":""}">${n}</span>`).join("")}</div></div>
+    <div class="m-card"><b>Pergunta 2 · Escolha única</b><div>Onde caminhou?</div><div class="m-chips"><span class="m-chip sel">Parque</span><span class="m-chip">Rua</span></div></div>
+    <b style="font-size:14px">Registros</b><div class="m-meta">11 nov · preenchido em 11 nov 19:02</div><b style="font-size:14px">Evolução e frequência</b><div class="m-meta">30 dias · Dias sem dados no período: 12</div>
+    <button class="m-tbtn">Editar formulário</button><button class="m-tbtn">Arquivar acompanhamento</button>`, "Fechar|Salvar");
+  if (id === "confirmacao") over = S.game ? dialog("Confirmar efeito financeiro", `<div>Marcar consulta no dentista</div><div>Penalidade confirmada</div><div class="m-meta">Variação em moedas: −10 · XP: 0 · saldo em moedas: 135</div><div>Saldo em moedas após confirmar: 135 · XP acumulados: 310</div>`, "Voltar|Confirmar") : dialog("", `<div>Com modo jogo desligado não há confirmação financeira: a tarefa é marcada direto e fica isenta.</div>`, "OK");
+  if (id === "compra") over = S.game ? dialog("Confirmar compra e uso?", `<div>☕ Café especial</div><div>Preço em moedas: 40</div><div>Saldo em moedas após a compra: 105</div><div>Compras ainda permitidas APÓS esta compra: 1</div><div class="m-meta">Comprar usa na hora. Não tem devolução.</div>`, "Voltar|Confirmar compra") : "";
+  if (id === "notificacoes") return {notif:true};
+  return {page, title:titles[page], body:base[page](), over, nav:NAV.some(n => n[0] === page) ? page : null, fab:page === "hoje" || page === "tarefas"};
+}
+function drawer() {
+  const items = [["hoje","Hoje"],["revisao","Revisar pendências","2"]].concat(S.game ? [["recompensas","Recompensas"],["historico","Histórico de moedas"]] : []);
+  return `<div class="m-scrim" style="padding:0"></div><div class="m-drawer"><div class="m-meta" style="padding:0 16px">SEU ESPAÇO</div><div style="font-size:26px;padding:4px 16px 8px">Ethos</div>
+   ${items.map(([g, l, b]) => `<div class="m-di ${g === "hoje" ? "sel" : ""}" data-go="${g}"><span>${l}</span>${b ? `<b>${b}</b>` : ""}</div>`).join("")}
+   <div class="m-hr"></div><div style="padding:4px 16px;font-weight:600">Minhas listas</div>
+   <div class="m-di" data-go="tarefas">Caixa de entrada</div>${[["⌂","Casa","#A45B25"],["▣","Trabalho","#426B96"],["♡","Saúde e bem-estar","#54745C"],["▤","Estudos","#79568E"]].map(([i,n,c]) => `<div class="m-di" data-go="tarefas" style="justify-content:flex-start"><span style="color:${c}">${i}</span>${n}</div>`).join("")}
+   <div class="m-di" data-go="listas" style="justify-content:flex-start">+ Criar lista</div><div class="m-di" data-go="listas" style="justify-content:flex-start">✎ Gerenciar listas</div>
+   <div class="m-hr"></div><div class="m-di" data-go="config">Configurações</div></div>`;
+}
+function pageIsDark() {
+  const t = document.documentElement.getAttribute("data-theme");
+  if (t) return t === "dark";
+  return matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function phone(id) {
+  const dark = S.theme === "dark" || (S.theme === "page" && pageIsDark());
+  const c = phoneContent(id);
+  const status = `<div class="p-status"><span>9:41</span><span aria-hidden="true">▾ ▴ ▮</span></div>`;
+  if (c.notif) {
+    return `<div class="phone ${dark ? "dark" : ""}" role="img" aria-label="Notificações do Ethos">${status}<div class="p-body nopad" style="padding-top:14px">
+     <div style="font-size:30px;font-weight:300">9:41</div><div class="m-meta">quinta-feira, 12 de novembro</div>
+     <div class="m-notif" data-go="detalhe-tarefa"><div class="app">Ethos · Lembretes · agora</div><b>Lembrete escolhido por você</b><div>Você tem uma atualização no Ethos.</div><div class="acts"><span>Concluir</span><span>Adiar</span><span>Abrir</span></div></div>
+     <div class="m-notif" data-go="cronometro"><div class="app">Ethos · Sessões de tempo</div><b>Cronômetro em andamento</b><div>Uma sessão de tempo está em andamento.</div><div class="acts"><span>Pausar</span><span>Abrir</span></div></div>
+     <div class="m-notif" data-go="acompanhamento"><div class="app">Ethos · Lembretes</div><b>Você tem um acompanhamento para preencher</b><div class="acts"><span>Preencher</span><span>Adiar</span></div></div>
+     <div class="m-notif"><div class="app">Ethos · Resumos · 08:00</div><b>Resumo diário</b><div>Hoje — Tarefas: 5 · Hábitos: 4 · Revisões pendentes: 2</div></div>
+     <div class="m-notif"><div class="app">Ethos · Resumos</div><b>Lembretes após sua ausência</b><div>2 lembretes ainda relevantes. Abra o Ethos para consultar.</div></div></div></div>`;
+  }
+  const snack = S.lastHabit ? `<div class="m-snack"><span>${S.habits[S.lastHabit] ? "Prática de hoje marcada." : "Prática de hoje desmarcada."}</span><b data-hab="${S.lastHabit}">Desfazer</b></div>` : "";
+  return `<div class="phone ${dark ? "dark" : ""}">${status}
+   <div class="p-head"><button class="ib" data-go="menu" aria-label="Abrir menu">☰</button><div class="tt"><div class="dt">QUINTA-FEIRA, 12 DE NOVEMBRO</div><div class="h">${c.title}</div></div><button class="ib ol" data-go="config" aria-label="Abrir configurações">⚙</button></div>
+   <div class="p-body">${c.body}</div>
+   ${c.fab ? `<button class="p-fab" data-fab aria-label="Criar tarefa ou hábito">+</button>` : ""}
+   <div class="p-nav">${NAV.map(([g, i, l]) => `<button class="${c.nav === g ? "on" : ""}" data-go="${g}"><span class="ic">${i}</span>${l}</button>`).join("")}</div>
+   ${snack}${c.over}</div>`;
+}
+
+/* ---------- Notas de ajuste (db) ---------- */
+let db = null, notes = [], notesState = "loading";
+const notesFor = id => notes.filter(n => n.screen === id).sort((a, b) => (a.status === "resolvido") - (b.status === "resolvido") || b.createdAt - a.createdAt);
+const openCount = id => notes.filter(n => n.screen === id && n.status !== "resolvido").length;
+const fmt = ms => new Date(ms).toLocaleString("pt-BR", {day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"});
+function noteItem(n, withScreen) {
+  const confirming = S.confirmDel === n.id;
+  return `<div class="note ${n.status === "resolvido" ? "done" : ""}"><p>${esc(n.text)}</p><div class="note-meta">
+   ${withScreen ? `<span class="tag">${esc(BY[n.screen]?.name || n.screen)}</span>` : ""}<span>${n.createdAt ? fmt(n.createdAt) : ""}</span>
+   <button data-note-toggle="${n.id}">${n.status === "resolvido" ? "Reabrir" : "Marcar resolvido"}</button>
+   ${confirming ? `<span>Apagar esta nota?</span><button class="del" data-note-del="${n.id}">Apagar</button><button data-note-cancel>Manter</button>` : `<button class="del" data-note-ask="${n.id}">Apagar</button>`}</div></div>`;
+}
+function notesStatusText() {
+  return {loading:"Carregando suas notas…", slow:"As notas ainda não carregaram. Pode ser a conexão; o que você digitar continua no campo.", off:"As notas só funcionam abrindo esta página no claude.ai com sua conta.", error:"Não deu para ler as notas agora. Recarregue a página para tentar de novo.", ready:""}[notesState];
+}
+function renderNotes() {
+  renderTabs();
+  const box = document.getElementById("notes-list");
+  if (box) {
+    const list = notesFor(S.screen);
+    box.innerHTML = (notesStatusText() ? `<div class="status">${notesStatusText()}</div>` : "") + (list.length ? list.map(n => noteItem(n)).join("") : notesState === "ready" ? `<div class="status">Nenhuma nota nesta tela ainda.</div>` : "");
+    const btn = document.getElementById("note-save"); if (btn) btn.disabled = !db || notesState === "off";
+  }
+  if (S.view === "ajustes") renderMain();
+  if (S.view === "mapa") document.querySelectorAll("[data-node]").forEach(el => {
+    const c = openCount(el.dataset.node), t = el.querySelector(".tag.note");
+    if (t) t.remove(); if (c) el.querySelector(".tags").insertAdjacentHTML("beforeend", `<span class="tag note">${c} ajuste${c > 1 ? "s" : ""}</span>`);
+  });
+}
+async function startNotes() {
+  const timer = setTimeout(() => { if (notesState === "loading") { notesState = "slow"; renderNotes(); } }, 10000);
+  if (!window.claude || typeof window.claude.use !== "function") { clearTimeout(timer); notesState = "off"; renderNotes(); return; }
+  try { db = await window.claude.use("db"); } catch (e) { db = null; }
+  if (!db) { clearTimeout(timer); notesState = "off"; renderNotes(); return; }
+  db.collection("ajustes").onSnapshot(snap => {
+    notes = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    if (!snap.metadata.fromCache) clearTimeout(timer);
+    notesState = "ready"; renderNotes();
+  }, () => { clearTimeout(timer); notesState = "error"; renderNotes(); });
+}
+async function saveNote() {
+  const ta = document.getElementById("note-text"); const text = ta.value.trim();
+  if (!text || !db) return;
+  const btn = document.getElementById("note-save"); btn.disabled = true;
+  try { await db.collection("ajustes").add({screen:S.screen, text, status:"aberto", createdAt:Date.now()}); ta.value = ""; S.drafts[S.screen] = ""; }
+  catch (e) { document.getElementById("note-err").textContent = e && e.code === "quota_exceeded" ? "O espaço de notas encheu. Apague notas resolvidas para liberar." : "Não deu para guardar. O texto continua no campo; tente de novo."; }
+  btn.disabled = false;
+}
+
+/* ---------- Views ---------- */
+function renderTabs() {
+  const open = notes.filter(n => n.status !== "resolvido").length;
+  const tabs = [["mapa","Mapa"],["telas","Telas"],["regras","Regras"],["ajustes","Ajustes"]];
+  document.getElementById("tabs").innerHTML = tabs.map(([v, l]) => `<a href="#${v === "telas" ? "t-" + S.screen : v}" ${S.view === v ? 'aria-current="page"' : ""}>${l}${v === "ajustes" && open ? `<span class="count">${open}</span>` : ""}</a>`).join("");
+}
+function mapView() {
+  const node = s => `<button class="node" data-open="${s.id}" data-node="${s.id}"><span class="node-title"><span class="sym">${s.sym}</span>${esc(s.name)}</span><small>${esc(s.reach[0])}</small>
+    <span class="tags">${s.game ? '<span class="tag game">modo jogo</span>' : ""}${s.opens.length ? `<span class="tag">abre ${s.opens.length}</span>` : ""}${openCount(s.id) ? `<span class="tag note">${openCount(s.id)} ajuste${openCount(s.id) > 1 ? "s" : ""}</span>` : ""}</span></button>`;
+  return `<div class="shell-diagram">
+    <div class="frame" aria-label="Esquema da moldura do app">
+      <div data-open="menu">☰ menu · data + título · ⚙ configurações</div>
+      <div class="body" data-open="hoje">conteúdo da página</div>
+      <div data-open="criar" style="text-align:right">+ (Hoje e Tarefas)</div>
+      <div data-open="hoje">◉ Hoje · ☰ Tarefas · ◇ Hábitos · ▦ Calendário</div>
+    </div>
+    <div class="frame-notes"><h2>Como o app se organiza</h2><ol>
+      <li><b>Uma moldura fixa.</b> Topo com ☰ e ⚙, barra inferior com 4 destinos e, em Hoje e Tarefas, o botão +.</li>
+      <li><b>Oito páginas.</b> Quatro na barra; Revisar pendências, Recompensas e Histórico só pelo menu; Configurações pelo ⚙.</li>
+      <li><b>Quase tudo o mais abre por cima.</b> Detalhes, editores, cronômetro, lembretes e acompanhamentos são diálogos ou telas cheias, não páginas: não aparecem na barra nem no Voltar como página.</li>
+      <li><b>Notificações entram pelo item.</b> Abrir um aviso leva direto ao detalhe da tarefa, do hábito, do cronômetro ou do formulário.</li>
+      <li><b>Modo jogo liga e desliga peças.</b> Recompensas, Histórico, carteira e preços somem quando desligado. Use o controle acima para ver.</li>
+    </ol></div></div>
+    ${GROUPS.map(([g, label]) => `<div class="band"><div class="band-head"><h2>${label}</h2><p>${{moldura:"Peças que aparecem em todas as páginas.", destino:"Páginas inteiras; a moldura continua em volta.", camada:"Diálogos e telas cheias abertos a partir de uma página.", fora:"O que o Ethos mostra fora do app."}[g]}</p></div>
+      <div class="nodes">${SCREENS.filter(s => s.g === g).map(node).join("")}</div></div>`).join("")}`;
+}
+function screensView() {
+  const s = BY[S.screen];
+  const idx = GROUPS.map(([g, label]) => `<h4>${label}</h4>` + SCREENS.filter(x => x.g === g).map(x => `<button data-open="${x.id}" aria-current="${x.id === S.screen}"><span>${esc(x.name)}</span>${openCount(x.id) ? `<span class="count">${openCount(x.id)}</span>` : ""}</button>`).join("")).join("");
+  const from = SCREENS.filter(x => x.opens.includes(s.id));
+  const li = a => `<ul>${a.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  return `<div class="screens"><nav class="index" aria-label="Telas">${idx}</nav>
+   <div class="phone-col">${phone(s.id)}<div class="phone-hint">Toque nos itens do celular para navegar como no app.</div></div>
+   <article class="sheet">
+    <section><div class="eyebrow">${GROUPS.find(g => g[0] === s.g)[1]}${s.game ? " · só com modo jogo" : ""}</div><h2 style="margin-top:8px">${esc(s.name)}</h2>
+      <div class="reach">${s.reach.map(r => `<span class="tag">${esc(r)}</span>`).join("")}</div></section>
+    <section class="notes-box"><h5>Quero ajustar nesta tela</h5>
+      <textarea id="note-text" placeholder="Ex.: o botão Excluir está perto demais de Concluir; queria o histórico recolhido">${esc(S.drafts[s.id] || "")}</textarea>
+      <div class="row-actions"><button class="btn" id="note-save" ${db ? "" : "disabled"}>Guardar ajuste</button><span class="small muted" id="note-err"></span></div>
+      <div class="notes-list" id="notes-list"></div></section>
+    <section><h5>O que aparece</h5>${li(s.what)}</section>
+    <section><h5>O que dá para fazer</h5>${li(s.actions)}</section>
+    <section><h5>Regras que valem aqui</h5>${li(s.rules)}</section>
+    <section class="attn"><h5>Pontos que chamam atenção no código</h5>${li(s.attn)}</section>
+    <section><h5>Leva para</h5><div class="links">${s.opens.length ? s.opens.map(o => `<button data-open="${o}">${esc(BY[o].name)}</button>`).join("") : '<span class="muted small">Nada; é um fim de caminho.</span>'}</div>
+      <h5 style="margin-top:14px">Chega a partir de</h5><div class="links">${from.length ? from.map(o => `<button data-open="${o.id}">${esc(o.name)}</button>`).join("") : '<span class="muted small">Ponto de entrada.</span>'}</div></section>
+    <section><h5>Specs e código</h5><div class="small">${s.specs.map(x => `<span class="spec">spec ${esc(x)}</span>`).join(" · ")}</div><div class="small" style="margin-top:6px">${s.code.map(x => `<code>${esc(x)}</code>`).join("<br>")}</div></section>
+   </article></div>`;
+}
+function rulesView() {
+  return `<div class="band-head"><h2>Regras do app</h2><p>O que acontece por trás das telas, por assunto. Retirado do domínio (<code>core/*/domain</code>) e das specs.</p></div>
+   <div class="rules">${RULES.map(r => `<div class="rule"><div style="display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap"><h3>${r.t}</h3><span class="spec">spec ${r.specs}</span></div>${r.game && !S.game ? '<p class="small muted" style="margin:6px 0 0">Com modo jogo desligado, nada disto aparece no app.</p>' : ""}${r.body}</div>`).join("")}</div>`;
+}
+function adjustView() {
+  const open = notes.filter(n => n.status !== "resolvido").length;
+  const groups = SCREENS.filter(s => notes.some(n => n.screen === s.id));
+  return `<div class="adjust-head"><div><h2>Ajustes anotados</h2><p class="muted" style="margin:0">${notesState === "ready" ? `${open} em aberto · ${notes.length - open} resolvido${notes.length - open === 1 ? "" : "s"}. Eu leio esta lista direto daqui quando você pedir.` : esc(notesStatusText())}</p></div>
+   ${notes.length ? '<button class="btn ghost" id="copy-all">Copiar tudo como texto</button>' : ""}</div>
+   ${groups.length ? groups.map(s => `<div class="adjust-group"><h3><button data-open="${s.id}">${esc(s.name)} ›</button></h3><div class="notes-list">${notesFor(s.id).map(n => noteItem(n)).join("")}</div></div>`).join("")
+     : notesState === "ready" ? `<div class="sheet"><p style="margin:0">Nenhum ajuste ainda. Abra uma tela na aba Telas e escreva no campo “Quero ajustar nesta tela”.</p></div>` : ""}`;
+}
+function renderMain() {
+  const m = document.getElementById("main");
+  const ta = document.getElementById("note-text"); if (ta) S.drafts[S.screen] = ta.value;
+  m.innerHTML = S.view === "mapa" ? mapView() : S.view === "regras" ? rulesView() : S.view === "ajustes" ? adjustView() : screensView();
+  if (S.view === "telas") renderNotes();
+}
+function renderControls() {
+  document.querySelectorAll("[data-theme-opt]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.themeOpt === S.theme)));
+  document.querySelectorAll("[data-game]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.game === "on") === S.game)));
+}
+function rerenderPhone() {
+  const col = document.querySelector(".phone-col"); if (!col) return;
+  const scroll = col.querySelector(".p-body")?.scrollTop || 0;
+  col.querySelector(".phone").outerHTML = phone(S.screen);
+  const b = col.querySelector(".p-body"); if (b) b.scrollTop = scroll;
+}
+function route() {
+  const h = location.hash.slice(1);
+  if (h.startsWith("t-") && BY[h.slice(2)]) { S.view = "telas"; S.screen = h.slice(2); }
+  else if (["mapa","regras","ajustes","telas"].includes(h)) S.view = h;
+  else S.view = "mapa";
+  S.fab = false; S.lastHabit = null; S.confirmDel = null;
+  renderTabs(); renderMain(); window.scrollTo({top:0});
+}
+function openScreen(id) { if (location.hash === "#t-" + id) route(); else location.hash = "t-" + id; }
+
+/* ---------- Eventos ---------- */
+document.addEventListener("click", e => {
+  const t = e.target;
+  const themeBtn = t.closest("[data-theme-opt]");
+  if (themeBtn) { S.theme = themeBtn.dataset.themeOpt; try { localStorage.setItem("mapa-theme", S.theme); } catch (err) {} renderControls(); if (S.view === "telas") rerenderPhone(); return; }
+  const gameBtn = t.closest("[data-game]");
+  if (gameBtn) { S.game = gameBtn.dataset.game === "on"; renderControls(); renderMain(); return; }
+  const inPhone = t.closest(".phone");
+  if (inPhone) {
+    const tog = t.closest("[data-tog]"), hab = t.closest("[data-hab]"), filt = t.closest("[data-filt]"), fab = t.closest("[data-fab]"), go = t.closest("[data-go]");
+    if (tog) { S.tasks[tog.dataset.tog] = !S.tasks[tog.dataset.tog]; rerenderPhone(); return; }
+    if (hab) { const h = HABITS.find(x => x.id === hab.dataset.hab); if (h && h.kind === "p") { S.habits[h.id] = !S.habits[h.id]; S.lastHabit = h.id; rerenderPhone(); } else openScreen("confirmacao"); return; }
+    if (filt) { S.filter = filt.dataset.filt; rerenderPhone(); return; }
+    if (fab) { S.fab = !S.fab; rerenderPhone(); return; }
+    if (go) { const target = go.dataset.go; if ((target === "recompensas" || target === "historico") && !S.game) openScreen("hoje"); else openScreen(target); return; }
+    if (t.closest(".m-scrim") && !t.closest(".m-dialog")) { openScreen(phoneContent(S.screen).page || "hoje"); return; }
+    return;
+  }
+  const open = t.closest("[data-open]");
+  if (open) { openScreen(open.dataset.open); return; }
+  if (t.id === "note-save") { saveNote(); return; }
+  const tg = t.closest("[data-note-toggle]");
+  if (tg && db) { const n = notes.find(x => x.id === tg.dataset.noteToggle); db.collection("ajustes").doc(n.id).update({status: n.status === "resolvido" ? "aberto" : "resolvido"}).catch(() => {}); return; }
+  const ask = t.closest("[data-note-ask]"); if (ask) { S.confirmDel = ask.dataset.noteAsk; renderNotes(); return; }
+  if (t.closest("[data-note-cancel]")) { S.confirmDel = null; renderNotes(); return; }
+  const del = t.closest("[data-note-del]"); if (del && db) { db.collection("ajustes").doc(del.dataset.noteDel).delete().catch(() => {}); S.confirmDel = null; return; }
+  if (t.id === "copy-all") {
+    const text = SCREENS.filter(s => notes.some(n => n.screen === s.id)).map(s => `## ${s.name}\n` + notesFor(s.id).map(n => `- [${n.status === "resolvido" ? "x" : " "}] ${n.text}`).join("\n")).join("\n\n");
+    const done = () => { t.textContent = "Copiado"; setTimeout(() => t.textContent = "Copiar tudo como texto", 1600); };
+    try { navigator.clipboard.writeText(text).then(done, () => { t.textContent = "Não deu para copiar"; }); } catch (err) { t.textContent = "Não deu para copiar"; }
+  }
+});
+document.addEventListener("input", e => { if (e.target.id === "note-text") S.drafts[S.screen] = e.target.value; });
+document.addEventListener("keydown", e => { if (e.target.id === "note-text" && e.key === "Enter" && (e.ctrlKey || e.metaKey)) saveNote(); });
+window.addEventListener("hashchange", route);
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", () => { if (S.view === "telas") rerenderPhone(); });
+new MutationObserver(() => { if (S.view === "telas") rerenderPhone(); }).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+renderControls(); route(); startNotes();
+</script>
