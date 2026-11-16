@@ -32,6 +32,8 @@ data class HabitsUiState(
     val snapshot: HabitSnapshot = HabitSnapshot(), val today: LocalDate,
     val periods: List<HabitPeriod> = emptyList(), val streaks: Map<String, HabitStreak> = emptyMap(),
     val rates: Map<String, Int?> = emptyMap(),
+    /** Daily result per habit and date as shown in its calendar ([HabitRules.standing]). */
+    val dayStandings: Map<String, Map<LocalDate, PeriodOutcome>> = emptyMap(),
     val loading: Boolean = true, val busy: Boolean = false, val storageError: Boolean = false,
     val problem: HabitProblem? = null, val draft: HabitDraft? = null, val detail: String? = null,
     val recordDate: String = "", val correctionId: String? = null,
@@ -92,11 +94,15 @@ class HabitsViewModel @Inject constructor(
             }
         }
     }
-    private fun derive(s: HabitsUiState): HabitsUiState = s.copy(
-        periods = s.snapshot.habits.flatMap { HabitRules.periods(s.snapshot, it.id, s.today) },
-        streaks = s.snapshot.habits.associate { it.id to HabitRules.streak(s.snapshot, it.id, s.today) },
-        rates = s.snapshot.habits.associate { it.id to HabitRules.successRate(s.snapshot, it.id, s.today) },
-    )
+    private fun derive(s: HabitsUiState): HabitsUiState {
+        val periods = s.snapshot.habits.flatMap { HabitRules.periods(s.snapshot, it.id, s.today) }
+        return s.copy(periods = periods, dayStandings = dayStandings(periods, s.today),
+            streaks = s.snapshot.habits.associate { it.id to HabitRules.streak(s.snapshot, it.id, s.today) },
+            rates = s.snapshot.habits.associate { it.id to HabitRules.successRate(s.snapshot, it.id, s.today) })
+    }
+    private fun dayStandings(periods: List<HabitPeriod>, today: LocalDate) = periods
+        .filter { it.rule.unit == HabitUnit.DAY }.groupBy { it.habitId }
+        .mapValues { (_, days) -> days.associate { it.start to HabitRules.standing(it, today) } }
     private var settled = false
     /** Lets periods that closed by themselves reach the ledger (avoid/limit successes, spec 014). */
     private fun settle() {

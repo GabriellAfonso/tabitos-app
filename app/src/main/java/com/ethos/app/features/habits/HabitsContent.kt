@@ -8,9 +8,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -18,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
@@ -43,7 +42,7 @@ fun HabitCalendar(
 ) {
     var monthText by rememberSaveable { mutableStateOf(YearMonth.from(today).toString()) }
     val month = YearMonth.parse(monthText)
-    val calendarWidth = 364.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
+    val weekdays = stringResource(R.string.calendar_weekdays).split(',')
     Column {
         Column {
             TextButton({ monthText = month.minusMonths(1).toString() }) {
@@ -54,8 +53,14 @@ fun HabitCalendar(
         Text(EthosDates.monthTitle(month), style = MaterialTheme.typography.titleMedium)
         val offset = month.atDay(1).dayOfWeek.value - 1
         val cells = (0 until offset).map { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
-        Column(Modifier.horizontalScroll(rememberScrollState())) {
-        cells.chunked(7).forEach { week -> Row(Modifier.width(calendarWidth)) {
+        // The grid fills the dialog width: a fixed width pushed Saturday and Sunday out of view.
+        Row(Modifier.fillMaxWidth()) {
+            weekdays.forEach { label ->
+                Text(label, Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
+                    textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Clip)
+            }
+        }
+        cells.chunked(7).forEach { week -> Row(Modifier.fillMaxWidth()) {
             week.forEach { date ->
                 if (date == null) Spacer(Modifier.weight(1f)) else {
                     val count = records.count { it.date == date }
@@ -74,15 +79,18 @@ fun HabitCalendar(
                         count > 0 -> "•"
                         else -> ""
                     }
-                    TextButton({ onDate(date.toString()) },
-                        Modifier.weight(1f).semantics { contentDescription = label }) {
-                        Text("${date.dayOfMonth}$mark")
+                    Column(Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
+                        .clickable { onDate(date.toString()) }.semantics(mergeDescendants = true) {
+                            contentDescription = label },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center) {
+                        Text(date.dayOfMonth.toString(), maxLines = 1)
+                        Text(mark, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     }
                 }
             }
             repeat(7 - week.size) { Spacer(Modifier.weight(1f)) }
         } }
-        }
     }
 }
 

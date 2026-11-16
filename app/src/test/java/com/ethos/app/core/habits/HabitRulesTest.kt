@@ -155,6 +155,27 @@ class HabitRulesTest {
             } catch (e: HabitRuleException) { assertEquals(HabitProblem.DATE, e.reason) }
         }
     }
+    @Test fun avoidCountsEndedDaysInLateWindowWithoutPayingEarly() {
+        val s = initial(HabitType.AVOID, HabitUnit.DAY, 0)
+        val wednesday = monday.plusDays(2)
+        // Monday and Tuesday ended without relapse; today does not count until it ends.
+        assertEquals(2, HabitRules.streak(s, "h", wednesday).current)
+        assertEquals(100, HabitRules.successRate(s, "h", wednesday))
+        assertEquals(PeriodOutcome.OPEN, HabitRules.periods(s, "h", wednesday).first().outcome)
+    }
+    @Test fun lateRelapseRecountsStreakInsideWindow() {
+        var s = initial(HabitType.AVOID, HabitUnit.DAY, 0)
+        val wednesday = monday.plusDays(2)
+        s = HabitRules.apply(s, HabitAction.Record("late", "h", monday.plusDays(1)), wednesday, 4, emptySet())
+        val tuesday = HabitRules.periods(s, "h", wednesday)[1]
+        assertEquals(PeriodOutcome.FAILURE, HabitRules.standing(tuesday, wednesday))
+        assertEquals(0, HabitRules.streak(s, "h", wednesday).current)
+        assertEquals(1, HabitRules.streak(s, "h", wednesday).best)
+    }
+    @Test fun relapseTodayBreaksStreakImmediately() {
+        val s = record(initial(HabitType.AVOID, HabitUnit.DAY, 0), "a", monday.plusDays(1))
+        assertEquals(0, HabitRules.streak(s, "h", monday.plusDays(1)).current)
+    }
     @Test fun missedDayBreaksStreakButRetainsBest() {
         var s = initial(HabitType.PRACTICE, HabitUnit.DAY, 1)
         s = record(record(s, "a", monday), "b", monday.plusDays(1))

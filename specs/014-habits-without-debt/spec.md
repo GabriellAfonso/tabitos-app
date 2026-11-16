@@ -107,8 +107,10 @@ and missed days.
 
 1. **Given** closed periods, **When** viewing the habit card, **Then** it shows "Sequência: N" and the
    success rate of the last closed periods (30 days, 8 weeks or 6 months by unit).
-2. **Given** an open or late-window period, **When** computing the streak, **Then** it neither breaks nor
-   counts the streak until it closes; streaks are never "incertos".
+2. **Given** an open or late-window period, **When** computing the streak, **Then** a practice period
+   neither breaks nor counts it until it succeeds or closes; an avoid/limit period that already ended within
+   its limit counts as success during the window, and one already over its limit (even today) breaks the
+   streak; a late record recounts it. Streaks are never "incertos". *(Revised 2026-11-16.)*
 3. **Given** the habit detail calendar, **When** shown, **Then** days are marked as feito, perdido,
    em aberto or fora do agendamento with distinct, accessible labels.
 
@@ -191,10 +193,14 @@ As a user, the "+" on Hoje offers Nova tarefa, Novo hábito and Quebrar hábito,
   periods are immutable.
 - **FR-009**: Periods pending at the moment of upgrade MUST be treated as closed (missed or success per
   FR-002/003) with no penalty and no review.
-- **FR-010**: Streak MUST count consecutive successful closed periods, ignoring open/window periods; the
-  "incerto" state is removed.
+- **FR-010**: Streak MUST count consecutive successful periods; the "incerto" state is removed. Practice
+  periods count when successful and ignore open/window periods. Avoid/limit periods (revised 2026-11-16, user
+  request: weekend days were missing from the streak on Mondays) count by their current standing: ended
+  within the limit = success, over the limit = missed, the current one within the limit = open (neither).
+  A late relapse record recounts it. The ledger still settles avoid/limit rewards only after closing (FR-006).
 - **FR-011**: The habit card MUST show the streak and the success rate of the last 30 daily, 8 weekly or 6
-  monthly closed periods; the detail calendar MUST mark feito, perdido, em aberto and fora do agendamento.
+  monthly periods counted by FR-010 (practice: closed only); the detail calendar MUST mark feito, perdido,
+  em aberto and fora do agendamento using the same standing, and MUST fit its width showing all 7 weekdays.
 - **FR-012**: The practice editor MUST offer Todo dia, Dias escolhidos, X vezes por semana, X vezes por mês;
   it MUST NOT ask for a partial target nor show the recalculated preview; the first partial period's target
   is min(target, available days).

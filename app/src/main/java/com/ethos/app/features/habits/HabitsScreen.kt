@@ -85,9 +85,8 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                 Text(stringResource(R.string.habit_calendar))
                 val records = state.snapshot.records.filter { it.habitId == h.id && !it.deleted }
                     .sortedWith(compareByDescending<HabitRecord> { it.date }.thenBy { it.id })
-                val days = state.periods.filter { it.habitId == h.id && it.rule.unit == HabitUnit.DAY }
-                    .associateBy { it.start }
-                HabitCalendar(records, state.today, vm::date) { day -> days[day]?.outcome }
+                val days = state.dayStandings[h.id].orEmpty()
+                HabitCalendar(records, state.today, vm::date) { day -> days[day] }
                 Text(stringResource(R.string.habit_closed_hint), style = MaterialTheme.typography.bodySmall)
                 // Calendar grouped by actual date, followed by individually correctable event records.
                 records.groupBy { it.date }.forEach { (day, entries) ->

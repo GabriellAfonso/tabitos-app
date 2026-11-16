@@ -69,15 +69,30 @@ object HabitRules {
     fun pending(s: HabitSnapshot, today: LocalDate) = s.habits.flatMap { periods(s, it.id, today) }
         .filter { it.outcome == PeriodOutcome.PENDING }
 
-    /** Percentage of successful closed periods among the last 30 days, 8 weeks or 6 months; null if none. */
+    /**
+     * Result shown to the person (streak, rate, calendar). An avoid/limit period that already ended within
+     * its limit counts as success during the late window, and one already over its limit counts as failure;
+     * a late record recounts it. Only [PeriodOutcome] from [periods] reaches the ledger, after closing.
+     */
+    fun standing(p: HabitPeriod, today: LocalDate): PeriodOutcome = when {
+        p.rule.type == HabitType.PRACTICE || p.outcome != PeriodOutcome.OPEN -> p.outcome
+        p.count > p.target -> PeriodOutcome.FAILURE
+        p.end < today -> PeriodOutcome.SUCCESS
+        else -> PeriodOutcome.OPEN
+    }
+    private fun decided(outcome: PeriodOutcome) = outcome == PeriodOutcome.SUCCESS || outcome == PeriodOutcome.FAILURE
+    /** A practice period may still gain days in its late window, so its rate waits for closing. */
+    private fun countsForRate(p: HabitPeriod, today: LocalDate) =
+        decided(standing(p, today)) && (p.rule.type != HabitType.PRACTICE || closed(p.end, today))
+
+    /** Percentage of successful periods among the last 30 days, 8 weeks or 6 months; null if none. */
     fun successRate(s: HabitSnapshot, id: String, today: LocalDate): Int? {
-        val closedPeriods = periods(s, id, today).filter { closed(it.end, today) &&
-            (it.outcome == PeriodOutcome.SUCCESS || it.outcome == PeriodOutcome.FAILURE) }
-        val unit = closedPeriods.lastOrNull()?.rule?.unit ?: return null
-        val recent = closedPeriods.filter { it.rule.unit == unit }.takeLast(when (unit) {
+        val counted = periods(s, id, today).filter { countsForRate(it, today) }
+        val unit = counted.lastOrNull()?.rule?.unit ?: return null
+        val recent = counted.filter { it.rule.unit == unit }.takeLast(when (unit) {
             HabitUnit.DAY -> 30; HabitUnit.WEEK -> 8; HabitUnit.MONTH -> 6
         })
-        return recent.count { it.outcome == PeriodOutcome.SUCCESS } * 100 / recent.size
+        return recent.count { standing(it, today) == PeriodOutcome.SUCCESS } * 100 / recent.size
     }
 
     fun streak(s: HabitSnapshot, id: String, today: LocalDate): HabitStreak {
@@ -91,7 +106,7 @@ object HabitRules {
             if (previous != null && (previous.unit != p.rule.unit || previous.type != p.rule.type)) {
                 current = 0
             }
-            when (p.outcome) {
+            when (standing(p, today)) {
                 PeriodOutcome.SUCCESS -> {
                     current++; best = maxOf(best, current)
                     bestByUnit[p.rule.unit] = maxOf(bestByUnit[p.rule.unit] ?: 0, current)
