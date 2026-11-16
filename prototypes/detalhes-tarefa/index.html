@@ -1,0 +1,503 @@
+<title>Detalhes da tarefa</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap">
+<style>
+/* Layout: cabeçalho com tarefa de exemplo e tema · fila de 4 celulares (Como está + versões A, B, C) · ficha de cada versão · o que fica igual. */
+:root{
+  --paper:#f5f4f7; --sheet:#ffffff; --ink:#1e1a23; --muted:#625b6b; --line:#e3dee8;
+  --plum:#6e4a8e; --plum-soft:#efe6f6; --amber:#93601a; --amber-soft:#fbf0e0;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif; --body:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--body)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.wrap{max-width:1680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 8px}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+h1{font:800 clamp(30px,4.4vw,46px)/1.05 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+h2{font:700 22px/1.2 var(--display);margin:0 0 6px}
+h3{font:700 16px/1.3 var(--display);margin:0}
+.lede{max-width:74ch;color:var(--muted);margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.ctl{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;min-width:0}
+.ctl>span{font-size:12.5px;color:var(--muted);font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--paper);padding:5px 11px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:var(--sheet);font-weight:600}
+main{padding-block:22px 60px;display:grid;gap:34px}
+.phones{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:26px;align-items:start}
+.col{display:grid;gap:12px;min-width:0}
+.col-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--plum-soft);color:var(--plum);font-weight:600;white-space:nowrap}
+.badge.now{background:var(--amber-soft);color:var(--amber)}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0}
+.card ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.card h5{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+.card h5:first-child{margin-top:0}
+.linkbtn{border:0;background:none;color:var(--plum);font-size:12.5px;text-decoration:underline;padding:0}
+.keep{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px}
+
+/* CELULAR — tokens Ameixa (core/ui/theme/EthosTheme.kt) */
+.phone{--p:#6E4A8E;--onp:#fff;--pc:#F1E7F8;--onpc:#2E1A40;--sc:#F1E7F8;--t:#93601A;--tc:#FBF0E0;--bg:#FBF8FC;--on:#231D29;--onv:#655C6E;--low:#fff;--cont:#F3EEF6;--high:#F1E9F5;--ol:#8F8498;--olv:#E6DEEB;--err:#B3261E;
+  width:100%;max-width:380px;height:760px;margin:0 auto;border:8px solid #26212b;border-radius:44px;background:var(--bg);color:var(--on);position:relative;overflow:hidden;display:flex;flex-direction:column;font:14px/1.4 Roboto,system-ui,sans-serif;box-shadow:0 18px 40px rgba(30,20,40,.18)}
+.phone.dark{--p:#D7B8F2;--onp:#3B1F55;--pc:#44325A;--onpc:#F1E2FC;--sc:#3A2D47;--t:#E8BE7A;--tc:#352A1F;--bg:#171419;--on:#ECE4F0;--onv:#B1A6B8;--low:#211C25;--cont:#1F1A23;--high:#2A2430;--ol:#82788A;--olv:#372F3D;--err:#F2B8B5}
+.phone *{box-sizing:border-box}
+.phone button{color:inherit}
+.p-status{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;font-weight:600}
+.p-head{display:flex;align-items:center;gap:4px;padding:6px 6px 8px;flex:none}
+.ib{width:44px;height:44px;border:0;background:none;font-size:19px;border-radius:50%;display:grid;place-items:center;color:var(--on);flex:none}
+.ib:hover{background:var(--cont)}
+.p-head .tt{flex:1;min-width:0}
+.p-head .dt{font-size:10px;letter-spacing:.06em;color:var(--onv)}
+.p-head .h{font-size:22px;font-weight:700}
+.p-body{flex:1;overflow-y:auto;padding:4px 16px 100px;display:flex;flex-direction:column;gap:8px}
+.p-fab{position:absolute;right:16px;bottom:24px;width:56px;height:56px;border-radius:16px;border:0;background:var(--pc);color:var(--onpc);font-size:28px;box-shadow:0 4px 10px rgba(0,0,0,.18);z-index:2}
+.m-sec{font-size:14px;font-weight:600;margin-top:6px;color:var(--onv)}
+.m-task{display:flex;align-items:center;gap:4px;border:1px solid var(--olv);background:var(--low);border-radius:14px;padding:4px 10px 4px 2px;cursor:pointer}
+.m-task.res .m-tt{text-decoration:line-through;color:var(--onv)}
+.m-ckc{width:46px;height:46px;flex:none;display:grid;place-items:center}
+.ring{width:22px;height:22px;border-radius:50%;border:2px solid var(--ol);display:grid;place-items:center;font-size:13px;color:var(--onp);flex:none}
+.ring.on{background:var(--p);border-color:var(--p)}
+.ring.big{width:28px;height:28px;font-size:16px}
+.m-tb{flex:1;min-width:0;padding:8px 0}
+.m-tt{font-size:14px;font-weight:600}
+.m-meta{font-size:12px;color:var(--onv)}
+.late{color:var(--t);font-weight:600}
+.m-scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:6;display:flex;align-items:center;justify-content:center;padding:20px}
+.m-scrim.bottom{align-items:flex-end;padding:0}
+.m-scrim.top{z-index:9}
+.m-dialog{background:var(--high);border-radius:28px;padding:22px 20px 14px;width:100%;max-height:94%;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.m-dialog h6{font-size:22px;font-weight:400;margin:0}
+.m-tbtn{border:0;background:none;color:var(--p)!important;font-weight:500;font-size:14px;padding:10px 12px;border-radius:20px;align-self:flex-start}
+.m-tbtn:hover{background:var(--cont)}
+.m-tbtn:disabled{opacity:.38;cursor:not-allowed}
+.m-fbtn{border:0;border-radius:20px;background:var(--p);color:var(--onp)!important;padding:10px 22px;font-weight:500;font-size:14px}
+.m-tonal{border:0;border-radius:20px;background:var(--sc);color:var(--onpc)!important;padding:10px 18px;font-weight:500;font-size:14px}
+.phone.dark .m-tonal{color:var(--on)!important}
+.m-obtn{border:1px solid var(--ol);border-radius:20px;background:none;color:var(--p)!important;padding:9px 16px;font-weight:500;font-size:14px}
+.m-field{border:1px solid var(--ol);border-radius:4px;padding:20px 14px 10px;position:relative;font-size:15px}
+.m-field small{position:absolute;top:6px;left:14px;font-size:11px;color:var(--onv)}
+.m-chiprow{display:flex;gap:8px;flex-wrap:wrap}
+.m-chip{border:1px solid var(--olv);border-radius:8px;padding:7px 12px;font-size:13px;background:none;display:inline-flex;gap:6px;align-items:center}
+.m-chip.sel{background:var(--sc);border-color:var(--sc)}
+.m-chip.warm{border-color:var(--t);color:var(--t)!important}
+.m-hist{font-size:13px;color:var(--onv);display:grid;gap:2px}
+.m-desc{font-size:14px;line-height:1.45;color:var(--on)}
+.m-check{display:flex;align-items:center;gap:12px;padding:6px 0;cursor:pointer;font-size:14px}
+.m-check .box{width:20px;height:20px;border-radius:3px;border:2px solid var(--ol);display:grid;place-items:center;font-size:12px;color:var(--onp);flex:none}
+.m-check.on .box{background:var(--p);border-color:var(--p)}
+.m-check.on span:last-child{color:var(--onv);text-decoration:line-through}
+.m-hr{height:1px;background:var(--olv);margin:2px 0}
+.m-lab{font-size:12px;letter-spacing:.04em;color:var(--onv);font-weight:500}
+.m-status{display:flex;gap:10px;align-items:center;border-radius:12px;padding:10px 12px;background:var(--sc);font-size:13.5px}
+/* versão 1: diálogo com ícones embaixo */
+.c-head{display:flex;gap:12px;align-items:flex-start}
+.c-head h6{flex:1;min-width:0;line-height:1.25}
+.c-head h6.res{text-decoration:line-through;color:var(--onv)}
+.c-meta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:13px;color:var(--onv);margin-top:-4px}
+.c-main{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.c-main .m-fbtn{grid-column:1/-1}
+.c-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.c-tools button{border:0;background:none;border-radius:14px;padding:8px 2px;display:grid;justify-items:center;gap:3px;font-size:11.5px;color:var(--onv)!important}
+.c-tools button:hover{background:var(--cont)}
+.c-tools .ic{font-size:18px;color:var(--p)}
+/* compacto e mínimo */
+.m-dialog.k{padding:18px 18px 12px;gap:10px}
+.k-title{font-size:20px!important;line-height:1.25}
+.k-title.res{text-decoration:line-through;color:var(--onv)}
+.k-desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13.5px;color:var(--onv)}
+.k-desc.open{display:block}
+.k-more{border:0;background:none;color:var(--p)!important;font-size:12.5px;padding:0;align-self:flex-start;margin-top:-6px}
+.k-timer{border:1px solid var(--olv);border-radius:12px;background:none;padding:1px 8px;font-size:12px;color:var(--p)!important}
+.k-checks .m-check{padding:3px 0;font-size:13.5px}
+.k-main{display:grid;grid-template-columns:auto 1fr 1.25fr;gap:6px}
+.k-main .m-tonal{padding:10px 8px;font-size:13px;line-height:1.2}
+.k-two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.split{display:flex;gap:2px}
+.split .m-fbtn{border-radius:20px 4px 4px 20px;padding:10px 12px;font-size:13.5px;flex:1;white-space:nowrap}
+.split .m-fbtn.more{border-radius:4px 20px 20px 4px;padding:10px 9px;flex:none}
+.c-tools.k{margin-top:-2px}
+.c-tools.five{grid-template-columns:repeat(5,1fr)}
+.c-tools.five button{font-size:10.5px;line-height:1.15}
+/* menus, folhas e calendário */
+.m-menu{position:absolute;right:12px;top:80px;background:var(--high);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.3);padding:6px 0;z-index:10;min-width:210px}
+.m-menu button{display:flex;gap:12px;align-items:center;width:100%;border:0;background:none;text-align:left;padding:12px 16px;font-size:14px}
+.m-menu button:hover{background:var(--cont)}
+.m-menu .ico{width:18px;text-align:center;color:var(--onv)}
+.s-sheet{background:var(--high);border-radius:28px 28px 0 0;width:100%;padding:0 0 20px;animation:up .2s ease-out}
+.s-sheet h6{font-size:16px;font-weight:500;margin:0;padding:0 24px}
+.s-sheet .sub{font-size:12.5px;color:var(--onv);padding:2px 24px 8px}
+.s-opt{display:flex;align-items:center;gap:16px;border:0;background:none;text-align:left;padding:12px 24px;width:100%}
+.s-opt:hover{background:var(--cont)}
+.s-opt .ico{width:24px;text-align:center;color:var(--onv);font-size:17px}
+.s-opt b{font-weight:500;font-size:15px;display:block}
+.s-opt small{color:var(--onv);font-size:12.5px}
+.s-opt .ok{margin-left:auto;color:var(--p)}
+.s-note{margin:8px 24px 0;padding:10px 12px;border-radius:12px;background:var(--tc);font-size:12.5px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:13px}
+.cal .wd{color:var(--onv);font-size:11.5px;padding:6px 0}
+.cal button{border:0;background:none;height:38px;border-radius:50%;font-size:13px}
+.cal button:disabled{opacity:.3;cursor:not-allowed}
+.cal button.today{color:var(--p)!important;font-weight:700}
+.cal button.sel{background:var(--p);color:var(--onp)!important;font-weight:700}
+.calhead{display:flex;align-items:center;justify-content:space-between;font-size:14px;font-weight:500}
+.pickval{font-size:24px;padding:2px 0 8px;border-bottom:1px solid var(--olv)}
+.m-snack{position:absolute;left:12px;right:12px;bottom:92px;background:#322d36;color:#f3eff6;border-radius:6px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;z-index:5}
+.m-snack button{border:0;background:none;color:#d7b8f2!important;font-weight:700;font-size:13px}
+.m-toast{position:absolute;left:50%;transform:translateX(-50%);bottom:30px;background:#322d36;color:#f3eff6;border-radius:20px;padding:8px 14px;font-size:12.5px;z-index:12;white-space:nowrap}
+@media (max-width:420px){.phone{height:720px;border-width:6px;border-radius:36px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header class="top wrap">
+  <div class="eyebrow">Ethos · protótipo de interface · rodada 3 · versão 1 compacta</div>
+  <h1>Detalhes da tarefa</h1>
+  <p class="lede">Rodada 3: você escolheu a versão 1 (pop-up com ícones embaixo). Aqui ela aparece sem os registros, que vão para uma futura aba de Histórico, e em duas versões mais baixas. Todas trazem o Adiar e as mesmas ações de hoje: concluir, não será feita, editar, lembretes, mudar de lista, excluir e registros. Escolha uma tarefa de exemplo para ver cada versão com checklist, vencida, repetida ou concluída. Dados fictícios; hoje é segunda, 16 de novembro.</p>
+  <div class="controls" id="controls"></div>
+</header>
+
+<main class="wrap">
+  <div class="phones" id="phones"></div>
+  <section>
+    <h2>Igual em todas as versões</h2>
+    <div class="keep">
+      <div class="card"><ul>
+        <li>Nenhuma regra muda: concluir, não será feita, desfazer, revisão e moedas seguem como estão.</li>
+        <li>Concluir em outro dia continua possível. Sai o campo de data sempre visível e entra “Concluí em outro dia”, que abre o calendário (até hoje).</li>
+        <li>Continua um pop-up no centro (AlertDialog), como hoje.</li><li>Adiar abre a mesma folha do outro protótipo: Amanhã ou Escolher data, mantendo o horário.</li>
+      </ul></div>
+      <div class="card"><ul>
+        <li>Mudar de lista sai dos chips soltos e vira uma escolha com nome e ícone da lista.</li>
+        <li>Registros e correções saem dos detalhes. Vão para uma aba de Histórico futura, com estatísticas (outra feature).</li>
+        <li>Textos visíveis em português no <code>strings.xml</code>, ícones com descrição para o TalkBack.</li>
+      </ul></div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const TODAY = new Date(2026, 10, 16);
+const WD = ["dom","seg","ter","qua","qui","sex","sáb"], WDL = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
+const MO = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const MOL = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const diff = (a, b) => Math.round((a - b) / 86400000);
+const same = (a, b) => !!a && !!b && a.getTime() === b.getTime();
+function short(d) { const n = diff(d, TODAY); return n === 0 ? "Hoje" : n === 1 ? "Amanhã" : n === -1 ? "Ontem" : d.getDate() + " " + MO[d.getMonth()]; }
+const longDay = d => { const n = diff(d, TODAY); return (n === 0 ? "Hoje, " : n === 1 ? "Amanhã, " : n === -1 ? "Ontem, " : "") + WDL[d.getDay()] + ", " + d.getDate() + " de " + MOL[d.getMonth()]; };
+const withWd = d => WD[d.getDay()] + ", " + d.getDate() + " " + MO[d.getMonth()];
+const LISTS = [["Caixa de entrada","▣"],["Rotina","◷"],["Casa","⌂"],["Trabalho","▤"]];
+
+const SAMPLES = {
+  simple: {label:"Simples", title:"Pagar conta de luz", due:TODAY, time:"18:00", list:"Rotina", reminders:["1 h antes"]},
+  full: {label:"Com checklist", title:"Preparar apresentação do trimestre", due:TODAY, list:"Trabalho", timer:"45 min",
+    desc:"Usar os números de outubro. Mandar para a Ana revisar antes de quinta.", reminders:["9:00","1 h antes"],
+    checks:[["Separar gráficos de vendas",true],["Escrever os 5 slides principais",true],["Revisar com a Ana",false],["Exportar em PDF",false]],
+},
+  late: {label:"Vencida", title:"Renovar a CNH", due:addDays(TODAY, -1), list:"Caixa de entrada", reminders:[]},
+  repeat: {label:"Repetida", title:"Regar as plantas", due:TODAY, list:"Casa", repeat:"A cada 2 dias", next:addDays(TODAY, 2), reminders:["8:00"]},
+  done: {label:"Concluída", title:"Ligar para o dentista", due:TODAY, list:"Rotina", reminders:[], done:"Feita hoje às 10:12",
+},
+};
+const VERSIONS = [
+  {id:"now", title:"Como está", badge:"Atual", now:true},
+  {id:"D1", title:"1 · Rodada 2, sem histórico", badge:"Escolhida"},
+  {id:"K1", title:"1 · Compacto", badge:"Sugerido"},
+  {id:"K2", title:"1 · Mínimo", badge:"Proposta"},
+];
+const S = {sample:"simple", theme:"page"};
+try { const t = localStorage.getItem("det-theme"); if (t) S.theme = t; } catch (e) {}
+const P = {};
+function reset(id) {
+  const s = SAMPLES[S.sample];
+  P[id] = {open:true, list:s.list, checks:(s.checks || []).map(c => c[1]), done:!!s.done, notDone:false,
+    menu:false, sheet:null, picker:null, doneMenu:false, more:false, snack:null, toast:null, gone:false, due:s.due};
+}
+const resetAll = () => VERSIONS.forEach(v => reset(v.id));
+resetAll();
+const sm = () => SAMPLES[S.sample];
+function dark() {
+  if (S.theme !== "page") return S.theme === "dark";
+  const a = document.documentElement.getAttribute("data-theme");
+  return a ? a === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+const isLate = st => diff(st.due, TODAY) < 0 && !st.done;
+const resolved = st => st.done || st.notDone;
+
+/* ---------- peças comuns ---------- */
+const dueText = st => short(st.due) + (sm().time ? " · " + sm().time : "");
+function checklist(id, st) {
+  const s = sm(); if (!s.checks) return "";
+  return s.checks.map((c, i) => `<div class="m-check${st.checks[i] ? " on" : ""}" data-check="${i}" role="checkbox" aria-checked="${st.checks[i]}"><span class="box">${st.checks[i] ? "✓" : ""}</span><span>${esc(c[0])}</span></div>`).join("");
+}
+const checkProg = st => sm().checks ? `${st.checks.filter(Boolean).length} de ${st.checks.length}` : "";
+function listIcon(name) { return (LISTS.find(l => l[0] === name) || ["", "▣"])[1]; }
+function remindersText() { const r = sm().reminders; return r.length ? r.length === 1 ? "Lembrete " + r[0] : r.length + " lembretes" : "Sem lembretes"; }
+
+/* ---------- versão atual (TasksContent.kt · TaskDetail) ---------- */
+function vNow(st) {
+  const s = sm();
+  return `<div class="m-scrim" data-close><div class="m-dialog" data-stop>
+    <h6>${esc(s.title)}</h6>
+    ${s.desc ? `<div>${esc(s.desc)}</div>` : ""}
+    <div style="color:var(--onv)">${esc(longDay(st.due).split(",").slice(0, 1).join(""))}${s.time ? " · " + s.time : ""}</div>
+    ${checklist("now", st)}
+    ${s.timer ? '<button class="m-tbtn">Cronômetro</button>' : ""}
+    ${resolved(st) ? `<button class="m-tbtn" data-undo-res>Desfazer resultado</button>` : `
+    <button class="m-tbtn">Lembretes</button>
+    <div class="m-field"><small>Data em que foi feita</small>Hoje</div>
+    <button class="m-fbtn" style="align-self:flex-start" data-complete>Concluir tarefa</button>
+    <button class="m-tbtn" data-notdone>Não será feita</button>
+    <button class="m-tbtn">Editar</button>
+    <div style="color:var(--onv)">Lista</div>
+    <div class="m-chiprow">${LISTS.map(([n]) => `<button class="m-chip${st.list === n ? " sel" : ""}" data-move="${esc(n)}">${esc(n)}</button>`).join("")}</div>`}
+    <button class="m-tbtn" data-delete>Excluir</button>
+    <div style="display:flex;justify-content:flex-end"><button class="m-tbtn" data-close>Fechar</button></div>
+  </div></div>`;
+}
+/* ---------- 1: ícones embaixo ---------- */
+function vC(st) {
+  const s = sm(), late = isLate(st);
+  return `<div class="m-scrim" data-close><div class="m-dialog" data-stop>
+    <div class="c-head"><h6 class="${resolved(st) ? "res" : ""}">${esc(s.title)}</h6></div>
+    <div class="c-meta"><span class="${late ? "late" : ""}">◷ ${esc(dueText(st))}${late ? " · vencida" : ""}</span><span>${listIcon(st.list)} ${esc(st.list)}</span>${s.repeat ? `<span>↻ ${esc(s.repeat)}</span>` : ""}${s.reminders.length && !resolved(st) ? `<span>🔔 ${s.reminders.length}</span>` : ""}</div>
+    ${s.desc ? `<div class="m-desc">${esc(s.desc)}</div>` : ""}
+    ${s.checks ? `<div><div class="prog">Checklist · ${checkProg(st)}</div>${checklist("C", st)}</div>` : ""}
+    ${s.timer && !resolved(st) ? `<button class="m-obtn" style="align-self:flex-start" data-toast="Inicia o cronômetro">▶ Cronômetro · ${esc(s.timer)}</button>` : ""}
+    ${resolved(st) ? `<div class="m-status">✓ <span>${esc(st.done ? s.done || "Feita hoje" : "Marcada como não será feita")}</span></div>
+      <button class="m-obtn" style="align-self:flex-start" data-undo-res>Desfazer resultado</button>` : `
+    <div class="c-main"><button class="m-fbtn" data-complete>✓ Concluir tarefa</button><button class="m-tonal" data-postpone>⏭ Adiar</button><button class="m-tonal" data-notdone>✕ Não será feita</button></div>
+    <button class="m-tbtn" style="padding-left:4px;margin-top:-4px" data-doneday>Concluí em outro dia</button>`}
+    <div class="m-hr"></div>
+    <div class="c-tools">
+      <button data-edit><span class="ic">✎</span>Editar</button>
+      <button data-toast="Abre Lembretes" ${resolved(st) ? "disabled style=\"opacity:.4\"" : ""}><span class="ic">🔔</span>Lembretes</button>
+      <button data-lists><span class="ic">⇄</span>Lista</button>
+      <button data-delete><span class="ic">🗑</span>Excluir</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end"><button class="m-tbtn" data-close>Fechar</button></div>
+  </div></div>`;
+}
+
+/* ---------- 1 compacto: mesma ordem, menos altura ---------- */
+function splitDone() {
+  return `<div class="split"><button class="m-fbtn" data-complete>✓ Concluir</button><button class="m-fbtn more" data-donemenu aria-label="Outras formas de concluir">▾</button></div>`;
+}
+function tools(st, withNotDone) {
+  const res = resolved(st);
+  return `<div class="c-tools k${withNotDone ? " five" : ""}">
+      ${withNotDone && !res ? '<button data-notdone><span class="ic">✕</span>Não será feita</button>' : ""}
+      <button data-edit><span class="ic">✎</span>Editar</button>
+      <button data-toast="Abre Lembretes" ${res ? 'disabled style="opacity:.4"' : ""}><span class="ic">🔔</span>Lembretes</button>
+      <button data-lists><span class="ic">⇄</span>Lista</button>
+      <button data-delete><span class="ic">🗑</span>Excluir</button>
+    </div>`;
+}
+function head(st) {
+  const s = sm(), late = isLate(st), res = resolved(st);
+  return `<h6 class="k-title${res ? " res" : ""}">${esc(s.title)}</h6>
+    <div class="c-meta"><span class="${late ? "late" : ""}">◷ ${esc(dueText(st))}${late ? " · vencida" : ""}</span><span>${listIcon(st.list)} ${esc(st.list)}</span>${s.repeat ? `<span>↻ ${esc(s.repeat)}</span>` : ""}${s.reminders.length && !res ? `<span>🔔 ${s.reminders.length}</span>` : ""}${s.timer && !res ? `<button class="k-timer" data-toast="Inicia o cronômetro">▶ ${esc(s.timer)}</button>` : ""}</div>
+    ${s.desc ? `<div class="m-desc k-desc${st.more ? " open" : ""}">${esc(s.desc)}</div>${st.more ? "" : '<button class="k-more" data-moredesc>Ver tudo</button>'}` : ""}
+    ${s.checks ? `<div class="k-checks">${checklist("K", st)}</div>` : ""}`;
+}
+const resolvedBlock = st => `<div class="m-status">✓ <span>${esc(st.done ? sm().done || "Feita hoje" : "Marcada como não será feita")}</span><button class="m-tbtn" style="margin-left:auto;padding:4px 8px" data-undo-res>Desfazer</button></div>`;
+function vK1(st) {
+  const res = resolved(st);
+  return `<div class="m-scrim" data-close><div class="m-dialog k" data-stop>
+    ${head(st)}
+    ${res ? resolvedBlock(st) : `<div class="k-main">${splitDone()}<button class="m-tonal" data-postpone>⏭ Adiar</button><button class="m-tonal" data-notdone>Não será feita</button></div>`}
+    <div class="m-hr"></div>
+    ${tools(st, false)}
+  </div></div>`;
+}
+function vK2(st) {
+  const res = resolved(st);
+  return `<div class="m-scrim" data-close><div class="m-dialog k" data-stop>
+    ${head(st)}
+    ${res ? resolvedBlock(st) : `<div class="k-two">${splitDone()}<button class="m-tonal" data-postpone>⏭ Adiar</button></div>`}
+    ${tools(st, true)}
+  </div></div>`;
+}
+
+/* ---------- camadas por cima ---------- */
+function overlays(id, st) {
+  const s = sm();
+  let out = "";
+  if (st.menu) out += `<div class="m-scrim top" style="background:transparent" data-close-layer="menu"><div class="m-menu" data-stop>
+    <button data-lists><span class="ico">⇄</span>Mover para outra lista</button>
+    <button data-toast="Abre Lembretes"><span class="ico">🔔</span>Lembretes</button>
+    <button data-delete><span class="ico">🗑</span>Excluir</button></div></div>`;
+  if (st.doneMenu) out += `<div class="m-scrim top" style="background:transparent" data-close-layer="doneMenu"><div class="m-menu" data-stop style="top:auto;bottom:${st.doneMenuY}px;left:24px;right:auto">
+    <button data-doneday><span class="ico">▦</span>Concluí em outro dia…</button></div></div>`;
+  if (st.sheet === "postpone") {
+    const late = isLate(st), t = addDays(TODAY, 1);
+    out += `<div class="m-scrim bottom top" data-close-layer="sheet"><div class="s-sheet" data-stop><div class="handle"></div>
+      <h6>Adiar “${esc(s.title)}”</h6><div class="sub">Prazo atual: ${esc(dueText(st))}${s.time ? " · o horário se mantém" : ""}</div>
+      <button class="s-opt" data-to="tomorrow"><span class="ico">☀</span><span><b>Amanhã</b><small>${esc(withWd(t))}${s.time ? " · " + s.time : ""}</small></span></button>
+      <button class="s-opt" data-to="pick"><span class="ico">▦</span><span><b>Escolher data</b><small>Abre o calendário</small></span></button>
+      ${s.repeat ? `<div class="s-note" style="background:var(--cont)">↻ Só esta vez. A série continua: próxima em ${esc(withWd(s.next))}.</div>` : ""}
+      ${late ? `<div class="s-note">◷ O prazo de ${esc(short(st.due).toLowerCase())} fica registrado como perdido, sem penalidade.</div>` : ""}
+    </div></div>`;
+  }
+  if (st.sheet === "lists") out += `<div class="m-scrim bottom top" data-close-layer="sheet"><div class="s-sheet" data-stop><div class="handle"></div>
+      <h6>Mover para</h6><div class="sub">A tarefa sai de “${esc(st.list)}”.</div>
+      ${LISTS.map(([n, i]) => `<button class="s-opt" data-move="${esc(n)}"><span class="ico">${i}</span><span><b>${esc(n)}</b></span>${st.list === n ? '<span class="ok">✓</span>' : ""}</button>`).join("")}
+    </div></div>`;
+  if (st.picker) {
+    const pk = st.picker, m = pk.month, first = new Date(m.getFullYear(), m.getMonth(), 1);
+    const off = (first.getDay() + 6) % 7, len = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+    let cells = "<span></span>".repeat(off);
+    for (let d = 1; d <= len; d++) {
+      const date = new Date(m.getFullYear(), m.getMonth(), d);
+      const dis = pk.mode === "postpone" ? date < TODAY || same(date, st.due) : date > TODAY;
+      cells += `<button class="${same(date, TODAY) ? "today" : ""} ${same(date, pk.sel) ? "sel" : ""}" data-day="${date.getTime()}" ${dis ? "disabled" : ""}>${d}</button>`;
+    }
+    out += `<div class="m-scrim top" data-close-layer="picker"><div class="m-dialog" data-stop>
+      <div class="m-lab">${pk.mode === "postpone" ? "NOVA DATA" : "DATA EM QUE FOI FEITA"}</div>
+      <div class="pickval">${pk.sel ? esc(WDL[pk.sel.getDay()] + ", " + pk.sel.getDate() + " de " + MOL[pk.sel.getMonth()]) : "Escolha um dia"}</div>
+      <div class="calhead"><button class="ib" data-month="-1" aria-label="Mês anterior">‹</button><span>${MOL[m.getMonth()]} de ${m.getFullYear()}</span><button class="ib" data-month="1" aria-label="Próximo mês">›</button></div>
+      <div class="cal">${["S","T","Q","Q","S","S","D"].map(w => `<span class="wd">${w}</span>`).join("")}${cells}</div>
+      <div style="display:flex;justify-content:flex-end;gap:4px"><button class="m-tbtn" data-close-layer="picker">Cancelar</button><button class="m-tbtn" data-pick-ok ${pk.sel ? "" : "disabled"}>${pk.mode === "postpone" ? "Adiar" : "Concluir"}</button></div>
+    </div></div>`;
+  }
+  if (st.snack) out += `<div class="m-snack" role="status"><span>${esc(st.snack)}</span><button data-restore>Desfazer</button></div>`;
+  if (st.toast) out += `<div class="m-toast" role="status">${esc(st.toast)} (protótipo)</div>`;
+  return out;
+}
+
+/* ---------- tela de fundo (Hoje) ---------- */
+function home(id, st) {
+  const s = sm();
+  const card = st.gone ? "" : `<div class="m-task${resolved(st) ? " res" : ""}" data-reopen><span class="m-ckc"><span class="ring${st.done ? " on" : ""}">${st.done ? "✓" : ""}</span></span>
+    <div class="m-tb"><div class="m-tt">${esc(s.title)}</div><div class="m-meta">${s.time ? s.time + " · " : ""}<span class="${isLate(st) ? "late" : ""}">${esc(short(st.due))}${isLate(st) ? " · vencida" : ""}</span> · ${resolved(st) ? (st.done ? "Feita" : "Não será feita") : "Pendente"}</div></div>${s.repeat ? '<span style="color:var(--onv)">↻</span>' : ""}</div>`;
+  return `<div class="m-sec">${isLate(st) ? "Revisar pendências" : "Tarefas de hoje"}</div>${card}
+    <div class="m-task"><span class="m-ckc"><span class="ring"></span></span><div class="m-tb"><div class="m-tt">Comprar ração do gato</div><div class="m-meta">Hoje · Pendente</div></div></div>
+    <div class="m-task"><span class="m-ckc"><span class="ring"></span></span><div class="m-tb"><div class="m-tt">Responder e-mail da escola</div><div class="m-meta">Hoje · Pendente</div></div></div>
+    ${st.open ? "" : '<div class="m-meta" style="text-align:center;padding-top:8px">Toque no cartão para abrir os detalhes de novo.</div>'}`;
+}
+const RENDER = {now:vNow, D1:vC, K1:vK1, K2:vK2};
+const EXPLAIN = {
+  D1: {what:["A versão 1 que você escolheu, só sem os registros.","Serve de régua para comparar a altura das outras duas."],
+      pro:["Nada novo para aprender."], imp:["Ainda tem o botão Fechar e “Concluí em outro dia” ocupando uma linha cada."]},
+  K1: {what:["Concluir, Adiar e Não será feita numa linha só.","“Concluí em outro dia” vai para a setinha ▾ do Concluir.","Descrição mostra 2 linhas e “Ver tudo”; checklist mais junto.","Sem botão Fechar: fecha tocando fora ou no Voltar, como os pop-ups do Android."],
+      pro:["Perde duas linhas de altura sem esconder nenhuma ação comum.","Mesma ordem e aparência da versão 1."],
+      imp:["Três botões numa linha ficam mais estreitos; com fonte grande quebram em duas linhas.","Concluir em outro dia fica a um toque a mais."]},
+  K2: {what:["Só Concluir e Adiar como botões grandes.","Não será feita vira o primeiro ícone da fileira, junto de Editar, Lembretes, Lista e Excluir.","Mesmo ▾ e sem Fechar, como no compacto."],
+      pro:["O menor de todos.","Destaca o que se faz quase sempre: concluir ou adiar."],
+      imp:["Não será feita perde destaque; fica parecido com Excluir na fileira.","Cinco ícones apertam os rótulos."]},
+};
+function explain(id) {
+  if (id === "now") return `<div class="card"><h5>Hoje</h5><ul><li>Uma coluna de botões de texto do mesmo peso: Lembretes, Não será feita, Editar e Excluir parecem iguais.</li><li>O campo “Data em que foi feita” fica sempre aberto, mesmo quando você conclui hoje.</li><li>A lista aparece como chips soltos; os registros (que saem daqui) aparecem no fim.</li></ul></div>`;
+  const e = EXPLAIN[id];
+  const ul = a => `<ul>${a.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  return `<div class="card"><h5>Muda</h5>${ul(e.what)}<h5>Vantagens</h5>${ul(e.pro)}<h5>Impacto</h5>${ul(e.imp)}</div>`;
+}
+function renderControls() {
+  const seg = (key, opts, label) => `<div class="ctl"><span>${label}</span><div class="seg" role="group" aria-label="${label}">${opts.map(([v, l]) => `<button data-set="${key}" data-val="${v}" aria-pressed="${S[key] === v}">${esc(l)}</button>`).join("")}</div></div>`;
+  document.getElementById("controls").innerHTML =
+    seg("sample", Object.entries(SAMPLES).map(([k, v]) => [k, v.label]), "Tarefa de exemplo") +
+    seg("theme", [["page","Igual à página"],["light","Claro"],["dark","Escuro"]], "Tema dos celulares");
+}
+function render() {
+  renderControls();
+  document.getElementById("phones").innerHTML = VERSIONS.map(v => {
+    const st = P[v.id];
+    return `<div class="col"><div class="col-head"><h3>${esc(v.title)}</h3><span class="badge${v.now ? " now" : ""}">${esc(v.badge)}</span></div>
+      <div class="phone${dark() ? " dark" : ""}" data-phone="${v.id}">
+        <div class="p-status"><span>9:41</span><span>▴ ▮▮▮ 82%</span></div>
+        <div class="p-head"><button class="ib" aria-label="Menu">☰</button><div class="tt"><div class="dt">SEGUNDA-FEIRA, 16 DE NOVEMBRO</div><div class="h">Hoje</div></div><button class="ib" aria-label="Configurações">⚙</button></div>
+        <div class="p-body">${home(v.id, st)}</div>
+        <button class="p-fab" aria-label="Criar">+</button>
+        ${st.open ? RENDER[v.id](st) : ""}
+        ${overlays(v.id, st)}
+      </div>
+      <p class="hint">${v.now ? "Espelha o diálogo atual do app." : "Toque em tudo: chips, Adiar, Concluí em outro dia, ⋮, registros."} <button class="linkbtn" data-reset="${v.id}">Recomeçar</button></p>
+      ${explain(v.id)}</div>`;
+  }).join("");
+}
+
+/* ---------- interações ---------- */
+let toastTimer = null;
+function toast(id, text) { P[id].toast = text; clearTimeout(toastTimer); toastTimer = setTimeout(() => { VERSIONS.forEach(v => P[v.id].toast = null); render(); }, 1600); }
+function finish(id, snack, patch) {
+  const st = P[id];
+  st.before = JSON.stringify({done:st.done, notDone:st.notDone, gone:st.gone, due:st.due.getTime(), postponedFrom:st.postponedFrom ? st.postponedFrom.getTime() : null, list:st.list});
+  Object.assign(st, patch, {open:false, menu:false, sheet:null, picker:null});
+  st.snack = snack;
+}
+function postponeTo(id, to) {
+  const st = P[id], late = isLate(st);
+  const when = diff(to, TODAY) === 1 ? "amanhã" : withWd(to);
+  finish(id, `Adiada para ${when}`, {gone:true, due:to, postponedFrom: late ? st.due : null});
+}
+document.getElementById("phones").addEventListener("click", e => {
+  const el = e.target;
+  const r = el.closest("[data-reset]");
+  if (r) { reset(r.dataset.reset); render(); return; }
+  const ph = el.closest("[data-phone]"); if (!ph) return;
+  const id = ph.dataset.phone, st = P[id];
+  const hit = s => el.closest(s);
+  let h;
+  if ((h = hit("[data-check]"))) { const i = Number(h.dataset.check); if (!resolved(st)) st.checks[i] = !st.checks[i]; render(); return; }
+  if (hit("[data-complete]")) { if (resolved(st)) return; finish(id, "Tarefa concluída", {done:true}); render(); return; }
+  if (hit("[data-notdone]")) { finish(id, "Marcada como não será feita", {notDone:true}); render(); return; }
+  if (hit("[data-undo-res]")) { st.done = false; st.notDone = false; toast(id, "Resultado desfeito"); render(); return; }
+  if (hit("[data-postpone]")) { if (resolved(st)) return; st.menu = false; st.sheet = "postpone"; render(); return; }
+  if ((h = hit("[data-to]"))) {
+    if (h.dataset.to === "tomorrow") postponeTo(id, addDays(TODAY, 1));
+    else { st.sheet = null; st.picker = {mode:"postpone", month:new Date(2026, 10, 1), sel:null}; }
+    render(); return;
+  }
+  if (hit("[data-donemenu]")) {
+    const r = hit("[data-donemenu]").getBoundingClientRect(), pr = ph.getBoundingClientRect();
+    st.doneMenu = true; st.doneMenuY = Math.max(16, pr.bottom - r.top + 4); render(); return;
+  }
+  if (hit("[data-moredesc]")) { st.more = true; render(); return; }
+  if (hit("[data-doneday]")) { st.doneMenu = false; st.picker = {mode:"done", month:new Date(2026, 10, 1), sel:null}; render(); return; }
+  if ((h = hit("[data-month]"))) { const m = st.picker.month; st.picker.month = new Date(m.getFullYear(), m.getMonth() + Number(h.dataset.month), 1); render(); return; }
+  if ((h = hit("[data-day]"))) { st.picker.sel = new Date(Number(h.dataset.day)); render(); return; }
+  if (hit("[data-pick-ok]")) {
+    const pk = st.picker;
+    if (pk.mode === "postpone") postponeTo(id, pk.sel);
+    else finish(id, `Concluída em ${short(pk.sel).toLowerCase() === "hoje" ? "hoje" : withWd(pk.sel)}`, {done:true});
+    render(); return;
+  }
+  if (hit("[data-lists]")) { st.menu = false; st.sheet = "lists"; render(); return; }
+  if ((h = hit("[data-move]"))) { st.list = h.dataset.move; st.sheet = null; toast(id, "Movida para " + st.list); render(); return; }
+  if (hit("[data-menu]")) { st.menu = true; render(); return; }
+  if (hit("[data-edit]")) { toast(id, "Abre o editor"); render(); return; }
+  if (hit("[data-delete]")) { st.menu = false; toast(id, "Pede confirmação para excluir"); render(); return; }
+  if ((h = hit("[data-toast]"))) { st.menu = false; toast(id, h.dataset.toast); render(); return; }
+  if (hit("[data-restore]")) {
+    const b = JSON.parse(st.before);
+    Object.assign(st, {done:b.done, notDone:b.notDone, gone:b.gone, due:new Date(b.due), postponedFrom:b.postponedFrom ? new Date(b.postponedFrom) : null, list:b.list, snack:null});
+    render(); return;
+  }
+  if (hit("[data-reopen]")) { st.open = true; st.snack = null; render(); return; }
+  const layer = el.closest("[data-close-layer]");
+  if (layer && (!el.closest("[data-stop]") || el.matches("[data-close-layer]"))) { const k = layer.dataset.closeLayer; st[k] = k === "menu" || k === "doneMenu" ? false : null; render(); return; }
+  const close = el.closest("[data-close]");
+  if (close && (!el.closest("[data-stop]") || el.matches("[data-close]"))) { st.open = false; render(); }
+});
+document.getElementById("controls").addEventListener("click", e => {
+  const b = e.target.closest("[data-set]"); if (!b) return;
+  S[b.dataset.set] = b.dataset.val;
+  if (b.dataset.set === "theme") { try { localStorage.setItem("det-theme", S.theme); } catch (err) {} }
+  else resetAll();
+  render();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (S.theme === "page") render(); });
+new MutationObserver(() => { if (S.theme === "page") render(); }).observe(document.documentElement, {attributes:true, attributeFilter:["data-theme"]});
+render();
+</script>
