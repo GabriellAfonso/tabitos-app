@@ -187,6 +187,15 @@ object TaskRules {
                 }
                 is TaskAction.Undo -> undo(action.id)
                 is TaskAction.Edit -> edit(action)
+                is TaskAction.Postpone -> {
+                    val o = postponable(action.id)
+                    if (action.to < today || action.to == o.fields.date) fail(TaskProblem.INVALID_DATE)
+                    moveDate(o, action.to)
+                }
+                is TaskAction.UndoPostpone -> {
+                    val o = postponable(action.id)
+                    if (action.to != o.fields.date) moveDate(o, action.to)
+                }
                 is TaskAction.Delete -> delete(action)
                 is TaskAction.Move -> {
                     val o = occurrence(action.id)
@@ -295,6 +304,20 @@ object TaskRules {
                 plannedDate = if (action.scope == ChangeScope.ONLY_THIS && d.rule.kind != RepeatKind.NONE)
                     o.plannedDate else replacement.plannedDate))
             audit(o, AuditKind.EDITED)
+        }
+        fun postponable(id: String): TaskOccurrence {
+            val o = occurrence(id)
+            if (o.status != TaskStatus.OPEN) fail(TaskProblem.NOT_OPEN)
+            requireInput(o.canPostpone)
+            return o
+        }
+        /**
+         * Postponing is an "only this occurrence" date edit: an overdue date records the missed deadline,
+         * recurring series keep their own dates and history stays append-only.
+         */
+        fun moveDate(o: TaskOccurrence, to: LocalDate) {
+            edit(TaskAction.Edit(o.id, o.fields.copy(date = to), definition(o.taskId).rule, ChangeScope.ONLY_THIS,
+                reviewedDeadline = true))
         }
         fun delete(action: TaskAction.Delete) {
             val o = occurrence(action.id)

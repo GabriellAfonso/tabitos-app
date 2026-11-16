@@ -51,16 +51,16 @@ class AccountingUiTest {
                 compose.onAllNodesWithText("Preparar café").fetchSemanticsNodes().isNotEmpty()
             }
             compose.onNodeWithText("Preparar café", useUnmergedTree = true).performClick()
-            compose.onNodeWithText("Concluir tarefa").performScrollTo().performClick()
+            compose.onNodeWithText("Concluir").performScrollTo().performClick()
             compose.onNodeWithText("Confirmar efeito financeiro").assertIsDisplayed()
             assertTrue(runBlocking { wallet.observe().first().entries.isEmpty() })
             compose.onNodeWithText(compose.activity.getString(R.string.cancel)).performClick()
             assertTrue(runBlocking { wallet.observe().first().entries.isEmpty() })
-            compose.onNodeWithText("Concluir tarefa").performScrollTo().performClick()
+            compose.onNodeWithText("Concluir").performScrollTo().performClick()
             compose.onNodeWithText("Confirmar").performClick()
             compose.waitUntil(15000) { runBlocking { wallet.observe().first().balance == 5L } }
             assertEquals(10L, runBlocking { wallet.observe().first().totalXp })
-            compose.onNodeWithText("Desfazer registro").performScrollTo().performClick()
+            compose.onNodeWithText("Desfazer").performScrollTo().performClick()
             compose.onNodeWithText("Estorno por correção").assertExists()
             compose.onNodeWithText("Confirmar").performClick()
             compose.waitUntil(15000) { runBlocking { wallet.observe().first().balance == 0L } }

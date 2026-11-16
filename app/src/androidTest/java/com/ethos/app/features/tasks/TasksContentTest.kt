@@ -58,11 +58,11 @@ class TasksContentTest {
         compose.onNodeWithText("Salvar").performClick()
         compose.waitUntil(15_000) { repo.saved.value.activeOccurrences.size == 1 }
         compose.onNodeWithText("Preparar mochila", useUnmergedTree = true).performScrollTo().performClick()
-        compose.onNodeWithText("Concluir tarefa").performScrollTo().performClick()
+        compose.onNodeWithText("Concluir").performScrollTo().performClick()
         compose.onNodeWithText("Restam 2 itens. Concluir mesmo assim?").assertIsDisplayed()
         compose.onNodeWithText("Concluir mesmo assim").performClick()
         compose.waitUntil(15_000) { repo.saved.value.occurrences.single().status == TaskStatus.DONE }
-        compose.onNodeWithText("Desfazer registro").performScrollTo().performClick()
+        compose.onNodeWithText("Desfazer").performScrollTo().performClick()
         compose.waitUntil(15_000) { repo.saved.value.occurrences.single().status == TaskStatus.OPEN }
         assertEquals(1, repo.saved.value.history.count { it.kind == AuditKind.UNDONE })
     }

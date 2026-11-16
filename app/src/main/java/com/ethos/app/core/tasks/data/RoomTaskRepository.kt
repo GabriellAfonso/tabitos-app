@@ -4,6 +4,9 @@ import androidx.room.withTransaction
 import com.ethos.app.core.accounting.data.AccountingStore
 import com.ethos.app.core.accounting.domain.AccountingProjection
 import com.ethos.app.core.preferences.GameModeSource
+import com.ethos.app.core.reminders.data.entity
+import com.ethos.app.core.reminders.domain.ReminderRules
+import com.ethos.app.core.tasks.domain.RepeatKind
 import com.ethos.app.core.tasks.domain.TaskAction
 import com.ethos.app.core.tasks.domain.TaskClock
 import com.ethos.app.core.tasks.domain.TaskRepository
@@ -12,6 +15,7 @@ import com.ethos.app.core.tasks.domain.TaskSnapshot
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import java.time.temporal.ChronoUnit
 
 class RoomTaskRepository(
     private val database: TaskDatabase, private val clock: TaskClock, private val gameMode: GameModeSource,
@@ -30,6 +34,7 @@ class RoomTaskRepository(
             val before = read()
             val after = TaskRules.apply(before, action, clock.today(), clock.nowMillis())
             if (before != after) write(after)
+            if (action is TaskAction.Postpone || action is TaskAction.UndoPostpone) moveReminders(before, after, action)
             if (action is TaskAction.Resolve || action is TaskAction.Undo || action is TaskAction.SetCompleted) {
                 val id = when (action) {
                     is TaskAction.Resolve -> action.id
@@ -44,6 +49,23 @@ class RoomTaskRepository(
                 database.habits().excludeList(action.id)
             }
         }
+    }
+
+    /** Fixed-date reminders move with a postponed task, in the same transaction (spec 021). */
+    private suspend fun moveReminders(before: TaskSnapshot, after: TaskSnapshot, action: TaskAction) {
+        val id = when (action) {
+            is TaskAction.Postpone -> action.id
+            is TaskAction.UndoPostpone -> action.id
+            else -> return
+        }
+        val old = before.occurrences.first { it.id == id }
+        val new = after.occurrences.first { it.id == id }
+        val days = ChronoUnit.DAYS.between(old.fields.date ?: return, new.fields.date ?: return)
+        if (days == 0L) return
+        val recurring = after.definitions.first { it.id == old.taskId }.rule.kind != RepeatKind.NONE
+        val dao = database.reminders()
+        ReminderRules.postponeChosen(dao.definitions().map { it.domain() }, old, days, recurring)
+            .forEach { dao.definition(it.entity()) }
     }
 
     private suspend fun read(): TaskSnapshot {

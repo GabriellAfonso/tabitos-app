@@ -7,6 +7,8 @@ import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.accounting.domain.AccountingRepository
 import com.ethos.app.core.accounting.domain.FinancialPreview
 import com.ethos.app.core.preferences.GameModeSource
+import com.ethos.app.core.reminders.domain.ReminderDefinition
+import com.ethos.app.core.reminders.domain.ReminderRepository
 import com.ethos.app.core.timers.domain.TimerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.LocalDate
@@ -54,6 +56,10 @@ data class TasksUiState(
     val timedConfirmation: String? = null,
     /** Game mode (spec 017): off hides difficulty/estimates and skips financial confirmations. */
     val gameMode: Boolean = true,
+    /** Reminder rules, only to count the reminders shown in the task details. */
+    val reminders: List<ReminderDefinition> = emptyList(),
+    /** Task just postponed, offered for "Desfazer" (spec 021). */
+    val postponed: PostponeFeedback? = null,
 ) {
     fun isTimed(o: TaskOccurrence): Boolean = o.taskId in durations
 }
@@ -64,6 +70,7 @@ class TasksViewModel @Inject constructor(
     private val accounting: AccountingRepository? = null,
     private val timers: TimerRepository? = null,
     private val gameMode: GameModeSource? = null,
+    private val reminders: ReminderRepository? = null,
 ) : ViewModel() {
     private val mutable = MutableStateFlow(TasksUiState(today = clock.today(), draft = saved["taskDraft"]))
     /** Goal to store once the task itself is saved; null minutes removes it (normal variant). */
@@ -77,6 +84,7 @@ class TasksViewModel @Inject constructor(
     private var retryConfirmed: Boolean = false
     private var completionAction: TaskAction.Resolve? = null
     private var financialAction: TaskAction? = null
+    private var pendingPostpone: PostponeFeedback? = null
 
     fun confirmFinancial(confirm: Boolean) {
         val action = financialAction
@@ -90,6 +98,13 @@ class TasksViewModel @Inject constructor(
         gameMode?.let { source ->
             viewModelScope.launch {
                 try { source.enabled.collect { on -> mutable.update { it.copy(gameMode = on) } }
+                } catch (e: CancellationException) { throw e
+                } catch (_: Exception) { }
+            }
+        }
+        reminders?.let { repository ->
+            viewModelScope.launch {
+                try { repository.observe().collect { r -> mutable.update { it.copy(reminders = r.definitions) } }
                 } catch (e: CancellationException) { throw e
                 } catch (_: Exception) { }
             }
@@ -261,7 +276,23 @@ class TasksViewModel @Inject constructor(
         mutable.update { it.copy(timedConfirmation = null) }
         if (confirm) execute(TaskAction.SetCompleted(id, true, clock.today()), confirmed = true)
     }
-    fun completionDate(text: String) { mutable.update { it.copy(completionText = text) } }
+    /** "Concluí em outro dia": completes with a past date chosen in the picker. */
+    fun completeOn(o: TaskOccurrence, date: LocalDate) {
+        mutable.update { it.copy(completionText = date.toString()) }
+        complete(o, true)
+    }
+    /** Moves only this occurrence to [to]; the details close and "Desfazer" is offered (spec 021). */
+    fun postpone(o: TaskOccurrence, to: LocalDate) {
+        val from = o.fields.date ?: return
+        pendingPostpone = PostponeFeedback(o.id, from, to)
+        execute(TaskAction.Postpone(o.id, to))
+    }
+    fun undoPostpone() {
+        val feedback = state.value.postponed ?: return
+        mutable.update { it.copy(postponed = null) }
+        execute(TaskAction.UndoPostpone(feedback.occurrenceId, feedback.from))
+    }
+    fun dismissPostponed() { mutable.update { it.copy(postponed = null) } }
     fun quickCheck(id: String) {
         val s = state.value
         if (s.busy || s.loading || s.storageError) return
@@ -347,7 +378,9 @@ class TasksViewModel @Inject constructor(
                     deleteListId = null, deleteTaskId = null,
                     selectedListId = if (action is TaskAction.DeleteList && action.id == it.selectedListId)
                         null else it.selectedListId,
-                    detailId = if (action is TaskAction.Delete) null else it.detailId) }
+                    detailId = if (action is TaskAction.Delete || action is TaskAction.Postpone) null else it.detailId,
+                    postponed = if (action is TaskAction.Postpone) pendingPostpone else it.postponed) }
+                if (action is TaskAction.Postpone) pendingPostpone = null
             } catch (e: CancellationException) { throw e
             } catch (e: TaskRuleException) {
                 mutable.update { it.copy(busy = false, error = e.problem) }

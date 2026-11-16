@@ -28,6 +28,23 @@ object ReminderRules {
                 .thenByDescending { it.fromOrdinal }.thenByDescending { it.createdAt })
             .firstOrNull()?.takeIf { it.enabled } }
 
+    /**
+     * Fixed-date reminders of [o] moved by [days] when its deadline is postponed (spec 021): same time of day,
+     * date shifted. Relative reminders already follow the deadline and weekday ones are not tied to a date.
+     * A series rule follows a non-recurring task by itself (its planned date moves), but a postponed occurrence
+     * of a recurring task keeps its planned date, so it gets its own occurrence-scoped copy.
+     */
+    fun postponeChosen(
+        defs: List<ReminderDefinition>, o: TaskOccurrence, days: Long, recurring: Boolean,
+    ): List<ReminderDefinition> = effective(defs, o).filter { it.mode == ReminderMode.CHOSEN }.mapNotNull { d ->
+        when {
+            d.occurrenceId == o.id -> d.copy(chosenDate = d.chosenDate?.plusDays(days))
+            recurring && o.plannedDate != null -> d.copy(id = "${d.groupId}:${o.id}", occurrenceId = o.id,
+                fromOrdinal = o.ordinal, chosenDate = o.plannedDate.plusDays(d.anchorDay + days))
+            else -> null
+        }
+    }
+
     fun project(sources: ReminderSources, defs: List<ReminderDefinition>, today: LocalDate): ReminderSources {
         val days = (defs.maxOfOrNull { it.offsetMinutes / 1440 } ?: 0) + 32
         val horizon = today.plusDays(days.coerceAtMost(398))

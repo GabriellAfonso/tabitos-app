@@ -57,9 +57,7 @@ import com.ethos.app.core.ui.reminders.LocalOpenReminders
 import com.ethos.app.core.ui.timers.LocalOpenTimer
 import com.ethos.app.core.timers.domain.TimerKind
 import com.ethos.app.core.reminders.domain.ReminderKind
-import java.time.Instant
 import java.time.LocalDate
-import java.time.ZoneId
 
 enum class TaskPage { LIST, TODAY, REVIEW }
 
@@ -301,9 +299,23 @@ fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
     }
     val detail = state.snapshot.activeOccurrences.firstOrNull { it.id == state.detailId }
     if (detail != null && state.draft == null && state.deleteTaskId == null) {
-        TaskDetail(detail, state, error, { viewModel.detail(null) }, { viewModel.edit(detail) },
-            { viewModel.complete(detail, it) }, viewModel::completionDate,
-            { viewModel.action(it) }, { viewModel.requestDeleteTask(detail.id) })
+        val openReminders = LocalOpenReminders.current
+        val openTimer = LocalOpenTimer.current
+        TaskDetail(taskDetailModel(state.snapshot, detail, state.today, state.reminders, state.durations),
+            state.snapshot.activeLists, state.today, state.busy, error, TaskDetailActions(
+                close = { viewModel.detail(null) },
+                complete = { viewModel.complete(detail, true) },
+                completeOn = { viewModel.completeOn(detail, it) },
+                notDone = { viewModel.complete(detail, false) },
+                undoResult = { viewModel.action(TaskAction.Undo(detail.id)) },
+                edit = { viewModel.edit(detail) },
+                delete = { viewModel.requestDeleteTask(detail.id) },
+                move = { viewModel.action(TaskAction.Move(detail.id, it)) },
+                check = { index, checked -> viewModel.action(TaskAction.Check(detail.id, index, checked)) },
+                openReminders = { openReminders(ReminderKind.TASK, detail.id) },
+                openTimer = { openTimer(TimerKind.TASK, detail.id) },
+                postpone = { viewModel.postpone(detail, it) },
+            ))
     }
     if (state.timedConfirmation != null) AlertDialog(
         onDismissRequest = { viewModel.confirmTimed(false) },
@@ -335,62 +347,6 @@ fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
             DeleteTaskDialog(id, recurring, state.busy, error, viewModel::action, { viewModel.requestDeleteTask(null) })
         }
     }
-}
-
-@Composable
-private fun TaskDetail(
-    o: TaskOccurrence, state: TasksUiState, error: @Composable () -> Unit, close: () -> Unit,
-    edit: () -> Unit, resolve: (Boolean) -> Unit, date: (String) -> Unit, action: (TaskAction) -> Unit,
-    delete: () -> Unit,
-) {
-    AlertDialog(onDismissRequest = { if (!state.busy) close() }, title = { Text(o.fields.title) }, text = {
-        Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            error()
-            if (o.fields.description.isNotEmpty()) Text(o.fields.description)
-            Text(listOfNotNull(o.dueDate?.let { EthosDates.long(it, state.today).label() }
-                ?: stringResource(R.string.no_date), o.fields.minute?.let(EthosDates::time)).joinToString(" · "))
-            o.checks.forEachIndexed { i, c -> Row {
-                Checkbox(c.checked, { action(TaskAction.Check(o.id, i, it)) },
-                    enabled = !state.busy && o.status == TaskStatus.OPEN,
-                    modifier = Modifier.semantics { contentDescription = c.label })
-                Text(c.label, Modifier.padding(top = 12.dp))
-            } }
-            // Only timed tasks have a timer; a free stopwatch is not part of tasks (spec 016).
-            if (state.isTimed(o)) {
-                val timer = LocalOpenTimer.current
-                TextButton({ timer(TimerKind.TASK, o.id) }, enabled = !state.busy) {
-                    Text(stringResource(R.string.timer_button)) }
-            }
-            if (o.status == TaskStatus.OPEN) {
-                val reminders = LocalOpenReminders.current
-                TextButton({ reminders(ReminderKind.TASK, o.id) }, enabled = !state.busy) {
-                    Text(stringResource(R.string.reminders)) }
-                DateField(R.string.actual_completion, state.completionText, state.today, !state.busy, date,
-                    max = state.today)
-                Button({ resolve(true) }, enabled = !state.busy) { Text(stringResource(R.string.complete_task)) }
-                TextButton({ resolve(false) }, enabled = !state.busy) { Text(stringResource(R.string.not_done)) }
-                TextButton(edit, enabled = !state.busy) { Text(stringResource(R.string.edit)) }
-                ListChoices(state.snapshot.activeLists, o.fields.listId, !state.busy) {
-                    action(TaskAction.Move(o.id, it)) }
-            } else TextButton({ action(TaskAction.Undo(o.id)) }, enabled = !state.busy) {
-                Text(stringResource(R.string.undo_outcome)) }
-            TextButton(delete, enabled = !state.busy) { Text(stringResource(R.string.delete)) }
-            Text(stringResource(R.string.task_history), style = MaterialTheme.typography.titleSmall)
-            val auditLabels = listOf(R.string.audit_created, R.string.audit_completed, R.string.audit_not_done,
-                R.string.audit_undone, R.string.audit_missed, R.string.audit_edited, R.string.audit_deleted,
-                R.string.audit_checked)
-            state.snapshot.history.filter { it.occurrenceId == o.id }.asReversed().forEach { record ->
-                val moment = Instant.ofEpochMilli(record.recordedAt).atZone(ZoneId.systemDefault())
-                val time = EthosDates.shortPlain(moment.toLocalDate(), state.today) + " " +
-                    EthosDates.time(moment.hour * 60 + moment.minute)
-                Text(stringResource(R.string.audit_line, stringResource(auditLabels[record.kind.ordinal]), time))
-                record.actualDate?.let { Text(stringResource(R.string.actual_date_line,
-                    EthosDates.shortPlain(it, state.today))) }
-                if (record.kind == AuditKind.MISSED_DEADLINE) Text(stringResource(R.string.original_deadline_line,
-                    record.originalDeadline?.let { EthosDates.shortPlain(it, state.today) }.orEmpty()))
-            }
-        }
-    }, confirmButton = { TextButton(close, enabled = !state.busy) { Text(stringResource(R.string.close)) } })
 }
 
 @Composable

@@ -50,6 +50,9 @@ data class TaskOccurrence(
     val position: Int = 0, val touched: Boolean = false,
 ) {
     fun needsReview(today: LocalDate): Boolean = status == TaskStatus.OPEN && dueDate?.isBefore(today) == true
+    /** Only an open task due on a specific day can be postponed to another day (spec 021). */
+    val canPostpone: Boolean get() = status == TaskStatus.OPEN && fields.deadline == DeadlineKind.DAY &&
+        fields.date != null
     fun inDay(day: LocalDate): Boolean = status == TaskStatus.OPEN && when (fields.deadline) {
         DeadlineKind.NONE -> false
         DeadlineKind.DAY -> dueDate == day
@@ -81,6 +84,10 @@ sealed interface TaskAction {
         val id: String, val fields: TaskFields, val rule: RepeatRule, val scope: ChangeScope,
         val reviewedDeadline: Boolean = false,
     ) : TaskAction
+    /** Moves only this occurrence to [to] (today or later), keeping its time; counts as the review (spec 021). */
+    data class Postpone(val id: String, val to: LocalDate) : TaskAction
+    /** Puts a just-postponed occurrence back on [to], which may be in the past. */
+    data class UndoPostpone(val id: String, val to: LocalDate) : TaskAction
     data class Check(val id: String, val index: Int, val checked: Boolean) : TaskAction
     data class Resolve(val id: String, val done: Boolean, val actualDate: LocalDate) : TaskAction
     data class Undo(val id: String) : TaskAction

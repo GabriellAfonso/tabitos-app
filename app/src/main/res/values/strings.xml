@@ -111,10 +111,7 @@
     <string name="this_and_future">Esta e as próximas</string>
     <string name="review_reschedule">O prazo já passou. Mudar a data registra o prazo perdido, sem penalidade.</string>
     <string name="confirm_review">Entendi, registrar o prazo perdido</string>
-    <string name="complete_task">Concluir tarefa</string>
     <string name="not_done">Não será feita</string>
-    <string name="undo_outcome">Desfazer registro</string>
-    <string name="actual_completion">Data em que foi feita</string>
     <plurals name="unchecked_confirm">
         <item quantity="one">Resta %1$d item. Concluir mesmo assim?</item>
         <item quantity="other">Restam %1$d itens. Concluir mesmo assim?</item>
@@ -151,18 +148,6 @@
     <string name="task_status_open">Pendente</string>
     <string name="task_status_done">Concluída</string>
     <string name="task_status_not_done">Não realizada</string>
-    <string name="task_history">Registros e correções</string>
-    <string name="audit_created">Criada</string>
-    <string name="audit_completed">Conclusão</string>
-    <string name="audit_not_done">Não será feita</string>
-    <string name="audit_undone">Registro desfeito</string>
-    <string name="audit_missed">Prazo perdido revisado</string>
-    <string name="audit_edited">Alteração</string>
-    <string name="audit_deleted">Exclusão</string>
-    <string name="audit_checked">Checklist alterado</string>
-    <string name="audit_line">%1$s · registrado em %2$s</string>
-    <string name="actual_date_line">Feita em %1$s</string>
-    <string name="original_deadline_line">Prazo original: %1$s</string>
     <string name="new_habit">Novo hábito</string>
     <string name="edit_habit">Editar hábito</string>
     <string name="habit_name">Nome do hábito</string>
@@ -676,4 +661,38 @@
     <string name="task_status_options">Opções de conclusão</string>
     <string name="task_mark_done">Feito</string>
     <string name="task_mark_not_done">Não será feito</string>
+    <!-- Task details and postpone (spec 021) -->
+    <string name="task_complete">Concluir</string>
+    <string name="task_complete_options">Outras formas de concluir</string>
+    <string name="task_complete_other_day">Concluí em outro dia…</string>
+    <string name="task_postpone">Adiar</string>
+    <string name="task_postpone_title">Adiar “%1$s”</string>
+    <string name="task_postpone_current">Prazo atual: %1$s</string>
+    <string name="task_postpone_current_time">Prazo atual: %1$s · %2$s · o horário se mantém</string>
+    <string name="task_postpone_tomorrow">Amanhã</string>
+    <string name="task_postpone_pick">Escolher data</string>
+    <string name="task_postpone_pick_hint">Abre o calendário</string>
+    <string name="task_postpone_series">Só esta vez. A série continua: próxima em %1$s.</string>
+    <string name="task_postpone_series_unknown">Só esta vez. As próximas continuam nas datas delas.</string>
+    <string name="task_postpone_overdue">O prazo de %1$s fica registrado como perdido, sem penalidade.</string>
+    <string name="task_postponed_tomorrow">Adiada para amanhã</string>
+    <string name="task_postponed_to">Adiada para %1$s</string>
+    <string name="task_overdue_suffix">%1$s · vencida</string>
+    <string name="task_description_more">Ver tudo</string>
+    <string name="task_done_status">Concluída · %1$s</string>
+    <string name="task_not_done_status">Marcada como não será feita</string>
+    <string name="task_move_title">Mover para</string>
+    <string name="task_timer_minutes">%1$d min</string>
+    <plurals name="task_open_timer">
+        <item quantity="one">Abrir cronômetro de %1$d minuto</item>
+        <item quantity="other">Abrir cronômetro de %1$d minutos</item>
+    </plurals>
+    <plurals name="task_reminder_count">
+        <item quantity="one">%1$d lembrete</item>
+        <item quantity="other">%1$d lembretes</item>
+    </plurals>
+    <plurals name="task_repeat_interval">
+        <item quantity="one">A cada %1$d dia</item>
+        <item quantity="other">A cada %1$d dias</item>
+    </plurals>
 </resources>

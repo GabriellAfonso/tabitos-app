@@ -82,24 +82,34 @@ fun DateField(
     val date = parseDate(value)
     PickerField(label, date?.let { EthosDates.long(it, today).label() }, enabled, tag) { open = true }
     if (!open) return
+    EthosDatePickerDialog(initial = date ?: today, min = min, max = max,
+        onConfirm = { onChange(it.toString()); open = false }, onDismiss = { open = false })
+}
+
+/** Calendar picker without typing (spec 013); [excluded] is a day that cannot be chosen, like the current one. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EthosDatePickerDialog(
+    initial: LocalDate, onConfirm: (LocalDate) -> Unit, onDismiss: () -> Unit,
+    min: LocalDate? = null, max: LocalDate? = null, excluded: LocalDate? = null,
+    confirmLabel: Int = R.string.picker_ok,
+) {
     val state = rememberDatePickerState(
-        initialSelectedDateMillis = (date ?: today).coerceIn(min ?: LocalDate.MIN, max ?: LocalDate.MAX)
-            .toPickerMillis(),
+        initialSelectedDateMillis = initial.coerceIn(min ?: LocalDate.MIN, max ?: LocalDate.MAX)
+            .takeIf { it != excluded }?.toPickerMillis(),
         selectableDates = object : SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 val day = pickerMillisToDate(utcTimeMillis)
-                return (min == null || day >= min) && (max == null || day <= max)
+                return (min == null || day >= min) && (max == null || day <= max) && day != excluded
             }
             override fun isSelectableYear(year: Int): Boolean =
                 (min == null || year >= min.year) && (max == null || year <= max.year)
         },
     )
-    DatePickerDialog(onDismissRequest = { open = false },
-        confirmButton = { TextButton({
-            state.selectedDateMillis?.let { onChange(pickerMillisToDate(it).toString()) }
-            open = false
-        }, enabled = state.selectedDateMillis != null) { Text(stringResource(R.string.picker_ok)) } },
-        dismissButton = { TextButton({ open = false }) { Text(stringResource(R.string.picker_cancel)) } },
+    DatePickerDialog(onDismissRequest = onDismiss,
+        confirmButton = { TextButton({ state.selectedDateMillis?.let { onConfirm(pickerMillisToDate(it)) } },
+            enabled = state.selectedDateMillis != null) { Text(stringResource(confirmLabel)) } },
+        dismissButton = { TextButton(onDismiss) { Text(stringResource(R.string.picker_cancel)) } },
     ) { DatePicker(state) }
 }
 

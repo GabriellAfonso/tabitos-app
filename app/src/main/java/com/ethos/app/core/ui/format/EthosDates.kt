@@ -20,6 +20,7 @@ object EthosDates {
     private val monthShort = DateTimeFormatter.ofPattern("MMM", ptBr)
     private val monthLong = DateTimeFormatter.ofPattern("MMMM", ptBr)
     private val weekday = DateTimeFormatter.ofPattern("EEEE", ptBr)
+    private val weekdayShort = DateTimeFormatter.ofPattern("EEE", ptBr)
 
     fun short(date: LocalDate, today: LocalDate): DateText = relative(date, today) ?: DateText.Plain(
         shortPlain(date, today))
@@ -32,6 +33,10 @@ object EthosDates {
         val base = "${date.dayOfMonth} ${shortMonth(date)}"
         return if (date.year == today.year) base else "$base ${date.year}"
     }
+
+    /** "ter, 17 nov", with the year outside the current one. */
+    fun shortWithWeekday(date: LocalDate, today: LocalDate): String =
+        "${date.format(weekdayShort).removeSuffix(".")}, ${shortPlain(date, today)}"
 
     /** "segunda, 10 de novembro", with " de 2027" outside the current year. */
     fun longPlain(date: LocalDate, today: LocalDate): String {

@@ -74,6 +74,7 @@ import com.ethos.app.features.shell.CreateActions
 import com.ethos.app.features.shell.EthosShell
 import com.ethos.app.features.shell.ShellDestination
 import com.ethos.app.features.tasks.DrawerListCallbacks
+import com.ethos.app.features.tasks.PostponedSnackbar
 import com.ethos.app.features.tasks.TaskDialogs
 import com.ethos.app.features.tasks.TaskDrawer
 import com.ethos.app.features.tasks.TimerDoneFeedback
@@ -223,6 +224,8 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
             if (app.timers.startedSession != null) {
                 TimerStartedFeedback(vm.timers::undoStart, vm.timers::dismissStartUndo)
             } else if (tasks.timerDone != null) TimerDoneFeedback(vm.tasks::undoTimerDone, vm.tasks::dismissTimerDone)
+            else if (tasks.postponed != null) PostponedSnackbar(tasks.postponed, tasks.today, vm.tasks::undoPostpone,
+                vm.tasks::dismissPostponed)
             else HabitPracticeFeedback(habits, vm.habits::undoPractice, vm.habits::dismissPracticeFeedback)
         },
     ) { destination, navigate ->
