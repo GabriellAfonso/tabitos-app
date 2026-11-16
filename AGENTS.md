@@ -214,4 +214,6 @@ Listas no menu: tocar abre, segurar e arrastar reordena, segurar e soltar abre E
 Histórico de moedas e Hábitos excluídos são sub-páginas de Configurações (Voltar); dados de demonstração removidos.
 Concluídas da lista só mostram o resolvido hoje; + com Criar tarefa/Criar bom hábito/Quebrar mau hábito.
 Mau hábito em vermelho (errorContainer); cor Vermelho e 11 ícones de hábito acrescentados ao fim (índices estáveis).
+Spec021: Adiar só no pop-up de detalhes (Amanhã/Escolher data), mantém horário, só esta ocorrência; vencida sem confirmação
+(registra prazo perdido); lembretes de data fixa andam os mesmos dias; Desfazer; pop-up "Mínimo" sem histórico nem Fechar.
 <!-- SPECKIT END -->
