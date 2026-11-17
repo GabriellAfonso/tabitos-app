@@ -264,14 +264,18 @@ fun TaskRow(
                 val parts = listOfNotNull(o.fields.minute?.let(EthosDates::time),
                     dateLabel,
                     stringResource(status))
-                Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                // Recurrence sits with the date, leaving the trailing edge to the timer control alone.
+                Row(verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (recurring) Icon(painterResource(R.drawable.ic_repeat),
+                        contentDescription = stringResource(R.string.task_repeats),
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
             if (timer != null && o.status == TaskStatus.OPEN) TimerChipButton(timer, o.fields.title, !busy)
-            if (recurring) Icon(painterResource(R.drawable.ic_repeat),
-                contentDescription = stringResource(R.string.task_repeats),
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f))
         }
     }
 }
