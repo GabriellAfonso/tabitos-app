@@ -161,6 +161,10 @@ layout below; every previous action is still reachable.
 - **FR-011**: The popup MUST follow the layout of User Story 3, scenario 1, with no "Fechar" button and closing on
   outside tap/back.
 - **FR-012**: The popup MUST NOT show the "Registros e correções" list; audits keep being recorded.
+- **FR-012a** (added 2026-11-17, for the future Statistics/History feature): a postpone MUST be recorded as
+  `AuditKind.POSTPONED` and its undo as `AuditKind.POSTPONE_UNDONE`, not as `EDITED`; both keep the previous
+  deadline in `originalDeadline` and the new date in `actualDate`. The kind is persisted by name (TEXT), so no
+  schema change. Postpones made before this change stay recorded as `EDITED` and cannot be told apart from edits.
 - **FR-013**: "Concluir" MUST complete with today's date; "▾ → Concluí em outro dia…" MUST complete with a chosen
   date between creation and today; the always-visible completion date field MUST be removed.
 - **FR-014**: "Lista" MUST open a choice of active lists and move the task; inline list chips MUST be removed.

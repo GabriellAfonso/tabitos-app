@@ -216,4 +216,13 @@ Concluídas da lista só mostram o resolvido hoje; + com Criar tarefa/Criar bom 
 Mau hábito em vermelho (errorContainer); cor Vermelho e 11 ícones de hábito acrescentados ao fim (índices estáveis).
 Spec021: Adiar só no pop-up de detalhes (Amanhã/Escolher data), mantém horário, só esta ocorrência; vencida sem confirmação
 (registra prazo perdido); lembretes de data fixa andam os mesmos dias; Desfazer; pop-up "Mínimo" sem histórico nem Fechar.
+Adiar grava AuditKind.POSTPONED e desfazer POSTPONE_UNDONE (prazo antigo e data nova), não EDITED (2026-11-17).
+Spec022: página Estatísticas no menu ☰ (com e sem modo jogo): abas Resumo/Histórico, período Semana/Mês/Ano/Tudo
+(‹ nome ▾ ›, só em memória). Plano/tarefas: specs/022-statistics-history/plan.md, tasks.md (25/25).
+Resumo: concluídas, % no prazo, adiadas (POSTPONED), barras; hábitos com HabitRules.successRate por intervalo;
+tempo de trechos fechados de tarefas/hábitos; moedas ganhas/gastas e nível. Histórico substitui Histórico de moedas.
+Apagar histórico (caixa ao excluir tarefa/hábito, Hábitos excluídos, itens excluídos no Histórico): uma transação,
+core/history/data/HistoryErasure; moedas/XP/nível intactos, títulos do razão ficam vazios ("Tarefa/Hábito apagado").
+Sem mudança de schema (7). Verificação: specs/022-statistics-history/verification.md; 210 JVM; instrumentados
+não executados.
 <!-- SPECKIT END -->
