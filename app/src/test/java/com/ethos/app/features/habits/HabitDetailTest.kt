@@ -67,7 +67,7 @@ class HabitDetailTest {
         advanceUntilIdle()
         val unmarked = habitDetailModel(vm.state.value, ID)!!
         assertEquals(HabitDayMark.OPEN, unmarked.week.single { it.date == today.minusDays(1) }.mark)
-        // The "Prática de hoje" feedback is only for today; past days show their change in the strip.
+        // The "Feito hoje" feedback is only for today; past days show their change in the strip.
         assertNull(vm.state.value.lastPractice)
 
         vm.setPractice(ID, today, done = true)

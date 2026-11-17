@@ -249,7 +249,8 @@ private data class TaskIconActions(
 @Composable
 private fun TaskActionIcons(open: Boolean, busy: Boolean, actions: TaskIconActions) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (open) DetailIconAction(R.drawable.ic_close, R.string.not_done, !busy, actions.notDone)
+        if (open) DetailIconAction(R.drawable.ic_close, R.string.not_done, !busy, actions.notDone,
+            spoken = R.string.not_done_spoken)
         DetailIconAction(R.drawable.ic_edit, R.string.edit, !busy, actions.edit)
         DetailIconAction(R.drawable.ic_notification_reminder, R.string.reminders, !busy && open, actions.reminders)
         DetailIconAction(R.drawable.ic_format_list_bulleted, R.string.choose_list, !busy && open, actions.list)

@@ -110,7 +110,8 @@
     <string name="this_and_future">Todas</string>
     <string name="review_reschedule">O prazo já passou. Mudar a data registra o prazo perdido, sem penalidade.</string>
     <string name="confirm_review">Entendi, registrar o prazo perdido</string>
-    <string name="not_done">Não será feita</string>
+    <string name="not_done">Não farei</string>
+    <string name="not_done_spoken">Não será feita</string>
     <plurals name="unchecked_confirm">
         <item quantity="one">Resta %1$d item. Concluir mesmo assim?</item>
         <item quantity="other">Restam %1$d itens. Concluir mesmo assim?</item>
@@ -609,19 +610,19 @@
     <string name="task_quick_uncomplete">Desmarcar %1$s</string>
     <string name="task_resolved_open">Abrir %1$s</string>
     <string name="task_repeats">Tarefa recorrente</string>
-    <string name="habit_quick_record">Marcar</string>
+    <string name="habit_quick_record">Feito</string>
     <string name="habit_quick_occurrence">Recaída</string>
     <string name="habit_quick_done">✓ Feito hoje</string>
-    <string name="habit_quick_unmark_description">Desmarcar prática de hoje: %1$s</string>
-    <string name="habit_marked_today">Prática de hoje marcada.</string>
-    <string name="habit_unmarked_today">Prática de hoje desmarcada.</string>
+    <string name="habit_quick_unmark_description">Desfazer %1$s de hoje</string>
+    <string name="habit_marked_today">Feito hoje.</string>
+    <string name="habit_unmarked_today">Registro de hoje desfeito.</string>
     <string name="habit_undo_quick">Desfazer</string>
     <string name="habit_feedback_close">Fechar</string>
     <plurals name="habit_today_occurrences">
         <item quantity="one">Hoje: %1$d ocorrência</item>
         <item quantity="other">Hoje: %1$d ocorrências</item>
     </plurals>
-    <string name="habit_quick_record_description">Marcar prática de hoje: %1$s</string>
+    <string name="habit_quick_record_description">Marcar %1$s como feito hoje</string>
     <string name="habit_quick_occurrence_description">Registrar recaída de hoje: %1$s</string>
     <string name="habit_week_description">Semana atual: %1$d de 7 dias com registro</string>
     <!-- Habit detail popup (spec 023) -->
@@ -639,8 +640,8 @@
     <string name="habit_freq_limit_month">Até %1$d por mês</string>
     <string name="habit_detail_stats">Sequência: %1$d · recorde %2$d · %3$d%% de constância</string>
     <string name="habit_detail_stats_no_rate">Sequência: %1$d · recorde %2$d</string>
-    <string name="habit_week_hint">Toque num dia aberto para marcar ou desmarcar. Dias esmaecidos já fecharam.</string>
-    <string name="habit_week_hint_breaking">Toque num dia aberto para corrigir quantas vezes aconteceu. Dias esmaecidos já fecharam.</string>
+    <string name="habit_week_hint">Toque num dia para corrigir. Os dias em cinza já passaram do prazo de correção.</string>
+    <string name="habit_week_hint_breaking">Toque num dia para corrigir quantas vezes aconteceu. Os dias em cinza já passaram do prazo de correção.</string>
     <string name="habit_day_clean">%1$s, sem recaída</string>
     <plurals name="habit_day_count">
         <item quantity="one">%1$s, %2$d registro</item>
@@ -655,9 +656,9 @@
     <string name="habit_progress_limit_day">Hoje: %1$d de %2$d permitidos</string>
     <string name="habit_progress_limit_week">Esta semana: %1$d de %2$d permitidos</string>
     <string name="habit_progress_limit_month">Este mês: %1$d de %2$d permitidos</string>
-    <string name="habit_mark_today">Marcar hoje</string>
+    <string name="habit_mark_today">Feito</string>
     <string name="habit_done_today">Feito hoje</string>
-    <string name="habit_unmark">Desmarcar</string>
+    <string name="habit_unmark">Desfazer</string>
     <string name="habit_register_relapse">Registrar recaída</string>
     <string name="habit_register_use">Registrar uso</string>
     <plurals name="habit_today_relapses">

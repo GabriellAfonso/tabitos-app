@@ -44,9 +44,9 @@ class HabitsContentTest {
         compose.onNodeWithText("Salvar").performClick()
         compose.waitUntil(15_000) { repo.snapshot.value.habits.size == 1 }
         compose.onNodeWithText("Ler páginas").performScrollTo().performClick()
-        compose.onNodeWithText("Marcar hoje").performScrollTo().performClick()
+        compose.onNodeWithText("Feito").performScrollTo().performClick()
         compose.waitUntil(15_000) { repo.snapshot.value.records.size == 1 }
-        compose.onNodeWithText("Desmarcar").performScrollTo().performClick()
+        compose.onAllNodesWithText("Desfazer").onFirst().performScrollTo().performClick()
         compose.waitUntil(15_000) { repo.snapshot.value.records.single().deleted }
         assertEquals(1, repo.snapshot.value.audits.count { it.kind == "DELETE_RECORD" })
     }
@@ -76,9 +76,9 @@ class HabitsContentTest {
                 LazyColumn { habitItems(state, HabitPage.TODAY, null, vm::detail, vm::retry, vm::quickRecord) }
             } }
         }
-        compose.onNodeWithText("Marcar").performClick()
+        compose.onNodeWithText("Feito").performClick()
         compose.onNodeWithText("✓ Feito hoje").assertExists().performClick()
-        compose.onNodeWithText("Marcar").assertExists()
+        compose.onNodeWithText("Feito").assertExists()
         compose.onNodeWithText("Ler hoje").assertExists()
         compose.onAllNodes(hasText("Dias distintos:", substring = true)).assertCountEquals(0)
         compose.onAllNodes(hasContentDescription("Semana atual:", substring = true)).assertCountEquals(0)

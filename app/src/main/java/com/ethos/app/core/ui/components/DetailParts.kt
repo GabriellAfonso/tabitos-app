@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -35,25 +36,43 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ethos.app.R
 import com.ethos.app.core.ui.theme.EthosTheme
 
 // Pieces shared by the task and habit detail popups (specs 021 and 023).
 
-/** Icon with its label under it, one of the equal-width actions at the bottom of a detail popup. */
+/**
+ * Icon with its label under it, one of the equal-width actions at the bottom of a detail popup.
+ * The label stays on one line and shrinks to fit, because narrow screens and large font scales would otherwise
+ * break words in the middle ("Lembrete/s"); [spoken] lets TalkBack read a fuller name than the short label.
+ */
 @Composable
 fun RowScope.DetailIconAction(
     @DrawableRes icon: Int, @StringRes label: Int, enabled: Boolean, onClick: () -> Unit,
+    @StringRes spoken: Int? = null,
 ) {
-    val color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    val color = if (enabled) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.onSurface.copy(alpha = DisabledContentAlpha)
+    val description = spoken?.let { stringResource(it) }
+    val labelStyle = MaterialTheme.typography.labelSmall
     Column(Modifier.weight(1f).heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp))
-        .clickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(vertical = 6.dp),
+        .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+        .semantics(mergeDescendants = true) { description?.let { contentDescription = it } }
+        .padding(vertical = 6.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Icon(painterResource(icon), null, Modifier.size(22.dp), tint = color)
-        Text(stringResource(label), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center,
-            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else color)
+        Text(stringResource(label), style = labelStyle, textAlign = TextAlign.Center,
+            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else color,
+            maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis,
+            autoSize = TextAutoSize.StepBased(minFontSize = MinActionLabelSize, maxFontSize = labelStyle.fontSize,
+                stepSize = ActionLabelSizeStep))
     }
 }
+
+private const val DisabledContentAlpha = 0.38f
+private val MinActionLabelSize = 9.sp
+private val ActionLabelSizeStep = 0.5.sp
 
 /** Small icon and text of a popup summary line; [spoken] replaces what TalkBack reads when the text is terse. */
 @Composable
@@ -75,7 +94,8 @@ fun ExpandableDescription(text: String) {
     Column {
         Text(text, style = MaterialTheme.typography.bodyMedium, maxLines = if (expanded) Int.MAX_VALUE else 2,
             overflow = TextOverflow.Ellipsis)
-        if (!expanded) TextButton({ expanded = true }, contentPadding = ButtonDefaults.TextButtonWithIconContentPadding) {
+        if (!expanded) TextButton({ expanded = true },
+            contentPadding = ButtonDefaults.TextButtonWithIconContentPadding) {
             Text(stringResource(R.string.task_description_more))
         }
     }
@@ -89,8 +109,8 @@ private fun DetailPartsPreview() {
             DetailSummaryItem(R.drawable.ic_repeat, "Todo dia")
             ExpandableDescription("Antes de dormir, longe do celular. Vale qualquer livro, menos os de trabalho.")
             Row(Modifier.fillMaxWidth()) {
-                DetailIconAction(R.drawable.ic_edit, R.string.edit, enabled = true) {}
-                DetailIconAction(R.drawable.ic_delete, R.string.delete, enabled = false) {}
+                DetailIconAction(R.drawable.ic_edit, R.string.edit, enabled = true, onClick = {})
+                DetailIconAction(R.drawable.ic_delete, R.string.delete, enabled = false, onClick = {})
             }
         }
     }
