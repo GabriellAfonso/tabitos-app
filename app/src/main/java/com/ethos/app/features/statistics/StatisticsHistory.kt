@@ -24,17 +24,19 @@ enum class HistoryKind {
 
 private val taskKinds = setOf(HistoryKind.TASK_COMPLETED, HistoryKind.TASK_NOT_DONE, HistoryKind.TASK_MISSED,
     HistoryKind.TASK_POSTPONED, HistoryKind.TASK_POSTPONE_UNDONE, HistoryKind.TASK_UNDONE)
-private val habitKinds = setOf(HistoryKind.HABIT_DONE, HistoryKind.HABIT_OCCURRENCE, HistoryKind.HABIT_DAY_OK,
-    HistoryKind.HABIT_DAY_OVER)
+/** Results of avoid/limit habits; practice habits only produce [HistoryKind.HABIT_DONE]. */
+private val badHabitKinds = setOf(HistoryKind.HABIT_OCCURRENCE, HistoryKind.HABIT_DAY_OK, HistoryKind.HABIT_DAY_OVER)
 
 val HistoryKind.isTask: Boolean get() = this in taskKinds
-val HistoryKind.isHabit: Boolean get() = this in habitKinds
+val HistoryKind.isBadHabit: Boolean get() = this in badHabitKinds
 
-enum class HistoryFilter { ALL, TASKS, HABITS, TIME, COINS }
+/** Type filters of the page (spec 024): [HABITS] are good habits, [BAD_HABITS] avoid/limit habits. */
+enum class HistoryFilter { ALL, TASKS, HABITS, BAD_HABITS, TIME, COINS }
 
 /** What a history item is about; [exists] is false once the task/habit was deleted (spec 022). */
 sealed interface HistorySubject {
-    data class Task(val occurrenceId: String, val exists: Boolean) : HistorySubject
+    /** [seriesId] groups the occurrences of a repeating task (spec 024). */
+    data class Task(val occurrenceId: String, val seriesId: String, val exists: Boolean) : HistorySubject
     data class Habit(val habitId: String, val exists: Boolean) : HistorySubject
     data class Reward(val rewardId: String?) : HistorySubject
     /** A coin entry whose task/habit history was erased: its title was cleared on purpose. */
@@ -90,7 +92,8 @@ private val newestFirst = compareByDescending<HistoryItem> { it.day }.thenByDesc
 private fun HistoryItem.matches(filter: HistoryFilter) = when (filter) {
     HistoryFilter.ALL -> true
     HistoryFilter.TASKS -> kind.isTask
-    HistoryFilter.HABITS -> kind.isHabit
+    HistoryFilter.HABITS -> kind == HistoryKind.HABIT_DONE
+    HistoryFilter.BAD_HABITS -> kind.isBadHabit
     HistoryFilter.TIME -> kind == HistoryKind.TIMER
     HistoryFilter.COINS -> coins != null || kind == HistoryKind.COINS
 }
@@ -125,7 +128,7 @@ private fun taskItems(tasks: TaskSnapshot, matcher: LedgerMatcher, zone: ZoneId)
     return tasks.history.mapNotNull { audit ->
         val kind = shownTaskKinds[audit.kind] ?: return@mapNotNull null
         val occurrence = occurrences[audit.occurrenceId] ?: return@mapNotNull null
-        val subject = HistorySubject.Task(occurrence.id, occurrence.status != TaskStatus.DELETED)
+        val subject = HistorySubject.Task(occurrence.id, occurrence.taskId, occurrence.status != TaskStatus.DELETED)
         HistoryItem("audit:${audit.id}", audit.recordedAt, localDay(audit.recordedAt, zone), kind, subject,
             occurrence.fields.title, from = audit.from(), to = audit.to(),
             adjustment = kind == HistoryKind.TASK_POSTPONE_UNDONE,
@@ -178,8 +181,10 @@ private fun timerItems(sources: HistorySources): List<HistoryItem> {
     return sources.credited.map { credited ->
         val session = credited.session
         val subject = when (session.kind) {
-            TimerKind.TASK -> HistorySubject.Task(session.sourceId,
-                occurrences[session.sourceId]?.status?.let { it != TaskStatus.DELETED } == true)
+            TimerKind.TASK -> occurrences[session.sourceId].let { occurrence ->
+                HistorySubject.Task(session.sourceId, occurrence?.taskId.orEmpty(),
+                    occurrence?.status?.let { it != TaskStatus.DELETED } == true)
+            }
             else -> HistorySubject.Habit(session.sourceId,
                 habits[session.sourceId]?.status?.let { it != HabitStatus.EXCLUDED } == true)
         }
@@ -211,7 +216,9 @@ private fun ledgerSubject(entry: LedgerEntry, sources: HistorySources): HistoryS
         entry.title.isBlank() -> HistorySubject.Erased(task = key.startsWith(TASK_KEY))
         key.startsWith(TASK_KEY) -> {
             val id = key.removePrefix(TASK_KEY).substringBeforeLast(':')
-            HistorySubject.Task(id, sources.tasks.occurrences.any { it.id == id && it.status != TaskStatus.DELETED })
+            val occurrence = sources.tasks.occurrences.firstOrNull { it.id == id }
+            HistorySubject.Task(id, occurrence?.taskId.orEmpty(),
+                occurrence?.status?.let { it != TaskStatus.DELETED } == true)
         }
         habitId != null -> HistorySubject.Habit(habitId,
             sources.habits.habits.any { it.id == habitId && it.status != HabitStatus.EXCLUDED })

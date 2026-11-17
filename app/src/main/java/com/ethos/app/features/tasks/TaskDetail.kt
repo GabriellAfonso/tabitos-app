@@ -65,6 +65,7 @@ import com.ethos.app.core.tasks.domain.TaskFields
 import com.ethos.app.core.tasks.domain.TaskList
 import com.ethos.app.core.tasks.domain.TaskOccurrence
 import com.ethos.app.core.tasks.domain.TaskStatus
+import com.ethos.app.core.ui.components.DetailHistoryLink
 import com.ethos.app.core.ui.components.DetailIconAction
 import com.ethos.app.core.ui.components.DetailSummaryItem
 import com.ethos.app.core.ui.components.ExpandableDescription
@@ -88,6 +89,8 @@ data class TaskDetailActions(
     val openReminders: () -> Unit,
     val openTimer: () -> Unit,
     val postpone: (LocalDate) -> Unit,
+    /** Opens Estatísticas filtered by the task series (spec 024); null hides the link. */
+    val history: (() -> Unit)? = null,
 )
 
 /**
@@ -120,6 +123,7 @@ fun TaskDetail(
                 else ResolvedStrip(o, today, busy, actions.undoResult)
                 TaskActionIcons(model.isOpen, busy, TaskIconActions(actions.notDone, actions.edit,
                     actions.openReminders, { choosingList = true }, actions.delete))
+                actions.history?.let { DetailHistoryLink(!busy, it) }
             }
         })
     if (postponing) PostponeSheet(model, today, busy,

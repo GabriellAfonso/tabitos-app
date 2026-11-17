@@ -280,8 +280,9 @@ fun TaskRow(
     }
 }
 
+/** [openHistory] receives the task series id; without it the popup has no "Ver histórico" link. */
 @Composable
-fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
+fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel, openHistory: ((String) -> Unit)? = null) {
     state.financialPreview?.let { preview ->
         FinancialConfirmation(preview, state.busy,
             { viewModel.confirmFinancial(true) }, { viewModel.confirmFinancial(false) })
@@ -320,6 +321,7 @@ fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel) {
                 openReminders = { openReminders(ReminderKind.TASK, detail.id) },
                 openTimer = { openTimer(TimerKind.TASK, detail.id) },
                 postpone = { viewModel.postpone(detail, it) },
+                history = openHistory?.let { open -> { open(detail.taskId) } },
             ))
     }
     if (state.timedConfirmation != null) AlertDialog(

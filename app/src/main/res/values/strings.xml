@@ -771,6 +771,10 @@
     <string name="statistics_filter_all">Tudo</string>
     <string name="statistics_filter_tasks">Tarefas</string>
     <string name="statistics_filter_habits">Hábitos</string>
+    <string name="statistics_filter_bad_habits">Maus hábitos</string>
+    <string name="statistics_clear_item">Mostrando só %1$s. Tocar para ver todos.</string>
+    <string name="statistics_option_deleted">%1$s (excluído)</string>
+    <string name="view_history">Ver histórico</string>
     <string name="statistics_filter_time">Tempo</string>
     <string name="statistics_filter_coins">Moedas</string>
     <string name="statistics_history_empty">Nada registrado neste período.</string>

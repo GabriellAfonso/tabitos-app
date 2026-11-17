@@ -41,13 +41,19 @@ import kotlinx.coroutines.launch
 /** Everything the page shows for one period; computed off the main thread from the shared snapshots. */
 data class StatisticsContentState(
     val period: StatisticsPeriod, val label: PeriodLabel, val hasPrevious: Boolean, val hasNext: Boolean,
-    val tasks: TaskSummary, val habits: HabitSummary, val time: TimeSummary, val coins: CoinSummary?,
+    /** Resumo cards; null when the chosen filter hides the card (spec 024). */
+    val tasks: TaskSummary?, val habits: HabitSummary?, val time: TimeSummary?, val coins: CoinSummary?,
     val filters: List<HistoryFilter>, val history: List<HistoryRow>, val hasMore: Boolean,
+    /** Filter and item in force after checking them against the data; both tabs use them. */
+    val filter: HistoryFilter = HistoryFilter.ALL, val item: StatisticsItem? = null,
+    /** Item the page is focused on, shown as a removable chip; null shows the whole type. */
+    val focused: FocusedItem? = null,
 )
 
 data class StatisticsUiState(
     val loading: Boolean = true, val error: Boolean = false, val content: StatisticsContentState? = null,
-    val filter: HistoryFilter = HistoryFilter.ALL, val gameMode: Boolean = true,
+    val filter: HistoryFilter = HistoryFilter.ALL, val item: StatisticsItem? = null,
+    val tab: StatisticsTab = StatisticsTab.SUMMARY, val gameMode: Boolean = true,
     /** Deleted task/habit whose dialog is open; [confirmingErase] is the irreversible confirmation step. */
     val deleted: HistorySubject? = null, val confirmingErase: Boolean = false,
     val erasing: Boolean = false, val eraseFailed: Boolean = false,
@@ -57,8 +63,11 @@ private data class Sources(
     val tasks: TaskSnapshot, val habits: HabitSnapshot, val timers: TimerSnapshot, val rewards: RewardSnapshot,
 )
 
+/** What the person chose; [item] wins over [filter] when both are set (spec 024). */
+private data class Selection(val filter: HistoryFilter = HistoryFilter.ALL, val item: StatisticsItem? = null)
+
 private data class Controls(
-    val period: StatisticsPeriod?, val filter: HistoryFilter, val limit: Int, val gameMode: Boolean,
+    val period: StatisticsPeriod?, val selection: Selection, val limit: Int, val gameMode: Boolean,
     val today: LocalDate,
 )
 
@@ -85,7 +94,8 @@ class StatisticsViewModel @Inject constructor(
     private val rewards: RewardRepository, private val gameMode: GameModeSource, private val clock: TaskClock,
     private val timerClock: TimerClock, private val store: StatisticsPeriodStore,
 ) : ViewModel() {
-    private val filter = MutableStateFlow(HistoryFilter.ALL)
+    private val selection = MutableStateFlow(Selection())
+    private val tab = MutableStateFlow(StatisticsTab.SUMMARY)
     private val limit = MutableStateFlow(HISTORY_PAGE_SIZE)
     private val retries = MutableStateFlow(0)
     private val erase = MutableStateFlow(EraseState())
@@ -95,22 +105,22 @@ class StatisticsViewModel @Inject constructor(
 
     private val computation: Flow<Computation> = retries.flatMapLatest {
         val sources = combine(tasks.observe(), habits.observe(), timers.observe(), rewards.observe(), ::Sources)
-        val controls = combine(store.period, filter, limit, gameMode.enabled, days(), ::Controls)
+        val controls = combine(store.period, selection, limit, gameMode.enabled, days(), ::Controls)
         combine<Sources, Controls, Computation>(sources, controls) { s, c ->
             Computation.Done(c, compute(s, c, timerClock.zone()))
         }
             .conflate().onStart { emit(Computation.Loading) }.catch { emit(Computation.Failed) }
     }.flowOn(Dispatchers.Default)
 
-    val state: StateFlow<StatisticsUiState> = combine(computation, erase) { result, dialog ->
+    val state: StateFlow<StatisticsUiState> = combine(computation, erase, tab) { result, dialog, shownTab ->
         val base = StatisticsUiState(deleted = dialog.deleted, confirmingErase = dialog.confirming,
-            erasing = dialog.erasing, eraseFailed = dialog.failed)
+            erasing = dialog.erasing, eraseFailed = dialog.failed, tab = shownTab)
         when (result) {
             Computation.Loading -> base
             Computation.Failed -> base.copy(loading = false, error = true)
             is Computation.Done ->
                 base.copy(loading = false, content = result.content, gameMode = result.controls.gameMode,
-                    filter = result.controls.filter.takeIf { it in result.content.filters } ?: HistoryFilter.ALL)
+                    filter = result.content.filter, item = result.content.item)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), StatisticsUiState())
 
@@ -125,9 +135,42 @@ class StatisticsViewModel @Inject constructor(
         store.choose(period)
     }
 
+    /** Changing the type always goes back to "Todos" of that type. */
     fun selectFilter(value: HistoryFilter) {
         limit.value = HISTORY_PAGE_SIZE
-        filter.value = value
+        selection.value = Selection(filter = value)
+    }
+
+    fun selectItem(item: StatisticsItem?) {
+        limit.value = HISTORY_PAGE_SIZE
+        selection.update { it.copy(item = item) }
+    }
+
+    fun selectTab(value: StatisticsTab) { tab.value = value }
+
+    /** "Ver histórico" of a deleted item's entry: its whole history instead of the erase dialog. */
+    fun viewDeletedHistory() {
+        val item = when (val subject = erase.value.deleted) {
+            is HistorySubject.Task -> StatisticsItem.TaskSeries(subject.seriesId)
+            is HistorySubject.Habit -> StatisticsItem.Habit(subject.habitId)
+            else -> return
+        }
+        erase.value = EraseState()
+        focus(item)
+    }
+
+    /** "Ver histórico" from a task or habit popup: Histórico of that item (spec 024). */
+    fun focus(item: StatisticsItem) {
+        limit.value = HISTORY_PAGE_SIZE
+        selection.value = Selection(item = item)
+        tab.value = StatisticsTab.HISTORY
+    }
+
+    /** Filter, item and tab are only kept while the page is open (spec 024). */
+    fun leave() {
+        limit.value = HISTORY_PAGE_SIZE
+        selection.value = Selection()
+        tab.value = StatisticsTab.SUMMARY
     }
 
     fun showMore() { limit.update { it + HISTORY_PAGE_SIZE } }
@@ -168,20 +211,31 @@ class StatisticsViewModel @Inject constructor(
             val firstDay = firstDataDay(s.tasks, s.habits, s.timers, wallet, zone, today)
             val range = period.range(firstDay, today)
             val credited = creditedTime(s.timers, zone)
-            val filter = c.filter.takeIf { c.gameMode || it != HistoryFilter.COINS } ?: HistoryFilter.ALL
-            val items = historyItems(HistorySources(s.tasks, s.habits, credited, wallet.entries, s.rewards.purchases),
-                range, today, zone, c.gameMode, filter)
+            val wanted = c.selection.item?.let { filterFor(it, s.habits, today) } ?: c.selection.filter
+            val filter = wanted.takeIf { c.gameMode || it != HistoryFilter.COINS } ?: HistoryFilter.ALL
+            // An item whose history was erased meanwhile no longer exists; the page falls back to its type.
+            val focused = c.selection.item?.let { focusedItem(it, s.tasks, s.habits) }
+            val item = focused?.item
+            val cards = summaryCards(filter, c.gameMode)
+            val sources = HistorySources(s.tasks, s.habits, credited, wallet.entries, s.rewards.purchases)
+            val items = if (item == null) historyItems(sources, range, today, zone, c.gameMode, filter)
+                else historyItems(sources, range, today, zone, c.gameMode, HistoryFilter.ALL)
+                    .filter { it.isAbout(item) }
             val longPeriod = period.kind == PeriodKind.YEAR || period.kind == PeriodKind.ALL
             return StatisticsContentState(
                 period = period, label = period.label(firstDay, today),
                 hasPrevious = period.hasPrevious(firstDay, today), hasNext = period.hasNext(firstDay, today),
-                tasks = taskSummary(s.tasks, range, period.bucketUnit(firstDay, today), today, zone),
-                habits = habitSummary(s.habits, range, today),
-                time = timeSummary(credited, range),
-                coins = if (c.gameMode) coinSummary(wallet, range, zone) else null,
+                tasks = if (cards.tasks) taskSummary(scopedTasks(s.tasks, item), range,
+                    period.bucketUnit(firstDay, today), today, zone) else null,
+                habits = if (cards.habits) habitSummary(s.habits, range, today,
+                    habitsInScope(s.habits, filter, item, today)) else null,
+                time = if (cards.time) timeSummary(scopedTime(credited, filter, item, s.tasks, s.habits, today),
+                    range) else null,
+                coins = if (cards.coins) coinSummary(wallet, range, zone) else null,
                 filters = historyFilters(c.gameMode),
                 history = historyRows(items.take(c.limit), longPeriod),
                 hasMore = items.size > c.limit,
+                filter = filter, item = item, focused = focused,
             )
         }
     }

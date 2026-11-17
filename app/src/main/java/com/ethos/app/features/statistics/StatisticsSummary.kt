@@ -2,6 +2,7 @@ package com.ethos.app.features.statistics
 
 import com.ethos.app.core.accounting.domain.AccountingSnapshot
 import com.ethos.app.core.accounting.domain.Progress
+import com.ethos.app.core.habits.domain.Habit
 import com.ethos.app.core.habits.domain.HabitRules
 import com.ethos.app.core.habits.domain.HabitSnapshot
 import com.ethos.app.core.habits.domain.HabitStatus
@@ -98,9 +99,15 @@ private fun bucketStarts(range: ClosedRange<LocalDate>, unit: BucketUnit): List<
         }
     }.takeWhile { it <= range.endInclusive }.toList()
 
-/** Constancy and streak use the habit card's own rules, so the two screens never disagree (spec 014). */
-fun habitSummary(habits: HabitSnapshot, range: ClosedRange<LocalDate>, today: LocalDate): HabitSummary {
-    val items = habits.habits.filter { it.status != HabitStatus.EXCLUDED }.sortedBy { it.name.lowercase() }.map { h ->
+/**
+ * Constancy and streak use the habit card's own rules, so the two screens never disagree (spec 014). [included]
+ * narrows the list to the filtered type or habit (spec 024); by default excluded habits stay out.
+ */
+fun habitSummary(
+    habits: HabitSnapshot, range: ClosedRange<LocalDate>, today: LocalDate,
+    included: (Habit) -> Boolean = { it.status != HabitStatus.EXCLUDED },
+): HabitSummary {
+    val items = habits.habits.filter(included).sortedBy { it.name.lowercase() }.map { h ->
         val streak = HabitRules.streak(habits, h.id, today)
         val type = HabitRules.currentRule(habits, h.id, today)?.type ?: HabitType.PRACTICE
         HabitStat(h.id, h.name, h.color, h.icon, bad = type != HabitType.PRACTICE,

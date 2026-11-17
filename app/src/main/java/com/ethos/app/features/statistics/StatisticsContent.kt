@@ -33,6 +33,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -90,8 +91,10 @@ data class StatisticsNavigation(
 
 data class StatisticsActions(
     val selectKind: (PeriodKind) -> Unit, val previous: () -> Unit, val next: () -> Unit,
-    val selectFilter: (HistoryFilter) -> Unit, val showMore: () -> Unit, val retry: () -> Unit,
+    val selectFilter: (HistoryFilter) -> Unit, val selectItem: (StatisticsItem?) -> Unit,
+    val selectTab: (StatisticsTab) -> Unit, val showMore: () -> Unit, val retry: () -> Unit,
     val openDeleted: (HistorySubject?) -> Unit, val askEraseConfirmation: () -> Unit, val confirmErase: () -> Unit,
+    val viewDeletedHistory: () -> Unit,
     val navigation: StatisticsNavigation,
 )
 
@@ -107,8 +110,8 @@ private val MIN_BAR = 2.dp
 
 @Composable
 fun StatisticsContent(state: StatisticsUiState, today: LocalDate, zone: ZoneId, actions: StatisticsActions) {
-    // Always opens on Resumo (spec 022): the tab is not kept when leaving the page.
-    var tab by remember { mutableStateOf(StatisticsTab.SUMMARY) }
+    // Opens on Resumo (spec 022) unless a popup asked for an item's Histórico (spec 024).
+    val tab = state.tab
     val content = state.content
     Column(Modifier.fillMaxSize()) {
         when {
@@ -118,14 +121,15 @@ fun StatisticsContent(state: StatisticsUiState, today: LocalDate, zone: ZoneId, 
             }
             else -> {
                 PeriodRow(content, today, actions)
-                PrimaryTabRow(selectedTabIndex = tab.ordinal) {
+                FilterRow(content, actions)
+                PrimaryTabRow(selectedTabIndex = StatisticsTab.entries.indexOf(tab)) {
                     StatisticsTab.entries.forEach { entry ->
-                        Tab(selected = tab == entry, onClick = { tab = entry },
+                        Tab(selected = tab == entry, onClick = { actions.selectTab(entry) },
                             text = { Text(stringResource(entry.title)) })
                     }
                 }
                 when (tab) {
-                    StatisticsTab.SUMMARY -> SummaryTab(content, today)
+                    StatisticsTab.SUMMARY -> SummaryTab(content, today, actions)
                     StatisticsTab.HISTORY -> HistoryTab(state, content, today, zone, actions)
                 }
             }
@@ -203,12 +207,12 @@ private fun periodText(label: PeriodLabel, today: LocalDate): String = when (lab
 }
 
 @Composable
-private fun SummaryTab(content: StatisticsContentState, today: LocalDate) {
+private fun SummaryTab(content: StatisticsContentState, today: LocalDate, actions: StatisticsActions) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        TasksCard(content.tasks, today)
-        HabitsCard(content.habits)
-        TimeCard(content.time)
+        content.tasks?.let { TasksCard(it, today) }
+        content.habits?.let { summary -> HabitsCard(summary) { actions.selectItem(StatisticsItem.Habit(it)) } }
+        content.time?.let { TimeCard(it) }
         content.coins?.let { CoinsCard(it) }
     }
 }
@@ -295,24 +299,26 @@ private fun bucketText(bucket: Bucket, today: LocalDate): String = when (bucket.
     BucketUnit.YEAR -> bucket.start.year.toString()
 }
 
+/** Tapping a habit focuses the page on it (spec 024). */
 @Composable
-private fun HabitsCard(summary: HabitSummary) = SummaryCard(R.string.statistics_habits) {
+private fun HabitsCard(summary: HabitSummary, focus: (String) -> Unit) = SummaryCard(R.string.statistics_habits) {
     if (summary.items.isEmpty()) {
         Text(stringResource(R.string.statistics_habits_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
         return@SummaryCard
     }
     Text(stringResource(R.string.statistics_habits_overall, percentText(summary.overallPercent)),
         style = MaterialTheme.typography.bodyLarge)
-    summary.items.forEach { HabitRow(it) }
+    summary.items.forEach { habit -> HabitRow(habit) { focus(habit.id) } }
 }
 
 @Composable
-private fun HabitRow(habit: HabitStat) {
+private fun HabitRow(habit: HabitStat, onClick: () -> Unit) {
     val rate = percentText(habit.ratePercent)
     val description = stringResource(R.string.statistics_habit_description, habit.name, rate, habit.streak)
     // Bad habits read in red everywhere (spec 020).
     val tone = if (habit.bad) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-    Row(Modifier.fillMaxWidth().heightIn(min = 40.dp).clearAndSetSemantics { contentDescription = description },
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick)
+        .clearAndSetSemantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Box(Modifier.size(10.dp).clip(CircleShape).background(itemColors.getOrElse(habit.color) { Color.Gray }))
         Text(habit.name, Modifier.weight(1f), color = tone, maxLines = 2)
@@ -372,9 +378,37 @@ private fun CoinTile(amount: Long, @StringRes label: Int, modifier: Modifier) {
 
 private val filterTitles = mapOf(
     HistoryFilter.ALL to R.string.statistics_filter_all, HistoryFilter.TASKS to R.string.statistics_filter_tasks,
-    HistoryFilter.HABITS to R.string.statistics_filter_habits, HistoryFilter.TIME to R.string.statistics_filter_time,
+    HistoryFilter.HABITS to R.string.statistics_filter_habits,
+    HistoryFilter.BAD_HABITS to R.string.statistics_filter_bad_habits,
+    HistoryFilter.TIME to R.string.statistics_filter_time,
     HistoryFilter.COINS to R.string.statistics_filter_coins,
 )
+
+/** Type chips shared by both tabs, then the focused item's chip when there is one (spec 024). */
+@Composable
+private fun FilterRow(content: StatisticsContentState, actions: StatisticsActions) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            content.filters.forEach { filter ->
+                FilterChip(content.filter == filter, { actions.selectFilter(filter) },
+                    label = { Text(stringResource(filterTitles.getValue(filter))) })
+            }
+        }
+        content.focused?.let { FocusedChip(it) { actions.selectItem(null) } }
+    }
+}
+
+/** The item the page is focused on; ✕ goes back to its whole type (spec 024). */
+@Composable
+private fun FocusedChip(focused: FocusedItem, clear: () -> Unit) {
+    val title = if (focused.deleted) stringResource(R.string.statistics_option_deleted, focused.title)
+        else focused.title
+    val description = stringResource(R.string.statistics_clear_item, title)
+    InputChip(selected = true, onClick = clear, label = { Text(title, maxLines = 1) },
+        modifier = Modifier.semantics { contentDescription = description },
+        trailingIcon = { Icon(painterResource(R.drawable.ic_close), contentDescription = null, Modifier.size(18.dp)) })
+}
 
 @Composable
 private fun HistoryTab(
@@ -382,15 +416,6 @@ private fun HistoryTab(
     actions: StatisticsActions,
 ) {
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
-        item(key = "filters") {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                content.filters.forEach { filter ->
-                    FilterChip(state.filter == filter, { actions.selectFilter(filter) },
-                        label = { Text(stringResource(filterTitles.getValue(filter))) })
-                }
-            }
-        }
         if (content.history.isEmpty()) {
             item(key = "empty") {
                 Text(stringResource(R.string.statistics_history_empty), Modifier.padding(vertical = 16.dp),
@@ -527,7 +552,10 @@ private fun DeletedDialogs(state: StatisticsUiState, actions: StatisticsActions)
         text = { Text(stringResource(R.string.statistics_deleted_body)) },
         confirmButton = { TextButton(actions.askEraseConfirmation) {
             Text(stringResource(R.string.statistics_erase)) } },
-        dismissButton = { TextButton(close) { Text(stringResource(R.string.cancel)) } })
+        dismissButton = { Row {
+            TextButton(actions.viewDeletedHistory) { Text(stringResource(R.string.view_history)) }
+            TextButton(close) { Text(stringResource(R.string.cancel)) }
+        } })
     else AlertDialog(onDismissRequest = close,
         title = { Text(stringResource(R.string.statistics_erase_confirm_title)) },
         text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -546,9 +574,9 @@ private fun previewState(): StatisticsUiState {
     val buckets = (0L..6L).map { Bucket(monday.plusDays(it), BucketUnit.DAY, listOf(2, 3, 0, 1, 0, 0, 0)[it.toInt()],
         future = monday.plusDays(it) > previewToday) }
     val completed = HistoryItem("a", 0, previewToday, HistoryKind.TASK_COMPLETED,
-        HistorySubject.Task("t:1", exists = true), "Pagar a conta de luz", coins = 10, xp = 20)
+        HistorySubject.Task("t:1", "t", exists = true), "Pagar a conta de luz", coins = 10, xp = 20)
     val postponed = HistoryItem("b", 0, previewToday, HistoryKind.TASK_POSTPONED,
-        HistorySubject.Task("t:2", exists = false), "Ligar para o dentista", from = previewToday.minusDays(1),
+        HistorySubject.Task("t:2", "t2", exists = false), "Ligar para o dentista", from = previewToday.minusDays(1),
         to = previewToday.plusDays(2))
     return StatisticsUiState(loading = false, content = StatisticsContentState(
         period = StatisticsPeriod.current(PeriodKind.WEEK, previewToday), label = PeriodLabel.ThisWeek,
@@ -565,7 +593,7 @@ private fun previewState(): StatisticsUiState {
     ))
 }
 
-private val previewActions = StatisticsActions({}, {}, {}, {}, {}, {}, {}, {}, {},
+private val previewActions = StatisticsActions({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
     StatisticsNavigation({}, {}, {}))
 
 @Preview(showBackground = true, widthDp = 380, heightDp = 820)

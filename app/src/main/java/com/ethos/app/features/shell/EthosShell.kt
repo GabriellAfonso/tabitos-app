@@ -72,6 +72,9 @@ fun EthosShell(
     createActions: CreateActions,
     drawerLists: @Composable (lists: DrawerListActions) -> Unit,
     snackbar: @Composable () -> Unit = {},
+    /** Page asked for from outside the shell (a popup link); [onRequestHandled] clears it once navigated. */
+    requested: ShellDestination? = null,
+    onRequestHandled: () -> Unit = {},
     page: @Composable (destination: ShellDestination, navigate: (ShellDestination) -> Unit) -> Unit,
 ) {
     val navController = rememberNavController()
@@ -93,6 +96,7 @@ fun EthosShell(
         }
     }
     fun navigateFromDrawer(destination: ShellDestination) = scope.launch { drawer.close(); navigate(destination) }
+    LaunchedEffect(requested) { requested?.let { navigate(it); onRequestHandled() } }
     val leavesGameDestination = !gameMode && current.isGameOnly
     LaunchedEffect(leavesGameDestination) { if (leavesGameDestination) navigate(ShellDestination.TODAY) }
     ModalNavigationDrawer(drawerState = drawer, drawerContent = {

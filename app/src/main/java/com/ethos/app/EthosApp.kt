@@ -72,6 +72,7 @@ import com.ethos.app.features.settings.TimerAlarmSetting
 import com.ethos.app.features.shell.CreateActions
 import com.ethos.app.features.shell.EthosShell
 import com.ethos.app.features.shell.ShellDestination
+import com.ethos.app.features.statistics.StatisticsItem
 import com.ethos.app.features.statistics.StatisticsNavigation
 import com.ethos.app.features.statistics.StatisticsScreen
 import com.ethos.app.features.statistics.StatisticsViewModel
@@ -101,7 +102,7 @@ import com.ethos.app.features.trackers.TrackerUiState
 import com.ethos.app.features.trackers.TrackerViewModel
 import kotlinx.coroutines.CancellationException
 
-/** Requests that arrive through notification Intents; each is consumed once the needed state has loaded. */
+/** Requests from notification Intents and popup links; each is consumed once the needed state has loaded. */
 @Stable
 class AppRequests {
     /** Reminder deep link and a token that makes its handling idempotent across recreation. */
@@ -109,6 +110,8 @@ class AppRequests {
     /** Session id from a timer notification, resolved to its source after timers load. */
     var timerSession by mutableStateOf<String?>(null)
     var timer by mutableStateOf<Pair<TimerKind, String>?>(null)
+    /** Page asked for by a popup link, such as "Ver histórico" (spec 024); cleared once the shell navigates. */
+    var destination by mutableStateOf<ShellDestination?>(null)
 }
 
 /** Activity-scoped ViewModels: they are shared by several destinations, dialogs and notifications. */
@@ -185,8 +188,11 @@ fun EthosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
             LocalFinancialPrices provides financial.snapshot.prices.takeUnless { financial.loading || financial.error },
         ) {
             // Order matters: later dialogs stack above earlier ones.
-            HabitDialogs(habits, tasks.snapshot.activeLists, vm.habits)
-            AppShell(vm, app) {
+            HabitDialogs(habits, tasks.snapshot.activeLists, vm.habits) { habitId ->
+                vm.habits.detail(null)
+                openStatistics(vm, requests, StatisticsItem.Habit(habitId))
+            }
+            AppShell(vm, app, requests) {
                 SettingsContent(appearance, appearanceViewModel::select, appearanceViewModel::retry)
                 TimerAlarmSetting(appearance.timerAlarm, appearanceViewModel::setTimerAlarm)
             }
@@ -194,14 +200,25 @@ fun EthosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
             TimerDialogs(timers, vm.timers, { kind, id ->
                 if (kind == TimerKind.TASK) vm.tasks.detail(id) else vm.habits.detail(id)
             }, requestPermission)
-            TaskDialogs(tasks, vm.tasks)
+            TaskDialogs(tasks, vm.tasks) { taskId ->
+                vm.tasks.detail(null)
+                openStatistics(vm, requests, StatisticsItem.TaskSeries(taskId))
+            }
             ReminderDialogs(reminders, vm.reminders, requestPermission)
         }
     }
 }
 
+/** "Ver histórico" of a task series or habit: Estatísticas › Histórico filtered by it (spec 024). */
+private fun openStatistics(vm: AppViewModels, requests: AppRequests, item: StatisticsItem) {
+    vm.statistics.focus(item)
+    requests.destination = ShellDestination.STATISTICS
+}
+
 @Composable
-private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Composable () -> Unit) {
+private fun AppShell(
+    vm: AppViewModels, app: AppState, requests: AppRequests, appearanceSettings: @Composable () -> Unit,
+) {
     val tasks = app.tasks
     val habits = app.habits
     EthosShell(
@@ -232,6 +249,8 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
                 vm.tasks::dismissPostponed)
             else HabitPracticeFeedback(habits, vm.habits::undoPractice, vm.habits::dismissPracticeFeedback)
         },
+        requested = requests.destination,
+        onRequestHandled = { requests.destination = null },
     ) { destination, navigate ->
         when (destination) {
             ShellDestination.TODAY -> TaskDestination(vm, app, TaskPage.TODAY, navigate)

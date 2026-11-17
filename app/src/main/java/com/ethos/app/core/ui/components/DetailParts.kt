@@ -87,6 +87,15 @@ fun DetailSummaryItem(
     }
 }
 
+/** "Ver histórico ›" at the end of a detail popup: opens Estatísticas filtered by the item (spec 024). */
+@Composable
+fun DetailHistoryLink(enabled: Boolean, onClick: () -> Unit) {
+    TextButton(onClick, enabled = enabled, contentPadding = ButtonDefaults.TextButtonWithIconContentPadding) {
+        Text(stringResource(R.string.view_history))
+        Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null, Modifier.size(18.dp))
+    }
+}
+
 /** Description limited to two lines until "Ver tudo" is tapped. */
 @Composable
 fun ExpandableDescription(text: String) {

@@ -60,6 +60,7 @@ import com.ethos.app.core.habits.domain.HabitStreak
 import com.ethos.app.core.habits.domain.HabitType
 import com.ethos.app.core.habits.domain.HabitUnit
 import com.ethos.app.core.tasks.domain.TaskList
+import com.ethos.app.core.ui.components.DetailHistoryLink
 import com.ethos.app.core.ui.components.DetailIconAction
 import com.ethos.app.core.ui.components.DetailSummaryItem
 import com.ethos.app.core.ui.components.ExpandableDescription
@@ -85,6 +86,8 @@ data class HabitDetailActions(
     val exclude: () -> Unit,
     val restore: () -> Unit,
     val erase: () -> Unit,
+    /** Opens Estatísticas filtered by this habit (spec 024); null hides the link. */
+    val history: (() -> Unit)? = null,
 )
 
 /**
@@ -111,6 +114,7 @@ fun HabitDetail(
                 }
                 HabitMainArea(model, busy, actions)
                 if (model.main != HabitDetailMain.EXCLUDED) HabitActionIcons(model.main, busy, actions)
+                actions.history?.let { DetailHistoryLink(!busy, it) }
             }
         })
 }

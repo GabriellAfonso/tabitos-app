@@ -98,7 +98,8 @@ class StatisticsHistoryTest {
         val shown = items(tasks, entries, gameMode = false)
         assertEquals(listOf(HistoryKind.TASK_COMPLETED), shown.map { it.kind })
         assertNull(shown.single().coins)
-        assertEquals(listOf(HistoryFilter.ALL, HistoryFilter.TASKS, HistoryFilter.HABITS, HistoryFilter.TIME),
+        assertEquals(listOf(HistoryFilter.ALL, HistoryFilter.TASKS, HistoryFilter.HABITS, HistoryFilter.BAD_HABITS,
+            HistoryFilter.TIME),
             historyFilters(gameMode = false))
         assertTrue(items(tasks, entries, gameMode = false, filter = HistoryFilter.COINS).isEmpty())
     }
@@ -106,7 +107,7 @@ class StatisticsHistoryTest {
     @Test fun deletedTasksAndErasedEntriesAreMarked() {
         val tasks = TaskSnapshot(occurrences = listOf(occurrence("o:1", TaskStatus.DELETED)),
             history = listOf(audit("1", AuditKind.COMPLETED, actual = today)))
-        assertEquals(HistorySubject.Task("o:1", exists = false), items(tasks).single().subject)
+        assertEquals(HistorySubject.Task("o:1", "def", exists = false), items(tasks).single().subject)
         val erased = ledger(1, "task:gone:1:done", "GAIN", 10, title = "")
         assertEquals(HistorySubject.Erased(task = true),
             items(TaskSnapshot(), listOf(erased), filter = HistoryFilter.COINS).single().subject)

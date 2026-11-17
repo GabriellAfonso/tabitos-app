@@ -49,8 +49,11 @@ fun HabitsRefreshEffect(viewModel: HabitsViewModel) {
     }
 }
 
+/** [openHistory] receives the habit id; without it the popup has no "Ver histórico" link. */
 @Composable
-fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewModel) {
+fun HabitDialogs(
+    state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewModel, openHistory: ((String) -> Unit)? = null,
+) {
     state.financialPreview?.let { preview ->
         FinancialConfirmation(preview, state.busy,
             { vm.confirmFinancial(true) }, { vm.confirmFinancial(false) })
@@ -69,7 +72,7 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                 Text(stringResource(R.string.cancel)) } })
         return
     }
-    if (h != null && state.draft == null && state.lifecycle == null) HabitDetailDialog(state, h, lists, vm)
+    if (h != null && state.draft == null && state.lifecycle == null) HabitDetailDialog(state, h, lists, vm, openHistory)
     state.lifecycle?.let { d ->
         AlertDialog(onDismissRequest = { if (!state.busy) vm.lifecycle(null) }, text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -98,7 +101,9 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
 }
 
 @Composable
-private fun HabitDetailDialog(state: HabitsUiState, h: Habit, lists: List<TaskList>, vm: HabitsViewModel) {
+private fun HabitDetailDialog(
+    state: HabitsUiState, h: Habit, lists: List<TaskList>, vm: HabitsViewModel, openHistory: ((String) -> Unit)?,
+) {
     val model = habitDetailModel(state, h.id) ?: return
     val timer = LocalOpenTimer.current
     val tracker = LocalOpenTracker.current
@@ -126,6 +131,7 @@ private fun HabitDetailDialog(state: HabitsUiState, h: Habit, lists: List<TaskLi
                     requiresDestination = h.listId != null && !listExists))
             },
             erase = { vm.requestErase(h.id) },
+            history = openHistory?.let { open -> { open(h.id) } },
         ))
     state.dayEditor?.let { date ->
         HabitDaySheet(model, date, state.today, state.busy, add = { vm.addOccurrence(h.id, date) },
