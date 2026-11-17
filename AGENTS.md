@@ -230,4 +230,8 @@ Sessão do cronômetro (Abrir): folha inferior com anel, Pausar/Retomar e + temp
 (auditoria continua gravada; tempo fica em Estatísticas). Presentation: features/timers/TimerSheetPresentation.kt.
 Spec023: pop-up de hábito no formato do de tarefa + faixa dos últimos 7 dias (toque marca/desmarca dia aberto; mau
 hábito abre folha −/+). Sem campo de data, registros nem períodos; regras/schema inalterados (HabitDetailPresentation).
+Spec024: Estatísticas com filtro acima das abas (vale no Resumo e no Histórico): Tudo/Tarefas/Hábitos/Maus hábitos/
+Tempo/Moedas. Item (habitId ou série taskId) só pelo próprio item, sem lista: "Ver histórico" nos pop-ups, linha de
+hábito no Resumo e aviso de item excluído; chip "Nome ✕" volta ao tipo. Filtro/item/aba só em memória
+(StatisticsSelection.kt; navegação via AppRequests.destination).
 <!-- SPECKIT END -->
