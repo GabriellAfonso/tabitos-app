@@ -3,6 +3,7 @@ package com.ethos.app.core.tasks.data
 import androidx.room.withTransaction
 import com.ethos.app.core.accounting.data.AccountingStore
 import com.ethos.app.core.accounting.domain.AccountingProjection
+import com.ethos.app.core.history.data.HistoryErasure
 import com.ethos.app.core.preferences.GameModeSource
 import com.ethos.app.core.reminders.data.entity
 import com.ethos.app.core.reminders.domain.ReminderRules
@@ -34,6 +35,7 @@ class RoomTaskRepository(
             val before = read()
             val after = TaskRules.apply(before, action, clock.today(), clock.nowMillis())
             if (before != after) write(after)
+            removeErased(before, after)
             if (action is TaskAction.Postpone || action is TaskAction.UndoPostpone) moveReminders(before, after, action)
             if (action is TaskAction.Resolve || action is TaskAction.Undo || action is TaskAction.SetCompleted) {
                 val id = when (action) {
@@ -49,6 +51,17 @@ class RoomTaskRepository(
                 database.habits().excludeList(action.id)
             }
         }
+    }
+
+    /** Rows the rules erased (spec 022) are deleted here, with their traces in other tables. */
+    private suspend fun removeErased(before: TaskSnapshot, after: TaskSnapshot) {
+        val occurrences = before.occurrences.map { it.id } - after.occurrences.map { it.id }.toSet()
+        val definitions = before.definitions.map { it.id } - after.definitions.map { it.id }.toSet()
+        if (occurrences.isEmpty() && definitions.isEmpty()) return
+        val dao = database.tasks()
+        dao.removeOccurrences(occurrences)
+        dao.removeDefinitions(definitions)
+        HistoryErasure(database).taskTraces(occurrences, definitions)
     }
 
     /** Fixed-date reminders move with a postponed task, in the same transaction (spec 021). */

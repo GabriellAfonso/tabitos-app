@@ -24,6 +24,22 @@ class TaskPostponeTest {
         assertFalse(s.history.any { it.kind == AuditKind.MISSED_DEADLINE })
     }
 
+    @Test fun postponeIsRecordedApartFromEditsWithBothDates() {
+        val s = apply(create(), TaskAction.Postpone("a:1", today.plusDays(2)))
+        val record = s.history.single { it.kind == AuditKind.POSTPONED }
+        assertEquals(today, record.originalDeadline)
+        assertEquals(today.plusDays(2), record.actualDate)
+        assertFalse(s.history.any { it.kind == AuditKind.EDITED })
+    }
+
+    @Test fun undoingAPostponeIsRecordedAsSuch() {
+        val postponed = apply(create(), TaskAction.Postpone("a:1", today.plusDays(1)))
+        val record = apply(postponed, TaskAction.UndoPostpone("a:1", today)).history
+            .single { it.kind == AuditKind.POSTPONE_UNDONE }
+        assertEquals(today.plusDays(1), record.originalDeadline)
+        assertEquals(today, record.actualDate)
+    }
+
     @Test fun postponeRejectsPastDaysAndTheCurrentDeadline() {
         val s = create()
         assertEquals(TaskProblem.INVALID_DATE, problem { apply(s, TaskAction.Postpone("a:1", today.minusDays(1))) })

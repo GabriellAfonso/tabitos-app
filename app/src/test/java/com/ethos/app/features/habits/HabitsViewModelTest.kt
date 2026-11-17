@@ -182,5 +182,10 @@ class HabitsViewModelTest {
             if (failWrite) throw IOException("Injected write failure")
             snapshot.value = HabitRules.apply(snapshot.value, action, clock.today(), clock.nowMillis(), emptySet())
         }
+        override suspend fun erase(habitId: String) {
+            val s = snapshot.value
+            snapshot.value = s.copy(habits = s.habits.filterNot { it.id == habitId },
+                records = s.records.filterNot { it.habitId == habitId })
+        }
     }
 }

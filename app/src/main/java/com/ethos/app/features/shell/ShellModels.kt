@@ -19,16 +19,16 @@ enum class ShellDestination(
     CALENDAR("calendar", R.string.calendar, R.drawable.ic_calendar_month),
     REVIEW("review", R.string.review, R.drawable.ic_pending_actions),
     REWARDS("rewards", R.string.rewards, R.drawable.ic_redeem),
+    STATISTICS("statistics", R.string.statistics, R.drawable.ic_bar_chart),
     SETTINGS("settings", R.string.settings, R.drawable.ic_settings),
-    HISTORY("history", R.string.history, R.drawable.ic_history, parent = SETTINGS),
     EXCLUDED_HABITS("excluded-habits", R.string.habit_excluded, R.drawable.ic_self_improvement, parent = SETTINGS),
     ;
 
     /** Exists only with game mode on (spec 017); off, requests for it land on Hoje. */
-    val isGameOnly: Boolean get() = this == REWARDS || this == HISTORY
+    val isGameOnly: Boolean get() = this == REWARDS
 
     companion object {
-        private val drawer = listOf(TODAY, CALENDAR, REVIEW, REWARDS)
+        private val drawer = listOf(TODAY, CALENDAR, REVIEW, REWARDS, STATISTICS)
 
         fun drawerFor(gameMode: Boolean): List<ShellDestination> = drawer.filter { gameMode || !it.isGameOnly }
     }

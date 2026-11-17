@@ -120,5 +120,5 @@ fun SettingsLink(@StringRes title: Int, @DrawableRes icon: Int, onClick: () -> U
 @Preview
 @Composable
 private fun SettingsLinkPreview() {
-    EthosTheme { SettingsLink(R.string.history, R.drawable.ic_history) {} }
+    EthosTheme { SettingsLink(R.string.habit_excluded, R.drawable.ic_self_improvement) {} }
 }

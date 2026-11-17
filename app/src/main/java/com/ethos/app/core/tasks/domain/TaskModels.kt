@@ -6,7 +6,20 @@ enum class DeadlineKind { NONE, DAY, WEEK, WORK_WEEK }
 enum class RepeatKind { NONE, DAILY, WEEKDAYS, WEEKLY, CUSTOM, MONTHLY, FIXED_INTERVAL, AFTER_COMPLETION }
 enum class TaskStatus { OPEN, DONE, NOT_DONE, DELETED }
 enum class ChangeScope { ONLY_THIS, THIS_AND_FUTURE }
-enum class AuditKind { CREATED, COMPLETED, NOT_DONE, UNDONE, MISSED_DEADLINE, EDITED, DELETED, CHECKED }
+/**
+ * Persisted by name. POSTPONED and POSTPONE_UNDONE keep the deadline before the change in
+ * [TaskAudit.originalDeadline] and the new date in [TaskAudit.actualDate], so the history can say
+ * "postponed from X to Y" without confusing a postpone with an ordinary edit.
+ */
+enum class AuditKind {
+    CREATED, COMPLETED, NOT_DONE, UNDONE, MISSED_DEADLINE, EDITED, DELETED, CHECKED, POSTPONED, POSTPONE_UNDONE;
+
+    /** Changes the person made to this occurrence itself, which keep it from being silently regenerated. */
+    val isIndependentChange: Boolean get() = when (this) {
+        EDITED, MISSED_DEADLINE, POSTPONED, POSTPONE_UNDONE -> true
+        CREATED, COMPLETED, NOT_DONE, UNDONE, DELETED, CHECKED -> false
+    }
+}
 enum class TaskProblem { INVALID_INPUT, INVALID_DATE, REVIEW_REQUIRED, DEPENDENT_ACTIONS, NOT_OPEN }
 
 class TaskRuleException(val problem: TaskProblem) : IllegalArgumentException(problem.name)
@@ -92,7 +105,13 @@ sealed interface TaskAction {
     data class Resolve(val id: String, val done: Boolean, val actualDate: LocalDate) : TaskAction
     data class Undo(val id: String) : TaskAction
     data class SetCompleted(val id: String, val done: Boolean, val actualDate: LocalDate) : TaskAction
-    data class Delete(val id: String, val scope: ChangeScope) : TaskAction
+    /**
+     * With [eraseHistory] the deleted occurrences leave no trace: "Só esta" erases this occurrence, "Todas" the
+     * whole series including past occurrences (spec 022). Coins already earned are never touched.
+     */
+    data class Delete(val id: String, val scope: ChangeScope, val eraseHistory: Boolean = false) : TaskAction
+    /** Erases the history of a deleted occurrence: every deleted occurrence of its series (spec 022). */
+    data class EraseHistory(val id: String) : TaskAction
     data class Move(val id: String, val listId: String?) : TaskAction
     data class Reorder(val id: String, val direction: Int) : TaskAction
     data class Order(val ids: List<String>) : TaskAction

@@ -54,6 +54,11 @@ interface TimerDao {
     @Upsert suspend fun segment(row: TimerSegmentEntity)
     @Query("SELECT * FROM timer_audits ORDER BY at, rowid") suspend fun audits(): List<TimerAuditEntity>
     @Insert suspend fun audit(row: TimerAuditEntity)
+    @Query("SELECT id FROM timer_sessions WHERE kind = :kind AND sourceId IN (:sourceIds)")
+    suspend fun sessionIds(kind: String, sourceIds: List<String>): List<String>
+    @Query("DELETE FROM timer_audits WHERE sessionId IN (:ids)") suspend fun removeAudits(ids: List<String>)
+    @Query("DELETE FROM timer_segments WHERE sessionId IN (:ids)") suspend fun removeSegments(ids: List<String>)
+    @Query("DELETE FROM timer_sessions WHERE id IN (:ids)") suspend fun removeSessions(ids: List<String>)
 }
 
 val TIMER_MIGRATION_5_6 = object : Migration(5, 6) {

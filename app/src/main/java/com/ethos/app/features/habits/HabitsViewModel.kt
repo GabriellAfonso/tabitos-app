@@ -27,7 +27,9 @@ data class HabitDraft(
 ) : java.io.Serializable
 data class HabitLifecycleDraft(val id: String, val status: HabitStatus, val partial: String = "",
     val listId: String? = null, val requiresDestination: Boolean = false,
-    val destinationChosen: Boolean = false) : java.io.Serializable
+    val destinationChosen: Boolean = false,
+    /** Only for excluding: delete the habit completely with its history instead (spec 022). */
+    val eraseHistory: Boolean = false) : java.io.Serializable
 data class HabitsUiState(
     val snapshot: HabitSnapshot = HabitSnapshot(), val today: LocalDate,
     val periods: List<HabitPeriod> = emptyList(), val streaks: Map<String, HabitStreak> = emptyMap(),
@@ -47,6 +49,8 @@ data class HabitsUiState(
     val timedConfirmation: String? = null,
     /** Game mode (spec 017): off hides difficulty/estimates and skips financial confirmations. */
     val gameMode: Boolean = true,
+    /** Excluded habit waiting for "Apagar por completo" to be confirmed (spec 022). */
+    val eraseConfirmation: String? = null,
 )
 
 @HiltViewModel
@@ -235,10 +239,28 @@ class HabitsViewModel @Inject constructor(
             if (d.requiresDestination && !d.destinationChosen) {
                 mutable.update { it.copy(problem = HabitProblem.DESTINATION) }; return
             }
+            if (d.status == HabitStatus.EXCLUDED && d.eraseHistory) { erase(d.id); return }
             execute(HabitAction.Status(d.id, d.status, d.partial.takeIf { it.isNotBlank() }?.toInt(), d.listId), true)
         } catch (_: Exception) { mutable.update { it.copy(problem = HabitProblem.INPUT) } }
     }
     fun action(action: HabitAction) { execute(action) }
+    fun requestErase(id: String?) { mutable.update { it.copy(eraseConfirmation = id) } }
+
+    /** Deletes the habit with its history in one transaction; coins and XP stay (spec 022). */
+    fun erase(id: String) {
+        if (state.value.busy) return
+        mutable.update { it.copy(busy = true, problem = null) }
+        viewModelScope.launch {
+            try {
+                repository.erase(id)
+                mutable.update { it.copy(busy = false, lifecycle = null, eraseConfirmation = null,
+                    detail = if (it.detail == id) null else it.detail) }
+            } catch (e: CancellationException) { throw e
+            } catch (_: Exception) {
+                mutable.update { it.copy(busy = false, storageError = true) }
+            }
+        }
+    }
     fun retry() {
         observe()
         val action = retryAction

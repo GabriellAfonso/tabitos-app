@@ -27,4 +27,12 @@ interface HabitDao {
     suspend fun closeListIntervals(listId: String, today: LocalDate)
     @Query("UPDATE habits SET status = 'EXCLUDED' WHERE listId = :listId")
     suspend fun excludeList(listId: String)
+    @Query("DELETE FROM habits WHERE id = :id") suspend fun removeHabit(id: String)
+    @Query("DELETE FROM habit_rules WHERE habitId = :id") suspend fun removeRules(id: String)
+    @Query("DELETE FROM habit_intervals WHERE habitId = :id") suspend fun removeIntervals(id: String)
+    @Query("DELETE FROM habit_records WHERE habitId = :id") suspend fun removeRecords(id: String)
+    @Query("DELETE FROM habit_audits WHERE habitId = :id") suspend fun removeAudits(id: String)
+    /** Period keys start with the habit id ([com.ethos.app.core.habits.domain.HabitRules.key]). */
+    @Query("DELETE FROM habit_overrides WHERE `key` LIKE :prefix || '%'") suspend fun removeOverrides(prefix: String)
+    @Query("DELETE FROM habit_reviews WHERE `key` LIKE :prefix || '%'") suspend fun removeReviews(prefix: String)
 }

@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import com.ethos.app.R
 import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskList
+import com.ethos.app.core.ui.components.CheckboxRow
 import com.ethos.app.core.ui.reminders.LocalOpenReminders
 import com.ethos.app.core.ui.timers.LocalOpenTimer
 import com.ethos.app.core.ui.trackers.LocalOpenTracker
@@ -58,6 +59,16 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
     if (state.draft != null) HabitEditor(state, lists,
         HabitEditorActions(vm::draft, vm::difficulty, vm::save, vm::retry))
     val h = state.snapshot.habits.firstOrNull { it.id == state.detail }
+    state.eraseConfirmation?.let { id ->
+        AlertDialog(onDismissRequest = { if (!state.busy) vm.requestErase(null) },
+            title = { Text(stringResource(R.string.habit_erase_completely)) },
+            text = { Column { HabitError(state, vm::retry); Text(stringResource(R.string.habit_erase_confirm)) } },
+            confirmButton = { TextButton({ vm.erase(id) }, enabled = !state.busy) {
+                Text(stringResource(R.string.habit_erase_completely), color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { TextButton({ vm.requestErase(null) }, enabled = !state.busy) {
+                Text(stringResource(R.string.cancel)) } })
+        return
+    }
     if (h != null && state.draft == null && state.lifecycle == null) {
         AlertDialog(onDismissRequest = { if (!state.busy) vm.detail(null) }, title = { Text(h.name) }, text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -136,11 +147,16 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                             R.string.habit_pause else R.string.habit_resume)) }
                     TextButton({ vm.lifecycle(HabitLifecycleDraft(h.id, HabitStatus.EXCLUDED, listId = h.listId)) },
                         enabled = !state.busy) { Text(stringResource(R.string.habit_exclude)) }
-                } else TextButton({ vm.lifecycle(HabitLifecycleDraft(h.id, HabitStatus.ACTIVE,
-                    listId = h.listId.takeIf { id -> lists.any { it.id == id } },
-                    requiresDestination = h.listId != null && lists.none { it.id == h.listId })) },
-                    enabled = !state.busy) {
-                    Text(stringResource(R.string.habit_restore)) }
+                } else {
+                    TextButton({ vm.lifecycle(HabitLifecycleDraft(h.id, HabitStatus.ACTIVE,
+                        listId = h.listId.takeIf { id -> lists.any { it.id == id } },
+                        requiresDestination = h.listId != null && lists.none { it.id == h.listId })) },
+                        enabled = !state.busy) {
+                        Text(stringResource(R.string.habit_restore)) }
+                    TextButton({ vm.requestErase(h.id) }, enabled = !state.busy) {
+                        Text(stringResource(R.string.habit_erase_completely),
+                            color = MaterialTheme.colorScheme.error) }
+                }
             }
         }, confirmButton = { TextButton({ vm.detail(null) }, enabled = !state.busy) {
             Text(stringResource(R.string.close)) } })
@@ -152,6 +168,10 @@ fun HabitDialogs(state: HabitsUiState, lists: List<TaskList>, vm: HabitsViewMode
                 Text(stringResource(R.string.habit_lifecycle_hint))
                 if (d.status == HabitStatus.ACTIVE) HabitLists(lists, d.listId, !state.busy) {
                     vm.lifecycle(d.copy(listId = it, destinationChosen = true)) }
+                if (d.status == HabitStatus.EXCLUDED) {
+                    CheckboxRow(R.string.delete_habit_erase_history, d.eraseHistory, !state.busy) {
+                        vm.lifecycle(d.copy(eraseHistory = it)) }
+                }
             }
         }, confirmButton = { TextButton(vm::confirmLifecycle, enabled = !state.busy) {
             Text(stringResource(R.string.habit_confirm_change)) } },

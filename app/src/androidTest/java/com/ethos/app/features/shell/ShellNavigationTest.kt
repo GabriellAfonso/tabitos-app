@@ -33,7 +33,7 @@ class ShellNavigationTest {
                     Column {
                         Text("page:${destination.route} " + stringResource(destination.title))
                         if (destination == ShellDestination.SETTINGS) {
-                            Button({ navigate(ShellDestination.HISTORY) }) { Text("go:history") }
+                            Button({ navigate(ShellDestination.EXCLUDED_HABITS) }) { Text("go:excluded") }
                         }
                     }
                 }
@@ -66,8 +66,8 @@ class ShellNavigationTest {
     @Test fun settingsSubPageShowsBackAndReturnsToSettings() {
         launch()
         compose.onNodeWithContentDescription("Abrir configurações").performClick()
-        compose.onNodeWithText("go:history").performClick()
-        compose.onNodeWithText("page:history", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("go:excluded").performClick()
+        compose.onNodeWithText("page:excluded-habits", substring = true).assertIsDisplayed()
         compose.onNodeWithContentDescription("Voltar").performClick()
         compose.onNodeWithText("page:settings", substring = true).assertIsDisplayed()
     }

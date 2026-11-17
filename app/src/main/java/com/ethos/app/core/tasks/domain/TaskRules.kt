@@ -15,6 +15,9 @@ object TaskRules {
         importance = if (difficulty == 2 && !fields.importanceManual) 2 else fields.importance,
     )
 
+    /** Which occurrences an erase takes: this one, the whole series, or the deleted ones of the series. */
+    private enum class EraseScope { OCCURRENCE, SERIES, DELETED_IN_SERIES }
+
     private class Mutation(snapshot: TaskSnapshot, val today: LocalDate, val now: Long) {
         val lists = snapshot.lists.toMutableList()
         val definitions = snapshot.definitions.toMutableList()
@@ -170,8 +173,7 @@ object TaskRules {
                     val changed = o.checks.mapIndexed { i, c ->
                         if (i == action.index) c.copy(checked = action.checked) else c
                     }
-                    val independent = history.any { it.occurrenceId == o.id &&
-                        it.kind in listOf(AuditKind.EDITED, AuditKind.MISSED_DEADLINE) }
+                    val independent = history.any { it.occurrenceId == o.id && it.kind.isIndependentChange }
                     put(o.copy(checks = changed, touched = changed.any { it.checked } || independent))
                     audit(o, AuditKind.CHECKED)
                 }
@@ -190,13 +192,22 @@ object TaskRules {
                 is TaskAction.Postpone -> {
                     val o = postponable(action.id)
                     if (action.to < today || action.to == o.fields.date) fail(TaskProblem.INVALID_DATE)
-                    moveDate(o, action.to)
+                    moveDate(o, action.to, AuditKind.POSTPONED)
                 }
                 is TaskAction.UndoPostpone -> {
                     val o = postponable(action.id)
-                    if (action.to != o.fields.date) moveDate(o, action.to)
+                    if (action.to != o.fields.date) moveDate(o, action.to, AuditKind.POSTPONE_UNDONE)
                 }
-                is TaskAction.Delete -> delete(action)
+                is TaskAction.Delete -> {
+                    delete(action)
+                    if (action.eraseHistory) erase(occurrence(action.id),
+                        if (action.scope == ChangeScope.THIS_AND_FUTURE) EraseScope.SERIES else EraseScope.OCCURRENCE)
+                }
+                is TaskAction.EraseHistory -> {
+                    val o = occurrence(action.id)
+                    if (o.status != TaskStatus.DELETED) fail(TaskProblem.INVALID_INPUT)
+                    erase(o, EraseScope.DELETED_IN_SERIES)
+                }
                 is TaskAction.Move -> {
                     val o = occurrence(action.id)
                     requireInput(action.listId == null || lists.any { it.id == action.listId && !it.deleted })
@@ -264,13 +275,12 @@ object TaskRules {
                 put(d.copy(nextDate = o.plannedDate, nextOrdinal = o.ordinal + 1))
             }
             audit(o, AuditKind.UNDONE, related = o.activeOutcome)
-            val hasIndependentChanges = o.checks.any { it.checked } || history.any {
-                it.occurrenceId == o.id && it.kind in listOf(AuditKind.EDITED, AuditKind.MISSED_DEADLINE)
-            }
+            val hasIndependentChanges = o.checks.any { it.checked } ||
+                history.any { it.occurrenceId == o.id && it.kind.isIndependentChange }
             put(o.copy(status = TaskStatus.OPEN, completedDate = null, activeOutcome = null,
                 touched = hasIndependentChanges))
         }
-        fun edit(action: TaskAction.Edit) {
+        fun edit(action: TaskAction.Edit, auditKind: AuditKind = AuditKind.EDITED) {
             val o = occurrence(action.id)
             if (o.status != TaskStatus.OPEN) fail(TaskProblem.NOT_OPEN)
             val fields = validate(action.fields, action.rule)
@@ -303,7 +313,7 @@ object TaskRules {
             put(replacement.copy(checks = checks, position = o.position, touched = true,
                 plannedDate = if (action.scope == ChangeScope.ONLY_THIS && d.rule.kind != RepeatKind.NONE)
                     o.plannedDate else replacement.plannedDate))
-            audit(o, AuditKind.EDITED)
+            audit(o, auditKind, actual = if (auditKind == AuditKind.EDITED) null else fields.date)
         }
         fun postponable(id: String): TaskOccurrence {
             val o = occurrence(id)
@@ -315,9 +325,27 @@ object TaskRules {
          * Postponing is an "only this occurrence" date edit: an overdue date records the missed deadline,
          * recurring series keep their own dates and history stays append-only.
          */
-        fun moveDate(o: TaskOccurrence, to: LocalDate) {
+        fun moveDate(o: TaskOccurrence, to: LocalDate, auditKind: AuditKind) {
             edit(TaskAction.Edit(o.id, o.fields.copy(date = to), definition(o.taskId).rule, ChangeScope.ONLY_THIS,
-                reviewedDeadline = true))
+                reviewedDeadline = true), auditKind)
+        }
+        /**
+         * Removes occurrences and their records (spec 022). Erased ordinals stay below the definition's next
+         * ordinal, so they are never generated again; the definition goes away only when it can no longer
+         * produce occurrences and none remain.
+         */
+        fun erase(o: TaskOccurrence, scope: EraseScope) {
+            val erased = when (scope) {
+                EraseScope.OCCURRENCE -> listOf(o)
+                EraseScope.SERIES -> occurrences.filter { it.taskId == o.taskId }
+                EraseScope.DELETED_IN_SERIES -> occurrences.filter {
+                    it.taskId == o.taskId && it.status == TaskStatus.DELETED }
+            }.map { it.id }.toSet()
+            occurrences.removeAll { it.id in erased }
+            history.removeAll { it.occurrenceId in erased }
+            val d = definition(o.taskId)
+            val ended = d.stopped || d.rule.kind == RepeatKind.NONE
+            if (ended && occurrences.none { it.taskId == d.id }) definitions.remove(d)
         }
         fun delete(action: TaskAction.Delete) {
             val o = occurrence(action.id)

@@ -92,8 +92,22 @@ object HabitRules {
         val recent = counted.filter { it.rule.unit == unit }.takeLast(when (unit) {
             HabitUnit.DAY -> 30; HabitUnit.WEEK -> 8; HabitUnit.MONTH -> 6
         })
-        return recent.count { standing(it, today) == PeriodOutcome.SUCCESS } * 100 / recent.size
+        return percentSucceeded(recent, today)
     }
+
+    /**
+     * Same rule as the card's [successRate], applied to the periods overlapping [range] (statistics, spec 022),
+     * so both numbers come from one definition of a counted period.
+     */
+    fun successRate(s: HabitSnapshot, id: String, today: LocalDate, range: ClosedRange<LocalDate>): Int? {
+        val counted = periods(s, id, today).filter {
+            countsForRate(it, today) && it.start <= range.endInclusive && it.end >= range.start
+        }
+        return if (counted.isEmpty()) null else percentSucceeded(counted, today)
+    }
+
+    private fun percentSucceeded(counted: List<HabitPeriod>, today: LocalDate) =
+        counted.count { standing(it, today) == PeriodOutcome.SUCCESS } * 100 / counted.size
 
     fun streak(s: HabitSnapshot, id: String, today: LocalDate): HabitStreak {
         val periods = periods(s, id, today)

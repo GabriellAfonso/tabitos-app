@@ -41,7 +41,6 @@ import com.ethos.app.core.ui.reminders.LocalOpenReminders
 import com.ethos.app.core.ui.theme.EthosTheme
 import com.ethos.app.core.ui.timers.LocalOpenTimer
 import com.ethos.app.core.ui.trackers.LocalOpenTracker
-import com.ethos.app.features.accounting.AccountingHistory
 import com.ethos.app.features.accounting.AccountingSettings
 import com.ethos.app.features.accounting.AccountingUiState
 import com.ethos.app.features.accounting.AccountingViewModel
@@ -73,6 +72,9 @@ import com.ethos.app.features.settings.TimerAlarmSetting
 import com.ethos.app.features.shell.CreateActions
 import com.ethos.app.features.shell.EthosShell
 import com.ethos.app.features.shell.ShellDestination
+import com.ethos.app.features.statistics.StatisticsNavigation
+import com.ethos.app.features.statistics.StatisticsScreen
+import com.ethos.app.features.statistics.StatisticsViewModel
 import com.ethos.app.features.tasks.DrawerListCallbacks
 import com.ethos.app.features.tasks.PostponedSnackbar
 import com.ethos.app.features.tasks.TaskDialogs
@@ -115,6 +117,7 @@ private class AppViewModels(
     val tasks: TasksViewModel, val habits: HabitsViewModel, val accounting: AccountingViewModel,
     val rewards: RewardsViewModel, val reminders: ReminderViewModel, val timers: TimerViewModel,
     val trackers: TrackerViewModel, val calendar: CalendarViewModel, val gameMode: GameModeViewModel,
+    val statistics: StatisticsViewModel,
 )
 
 /** One frame of collected state, so page functions receive values instead of collecting again. */
@@ -132,6 +135,7 @@ private class AppState(
 @Composable
 private fun appViewModels() = AppViewModels(
     viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(),
+    viewModel(),
 )
 
 /** Composition root of the app; [onDarkTheme] lets the Activity style the system bars. */
@@ -236,8 +240,10 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
             ShellDestination.CALENDAR -> CalendarScreen(vm.calendar, vm.tasks::detail, vm.habits::detail,
                 vm.trackers::fill, vm.trackers::editEntry)
             ShellDestination.REWARDS -> RewardsScreen(vm.rewards) { RewardSessions(vm, app) }
-            ShellDestination.HISTORY -> AccountingHistory(app.financial, vm.accounting::retry, tasks.today,
-                vm.timers.zone)
+            ShellDestination.STATISTICS -> StatisticsScreen(tasks.today, vm.timers.zone, StatisticsNavigation(
+                openTask = vm.tasks::detail, openHabit = vm.habits::detail,
+                openRewards = { navigate(ShellDestination.REWARDS) },
+            ), vm.statistics)
             ShellDestination.EXCLUDED_HABITS -> HabitsContent(habits, HabitPage.EXCLUDED, vm.habits::detail,
                 vm.habits::retry)
             ShellDestination.SETTINGS -> SettingsPage {
@@ -246,8 +252,6 @@ private fun AppShell(vm: AppViewModels, app: AppState, appearanceSettings: @Comp
                 if (app.showsGame) {
                     AccountingSettings(app.financial, vm.accounting::edit, vm.accounting::draft,
                         vm.accounting::save, vm.accounting::retry)
-                    SettingsLink(R.string.history, ShellDestination.HISTORY.icon) {
-                        navigate(ShellDestination.HISTORY) }
                 }
                 SettingsLink(R.string.habit_excluded, ShellDestination.EXCLUDED_HABITS.icon) {
                     navigate(ShellDestination.EXCLUDED_HABITS) }

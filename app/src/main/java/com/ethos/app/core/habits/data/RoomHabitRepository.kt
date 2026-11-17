@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.ethos.app.core.accounting.data.AccountingStore
 import com.ethos.app.core.accounting.domain.AccountingProjection
 import com.ethos.app.core.habits.domain.*
+import com.ethos.app.core.history.data.HistoryErasure
 import com.ethos.app.core.preferences.GameModeSource
 import com.ethos.app.core.tasks.data.TaskDatabase
 import com.ethos.app.core.tasks.domain.TaskClock
@@ -30,6 +31,10 @@ class RoomHabitRepository(
                 dao.reviews().map { it.value }, dao.audits().map { it.value })
         }
     }
+    override suspend fun erase(habitId: String) {
+        database.withTransaction { HistoryErasure(database).habit(habitId) }
+    }
+
     override suspend fun execute(action: HabitAction) {
         // Read before the transaction: outcomes follow the mode at write time (spec 017).
         val scoring = gameMode.enabled.first()

@@ -45,6 +45,12 @@ interface ReminderDao {
     @Query("DELETE FROM reminder_definitions WHERE id = :id") suspend fun remove(id: String)
     @Upsert suspend fun deliveries(rows: List<DeliveryEntity>)
     @Upsert suspend fun settings(row: ReminderSettingsEntity)
+    @Query("DELETE FROM reminder_definitions WHERE kind = :kind AND sourceId IN (:sourceIds)")
+    suspend fun removeForSources(kind: String, sourceIds: List<String>)
+    @Query("DELETE FROM reminder_definitions WHERE occurrenceId IN (:occurrenceIds)")
+    suspend fun removeForOccurrences(occurrenceIds: List<String>)
+    @Query("DELETE FROM reminder_deliveries WHERE kind = :kind AND sourceId IN (:sourceIds)")
+    suspend fun removeDeliveries(kind: String, sourceIds: List<String>)
 }
 
 val REMINDER_MIGRATION_4_5 = object : Migration(4, 5) {

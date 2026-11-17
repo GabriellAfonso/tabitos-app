@@ -17,4 +17,8 @@ interface TaskDao {
     @Upsert suspend fun checks(rows: List<ChecklistEntity>)
     @Upsert suspend fun history(rows: List<AuditEntity>)
     @Query("DELETE FROM task_checklist WHERE ownerId = :owner") suspend fun clearChecks(owner: String)
+    @Query("DELETE FROM task_checklist WHERE ownerId IN (:owners)") suspend fun removeChecks(owners: List<String>)
+    @Query("DELETE FROM task_audit WHERE occurrenceId IN (:ids)") suspend fun removeHistory(ids: List<String>)
+    @Query("DELETE FROM task_occurrences WHERE id IN (:ids)") suspend fun removeOccurrences(ids: List<String>)
+    @Query("DELETE FROM task_definitions WHERE id IN (:ids)") suspend fun removeDefinitions(ids: List<String>)
 }

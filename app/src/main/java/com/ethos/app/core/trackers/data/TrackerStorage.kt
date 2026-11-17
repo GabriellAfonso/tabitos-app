@@ -59,6 +59,14 @@ interface TrackerDao {
     @Insert suspend fun answers(rows: List<TrackerAnswerEntity>)
     @Query("DELETE FROM tracker_answers WHERE entryId = :id") suspend fun removeAnswers(id: String)
     @Query("DELETE FROM tracker_entries WHERE id = :id") suspend fun removeEntry(id: String)
+    @Query("SELECT id FROM trackers WHERE habitId = :habitId") suspend fun trackerIds(habitId: String): List<String>
+    @Query("DELETE FROM tracker_answers WHERE entryId IN (SELECT id FROM tracker_entries WHERE trackerId = :id)")
+    suspend fun removeTrackerAnswers(id: String)
+    @Query("DELETE FROM tracker_entries WHERE trackerId = :id") suspend fun removeTrackerEntries(id: String)
+    @Query("DELETE FROM tracker_options WHERE trackerId = :id") suspend fun removeOptions(id: String)
+    @Query("DELETE FROM tracker_questions WHERE trackerId = :id") suspend fun removeQuestions(id: String)
+    @Query("DELETE FROM tracker_versions WHERE trackerId = :id") suspend fun removeVersions(id: String)
+    @Query("DELETE FROM trackers WHERE id = :id") suspend fun removeTracker(id: String)
 }
 
 val TRACKER_MIGRATION_6_7 = object : Migration(6, 7) {

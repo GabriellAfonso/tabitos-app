@@ -49,6 +49,7 @@ import com.ethos.app.core.ui.components.CHECK_ANIMATION_MILLIS
 import com.ethos.app.core.ui.components.RoundCheck
 import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.format.label
+import com.ethos.app.core.ui.components.CheckboxRow
 import com.ethos.app.core.ui.components.ColorPicker
 import com.ethos.app.core.ui.components.IconPicker
 import com.ethos.app.core.ui.components.itemColors
@@ -371,11 +372,13 @@ private fun DeleteTaskDialog(
     action: (TaskAction) -> Unit, close: () -> Unit,
 ) {
     var scope by rememberSaveable(id) { mutableStateOf(ChangeScope.ONLY_THIS) }
+    var eraseHistory by rememberSaveable(id) { mutableStateOf(false) }
     AlertDialog(onDismissRequest = { if (!busy) close() }, text = { Column {
         error()
         Text(stringResource(R.string.delete_task_confirm))
         if (recurring) ScopeChoice(scope, !busy) { scope = it }
-    } }, confirmButton = { TextButton({ action(TaskAction.Delete(id, scope)) }, enabled = !busy) {
+        CheckboxRow(R.string.delete_task_erase_history, eraseHistory, !busy) { eraseHistory = it }
+    } }, confirmButton = { TextButton({ action(TaskAction.Delete(id, scope, eraseHistory)) }, enabled = !busy) {
         Text(stringResource(R.string.delete)) } },
         dismissButton = { TextButton(close, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
 }

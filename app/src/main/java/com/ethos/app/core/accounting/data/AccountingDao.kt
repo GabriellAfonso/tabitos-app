@@ -12,4 +12,10 @@ interface AccountingDao {
     @Upsert suspend fun entitlements(values: List<EntitlementEntity>)
     @Query("SELECT * FROM accounting_ledger ORDER BY id") suspend fun entries(): List<LedgerEntity>
     @Insert suspend fun append(values: List<LedgerEntity>)
+    /** Erasing history clears titles only; amounts, balances and XP stay exactly as recorded (spec 022). */
+    @Query("UPDATE accounting_ledger SET title = '' WHERE `key` IN " +
+        "(SELECT `key` FROM accounting_entitlements WHERE owner IN (:owners))")
+    suspend fun clearLedgerTitles(owners: List<String>)
+    @Query("UPDATE accounting_entitlements SET title = '' WHERE owner IN (:owners)")
+    suspend fun clearEntitlementTitles(owners: List<String>)
 }
