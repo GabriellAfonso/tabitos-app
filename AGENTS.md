@@ -225,4 +225,7 @@ Apagar histórico (caixa ao excluir tarefa/hábito, Hábitos excluídos, itens e
 core/history/data/HistoryErasure; moedas/XP/nível intactos, títulos do razão ficam vazios ("Tarefa/Hábito apagado").
 Sem mudança de schema (7). Verificação: specs/022-statistics-history/verification.md; 210 JVM; instrumentados
 não executados.
+Sessão do cronômetro (Abrir): folha inferior com anel, Pausar/Retomar e + tempo esquecido; Descartar/Encerrar no ⋮;
+3 trechos recentes + Ver tudo (Corrigir/Excluir no ⋮ do trecho); sem histórico de alterações nem tempo por período
+(auditoria continua gravada; tempo fica em Estatísticas). Presentation: features/timers/TimerSheetPresentation.kt.
 <!-- SPECKIT END -->

@@ -67,10 +67,6 @@ class TimerRulesTest {
         val parts = TimerRules.allocate(at("2026-11-08T23:50"), at("2026-11-09T00:20"), zone)
         assertEquals(mapOf(LocalDate.parse("2026-11-08") to 10 * minute, LocalDate.parse("2026-11-09") to 20 * minute),
             parts)
-        val weeks = TimerRules.byPeriod(listOf(TimerSegment("x", "s", at("2026-11-08T23:50"), at("2026-11-09T00:20"),
-            created = 0)), TimerPeriod.WEEK, TimerNow(0, 0, null), zone)
-        assertEquals(10 * minute, weeks[LocalDate.parse("2026-11-02")])
-        assertEquals(20 * minute, weeks[LocalDate.parse("2026-11-09")])
     }
 
     @Test fun daylightSavingDayAllocatesRealDuration() {

@@ -97,18 +97,6 @@ object TimerRules {
         }
     }
 
-    fun byPeriod(segments: List<TimerSegment>, period: TimerPeriod, now: TimerNow, zone: ZoneId):
-        Map<LocalDate, Long> {
-        val result = sortedMapOf<LocalDate, Long>(compareByDescending { it })
-        segments.filter { it.active }.forEach { segment ->
-            allocate(segment.startWall, endWall(segment, now), zone).forEach { (date, millis) ->
-                val key = if (period == TimerPeriod.WEEK) weekStart(date) else date
-                result[key] = (result[key] ?: 0) + millis
-            }
-        }
-        return result
-    }
-
     /** Remaining objective time for a session, or null when it has no objective. */
     fun remaining(snapshot: TimerSnapshot, session: TimerSession, now: TimerNow, zone: ZoneId): Long? {
         session.limitMillis?.let { return (it - sessionTotal(snapshot, session.id, now)).coerceAtLeast(0) }
