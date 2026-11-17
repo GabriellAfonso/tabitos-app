@@ -166,7 +166,6 @@
     <string name="habit_day_done">%1$s, feito</string>
     <string name="habit_day_missed">%1$s, perdido</string>
     <string name="habit_day_open">%1$s, em aberto</string>
-    <string name="habit_closed_hint">Dá para registrar até 2 dias depois. Depois o período fecha sozinho.</string>
     <string name="habit_avoid">Evitar</string>
     <string name="habit_limit">Limitar</string>
     <string name="habit_period">Período</string>
@@ -212,7 +211,6 @@
     <string name="habit_icon_sleep_late">Dormir tarde</string>
     <string name="habit_days_progress">Dias distintos: %1$d / %2$d</string>
     <string name="habit_events_progress">Ocorrências: %1$d · limite: %2$d</string>
-    <string name="habit_period_range">%1$s a %2$s</string>
     <string name="habit_success">Feito</string>
     <string name="habit_failure">Perdido</string>
     <string name="habit_in_progress">Em andamento</string>
@@ -222,19 +220,7 @@
     <string name="habit_excluded">Hábitos excluídos</string>
     <string name="habit_excluded_empty">Nenhum hábito excluído.</string>
     <string name="habit_paused">Pausado</string>
-    <string name="habit_streak">Sequência: %1$d · Recorde: %2$d · unidade: %3$s</string>
-    <string name="habit_calendar">Calendário de registros</string>
-    <string name="habit_calendar_day">%1$s · registros: %2$d</string>
-    <string name="habit_actual_date">Data real (AAAA-MM-DD)</string>
     <string name="habit_today">Hoje</string>
-    <string name="habit_yesterday">Fiz ontem</string>
-    <string name="habit_record">Registrar ocorrência/prática</string>
-    <string name="habit_correct">Corrigir registro</string>
-    <string name="habit_delete_record">Excluir registro incorreto</string>
-    <string name="habit_history_periods">Progresso por período</string>
-    <string name="habit_pause">Pausar hábito</string>
-    <string name="habit_resume">Retomar hábito</string>
-    <string name="habit_exclude">Excluir do acompanhamento</string>
     <string name="habit_restore">Restaurar hábito</string>
     <string name="habit_confirm_change">Confirmar alteração</string>
     <string name="habit_lifecycle_hint">O histórico fica guardado. Dias pausados não contam como perdidos.</string>
@@ -245,9 +231,6 @@
     <string name="habit_partial_error">Informe a meta/limite deste período parcial antes de continuar.</string>
     <string name="habit_destination_error">Escolha Caixa de entrada ou uma lista disponível.</string>
     <string name="habit_input_error">Confira o nome, a meta e os dias selecionados.</string>
-    <string name="habit_previous_month">Mês anterior</string>
-    <string name="habit_following_month">Próximo mês</string>
-    <string name="habit_old_best">Recorde histórico: %1$d · unidade: %2$s</string>
     <string name="finance_loading">Carregando moedas e progresso…</string>
     <string name="finance_error">Não foi possível carregar ou salvar a contabilização. Tente novamente.</string>
     <string name="finance_level">Nível %1$d</string>
@@ -412,7 +395,6 @@
     <string name="reminder_fri">Sexta</string>
     <string name="reminder_sat">Sábado</string>
     <string name="reminder_sun">Domingo</string>
-    <string name="timer_button">Cronômetro</string>
     <string name="timer_channel">Sessões de tempo</string>
     <string name="timer_alert_channel">Avisos de tempo</string>
     <string name="timer_alarm_channel">Alarme do cronômetro</string>
@@ -642,6 +624,66 @@
     <string name="habit_quick_record_description">Marcar prática de hoje: %1$s</string>
     <string name="habit_quick_occurrence_description">Registrar recaída de hoje: %1$s</string>
     <string name="habit_week_description">Semana atual: %1$d de 7 dias com registro</string>
+    <!-- Habit detail popup (spec 023) -->
+    <string name="habit_freq_every_day">Todo dia</string>
+    <plurals name="habit_freq_week">
+        <item quantity="one">%1$d× por semana</item>
+        <item quantity="other">%1$d× por semana</item>
+    </plurals>
+    <plurals name="habit_freq_month">
+        <item quantity="one">%1$d× por mês</item>
+        <item quantity="other">%1$d× por mês</item>
+    </plurals>
+    <string name="habit_freq_limit_day">Até %1$d por dia</string>
+    <string name="habit_freq_limit_week">Até %1$d por semana</string>
+    <string name="habit_freq_limit_month">Até %1$d por mês</string>
+    <string name="habit_detail_stats">Sequência: %1$d · recorde %2$d · %3$d%% de constância</string>
+    <string name="habit_detail_stats_no_rate">Sequência: %1$d · recorde %2$d</string>
+    <string name="habit_week_hint">Toque num dia aberto para marcar ou desmarcar. Dias esmaecidos já fecharam.</string>
+    <string name="habit_week_hint_breaking">Toque num dia aberto para corrigir quantas vezes aconteceu. Dias esmaecidos já fecharam.</string>
+    <string name="habit_day_clean">%1$s, sem recaída</string>
+    <plurals name="habit_day_count">
+        <item quantity="one">%1$s, %2$d registro</item>
+        <item quantity="other">%1$s, %2$d registros</item>
+    </plurals>
+    <plurals name="habit_day_over">
+        <item quantity="one">%1$s, passou do limite, %2$d registro</item>
+        <item quantity="other">%1$s, passou do limite, %2$d registros</item>
+    </plurals>
+    <string name="habit_progress_days_week">Esta semana: %1$d de %2$d dias</string>
+    <string name="habit_progress_days_month">Este mês: %1$d de %2$d dias</string>
+    <string name="habit_progress_limit_day">Hoje: %1$d de %2$d permitidos</string>
+    <string name="habit_progress_limit_week">Esta semana: %1$d de %2$d permitidos</string>
+    <string name="habit_progress_limit_month">Este mês: %1$d de %2$d permitidos</string>
+    <string name="habit_mark_today">Marcar hoje</string>
+    <string name="habit_done_today">Feito hoje</string>
+    <string name="habit_unmark">Desmarcar</string>
+    <string name="habit_register_relapse">Registrar recaída</string>
+    <string name="habit_register_use">Registrar uso</string>
+    <plurals name="habit_today_relapses">
+        <item quantity="one">Hoje: %1$d recaída</item>
+        <item quantity="other">Hoje: %1$d recaídas</item>
+    </plurals>
+    <plurals name="habit_today_uses">
+        <item quantity="one">Hoje: %1$d uso</item>
+        <item quantity="other">Hoje: %1$d usos</item>
+    </plurals>
+    <string name="habit_today_clean">Hoje: sem recaídas</string>
+    <string name="habit_undo_one">Desfazer 1</string>
+    <string name="habit_paused_strip">Pausado. Dias pausados não contam como perdidos.</string>
+    <string name="habit_excluded_strip">Excluído do acompanhamento.</string>
+    <string name="habit_pause_short">Pausar</string>
+    <string name="habit_resume_short">Retomar</string>
+    <string name="habit_track">Acompanhar</string>
+    <string name="habit_day_sheet_relapses">Quantas recaídas neste dia</string>
+    <string name="habit_day_sheet_limit">Quantas vezes neste dia · limite %1$d</string>
+    <plurals name="habit_times">
+        <item quantity="one">vez</item>
+        <item quantity="other">vezes</item>
+    </plurals>
+    <string name="habit_day_sheet_within">Dentro do combinado: o dia conta como sucesso quando fechar.</string>
+    <string name="habit_day_sheet_over">Passou do combinado: este dia conta como perdido.</string>
+    <string name="habit_day_sheet_done">Pronto</string>
     <string name="game_mode_setting">Modo jogo</string>
     <string name="game_mode_setting_hint">Moedas, XP, níveis e recompensas pelas tarefas e hábitos.</string>
     <string name="game_mode_off_title">Desligar o modo jogo?</string>

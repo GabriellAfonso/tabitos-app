@@ -2,22 +2,17 @@ package com.ethos.app.features.habits
 
 import com.ethos.app.core.ui.timers.TimerChip
 import com.ethos.app.core.ui.timers.TimerChipButton
-import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.theme.EthosTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
@@ -33,66 +28,6 @@ import com.ethos.app.core.ui.components.WeekBars
 import com.ethos.app.core.ui.components.itemColors
 import com.ethos.app.core.habits.domain.*
 import java.time.LocalDate
-import java.time.YearMonth
-
-@Composable
-fun HabitCalendar(
-    records: List<HabitRecord>, today: LocalDate, onDate: (String) -> Unit,
-    dayOutcome: (LocalDate) -> PeriodOutcome? = { null },
-) {
-    var monthText by rememberSaveable { mutableStateOf(YearMonth.from(today).toString()) }
-    val month = YearMonth.parse(monthText)
-    val weekdays = stringResource(R.string.calendar_weekdays).split(',')
-    Column {
-        Column {
-            TextButton({ monthText = month.minusMonths(1).toString() }) {
-                Text(stringResource(R.string.habit_previous_month)) }
-            TextButton({ monthText = month.plusMonths(1).toString() }) {
-                Text(stringResource(R.string.habit_following_month)) }
-        }
-        Text(EthosDates.monthTitle(month), style = MaterialTheme.typography.titleMedium)
-        val offset = month.atDay(1).dayOfWeek.value - 1
-        val cells = (0 until offset).map { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
-        // The grid fills the dialog width: a fixed width pushed Saturday and Sunday out of view.
-        Row(Modifier.fillMaxWidth()) {
-            weekdays.forEach { label ->
-                Text(label, Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Clip)
-            }
-        }
-        cells.chunked(7).forEach { week -> Row(Modifier.fillMaxWidth()) {
-            week.forEach { date ->
-                if (date == null) Spacer(Modifier.weight(1f)) else {
-                    val count = records.count { it.date == date }
-                    val outcome = dayOutcome(date)
-                    val dayText = EthosDates.shortPlain(date, today)
-                    // Marks never rely on color alone: symbol plus spoken state (spec 014).
-                    val label = when (outcome) {
-                        PeriodOutcome.SUCCESS -> stringResource(R.string.habit_day_done, dayText)
-                        PeriodOutcome.FAILURE -> stringResource(R.string.habit_day_missed, dayText)
-                        PeriodOutcome.OPEN -> stringResource(R.string.habit_day_open, dayText)
-                        else -> stringResource(R.string.habit_calendar_day, dayText, count)
-                    }
-                    val mark = when {
-                        outcome == PeriodOutcome.SUCCESS -> "✓"
-                        outcome == PeriodOutcome.FAILURE -> "✕"
-                        count > 0 -> "•"
-                        else -> ""
-                    }
-                    Column(Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
-                        .clickable { onDate(date.toString()) }.semantics(mergeDescendants = true) {
-                            contentDescription = label },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center) {
-                        Text(date.dayOfMonth.toString(), maxLines = 1)
-                        Text(mark, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-                    }
-                }
-            }
-            repeat(7 - week.size) { Spacer(Modifier.weight(1f)) }
-        } }
-    }
-}
 
 /** Where habit cards appear; [EXCLUDED] is the Settings sub-page that keeps excluded habits restorable. */
 enum class HabitPage { TODAY, REVIEW, LIST, EXCLUDED }
@@ -123,16 +58,6 @@ fun HabitError(state: HabitsUiState, retry: () -> Unit) {
             if (state.storageError) TextButton(retry) { Text(stringResource(R.string.retry)) }
         }
     }
-}
-
-@Composable
-fun HabitProgress(p: HabitPeriod, today: LocalDate) {
-    val label = if (p.rule.type == HabitType.PRACTICE) R.string.habit_days_progress else R.string.habit_events_progress
-    Text(stringResource(label, p.count, p.target))
-    Text(stringResource(R.string.habit_period_range, p.start.toString(), p.end.toString()),
-        style = MaterialTheme.typography.bodySmall)
-    Text(stringResource(outcomeLabel(p, today)))
-    if (p.excessIds.isNotEmpty()) Text(stringResource(R.string.habit_excess, p.excessIds.size))
 }
 
 /** Habits are chances, never debts: closed periods read "Feito"/"Perdido", the late window stays open. */

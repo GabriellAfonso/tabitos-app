@@ -1,0 +1,97 @@
+package com.ethos.app.core.ui.components
+
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import com.ethos.app.R
+import com.ethos.app.core.ui.theme.EthosTheme
+
+// Pieces shared by the task and habit detail popups (specs 021 and 023).
+
+/** Icon with its label under it, one of the equal-width actions at the bottom of a detail popup. */
+@Composable
+fun RowScope.DetailIconAction(
+    @DrawableRes icon: Int, @StringRes label: Int, enabled: Boolean, onClick: () -> Unit,
+) {
+    val color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    Column(Modifier.weight(1f).heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp))
+        .clickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Icon(painterResource(icon), null, Modifier.size(22.dp), tint = color)
+        Text(stringResource(label), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center,
+            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else color)
+    }
+}
+
+/** Small icon and text of a popup summary line; [spoken] replaces what TalkBack reads when the text is terse. */
+@Composable
+fun DetailSummaryItem(
+    @DrawableRes icon: Int, text: String, emphasized: Boolean = false, tint: Color? = null, spoken: String? = null,
+) {
+    val color = if (emphasized) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+    Row(Modifier.semantics(mergeDescendants = true) { spoken?.let { contentDescription = it } },
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(painterResource(icon), null, Modifier.size(16.dp), tint = tint ?: color)
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = color)
+    }
+}
+
+/** Description limited to two lines until "Ver tudo" is tapped. */
+@Composable
+fun ExpandableDescription(text: String) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+    Column {
+        Text(text, style = MaterialTheme.typography.bodyMedium, maxLines = if (expanded) Int.MAX_VALUE else 2,
+            overflow = TextOverflow.Ellipsis)
+        if (!expanded) TextButton({ expanded = true }, contentPadding = ButtonDefaults.TextButtonWithIconContentPadding) {
+            Text(stringResource(R.string.task_description_more))
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun DetailPartsPreview() {
+    EthosTheme {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            DetailSummaryItem(R.drawable.ic_repeat, "Todo dia")
+            ExpandableDescription("Antes de dormir, longe do celular. Vale qualquer livro, menos os de trabalho.")
+            Row(Modifier.fillMaxWidth()) {
+                DetailIconAction(R.drawable.ic_edit, R.string.edit, enabled = true) {}
+                DetailIconAction(R.drawable.ic_delete, R.string.delete, enabled = false) {}
+            }
+        }
+    }
+}

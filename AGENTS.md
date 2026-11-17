@@ -228,4 +228,6 @@ não executados.
 Sessão do cronômetro (Abrir): folha inferior com anel, Pausar/Retomar e + tempo esquecido; Descartar/Encerrar no ⋮;
 3 trechos recentes + Ver tudo (Corrigir/Excluir no ⋮ do trecho); sem histórico de alterações nem tempo por período
 (auditoria continua gravada; tempo fica em Estatísticas). Presentation: features/timers/TimerSheetPresentation.kt.
+Spec023: pop-up de hábito no formato do de tarefa + faixa dos últimos 7 dias (toque marca/desmarca dia aberto; mau
+hábito abre folha −/+). Sem campo de data, registros nem períodos; regras/schema inalterados (HabitDetailPresentation).
 <!-- SPECKIT END -->

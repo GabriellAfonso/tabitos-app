@@ -44,9 +44,9 @@ class HabitsContentTest {
         compose.onNodeWithText("Salvar").performClick()
         compose.waitUntil(15_000) { repo.snapshot.value.habits.size == 1 }
         compose.onNodeWithText("Ler páginas").performScrollTo().performClick()
-        compose.onNodeWithText("Registrar ocorrência/prática").performScrollTo().performClick()
+        compose.onNodeWithText("Marcar hoje").performScrollTo().performClick()
         compose.waitUntil(15_000) { repo.snapshot.value.records.size == 1 }
-        compose.onNodeWithText("Excluir registro incorreto").performScrollTo().performClick()
+        compose.onNodeWithText("Desmarcar").performScrollTo().performClick()
         compose.waitUntil(15_000) { repo.snapshot.value.records.single().deleted }
         assertEquals(1, repo.snapshot.value.audits.count { it.kind == "DELETE_RECORD" })
     }

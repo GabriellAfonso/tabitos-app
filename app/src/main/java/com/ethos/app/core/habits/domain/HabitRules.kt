@@ -29,7 +29,8 @@ object HabitRules {
         "${rule.habitId}:${rule.type}:${rule.unit}:${start(date, rule.unit)}"
     private fun dates(from: LocalDate, to: LocalDate): Sequence<LocalDate> =
         generateSequence(from) { it.plusDays(1) }.takeWhile { it <= to }
-    private fun scheduled(rule: HabitRule, date: LocalDate) = rule.type != HabitType.PRACTICE ||
+    /** Daily practice only counts on its chosen weekdays; other rules accept every day. */
+    fun scheduled(rule: HabitRule, date: LocalDate) = rule.type != HabitType.PRACTICE ||
         rule.unit != HabitUnit.DAY || rule.weekdays and (1 shl (date.dayOfWeek.value - 1)) != 0
 
     fun periods(s: HabitSnapshot, id: String, today: LocalDate): List<HabitPeriod> {

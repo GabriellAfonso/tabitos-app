@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -24,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -55,7 +53,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -68,6 +65,9 @@ import com.ethos.app.core.tasks.domain.TaskFields
 import com.ethos.app.core.tasks.domain.TaskList
 import com.ethos.app.core.tasks.domain.TaskOccurrence
 import com.ethos.app.core.tasks.domain.TaskStatus
+import com.ethos.app.core.ui.components.DetailIconAction
+import com.ethos.app.core.ui.components.DetailSummaryItem
+import com.ethos.app.core.ui.components.ExpandableDescription
 import com.ethos.app.core.ui.components.itemColors
 import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.format.label
@@ -113,7 +113,7 @@ fun TaskDetail(
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 error()
                 TaskSummaryLine(model, today, busy, actions.openTimer)
-                if (o.fields.description.isNotEmpty()) TaskDescription(o.fields.description)
+                if (o.fields.description.isNotEmpty()) ExpandableDescription(o.fields.description)
                 if (o.checks.isNotEmpty()) TaskChecklist(o, busy || !model.isOpen, actions.check)
                 if (model.isOpen) TaskMainButtons(model.canPostpone, busy, actions.complete,
                     onOtherDay = { pickingCompletionDate = true }, onPostpone = { postponing = true })
@@ -144,16 +144,16 @@ private fun TaskSummaryLine(model: TaskDetailModel, today: LocalDate, busy: Bool
         itemVerticalAlignment = Alignment.CenterVertically) {
         val due = o.dueDate?.let { EthosDates.short(it, today).label() } ?: stringResource(R.string.no_date)
         val dueWithTime = listOfNotNull(due, o.fields.minute?.let(EthosDates::time)).joinToString(" · ")
-        SummaryItem(R.drawable.ic_calendar_month,
+        DetailSummaryItem(R.drawable.ic_calendar_month,
             if (model.isOverdue) stringResource(R.string.task_overdue_suffix, dueWithTime) else dueWithTime,
             emphasized = model.isOverdue)
         val list = model.list
-        SummaryItem(if (list == null) R.drawable.ic_checklist else listIcons[list.icon].icon,
+        DetailSummaryItem(if (list == null) R.drawable.ic_checklist else listIcons[list.icon].icon,
             list?.name ?: stringResource(R.string.inbox), tint = list?.let { itemColors[it.color] })
-        model.repeat?.let { SummaryItem(R.drawable.ic_repeat, repeatLabel(it)) }
+        model.repeat?.let { DetailSummaryItem(R.drawable.ic_repeat, repeatLabel(it)) }
         if (model.isOpen && model.reminderCount > 0) {
             val spoken = pluralStringResource(R.plurals.task_reminder_count, model.reminderCount, model.reminderCount)
-            SummaryItem(R.drawable.ic_notification_reminder, model.reminderCount.toString(), spoken = spoken)
+            DetailSummaryItem(R.drawable.ic_notification_reminder, model.reminderCount.toString(), spoken = spoken)
         }
         val minutes = model.timerMinutes
         if (model.isOpen && minutes != null) {
@@ -166,36 +166,12 @@ private fun TaskSummaryLine(model: TaskDetailModel, today: LocalDate, busy: Bool
 }
 
 @Composable
-private fun SummaryItem(
-    @DrawableRes icon: Int, text: String, emphasized: Boolean = false, tint: Color? = null, spoken: String? = null,
-) {
-    val color = if (emphasized) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-    Row(Modifier.semantics(mergeDescendants = true) { spoken?.let { contentDescription = it } },
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(painterResource(icon), null, Modifier.size(16.dp), tint = tint ?: color)
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = color)
-    }
-}
-
-@Composable
 private fun repeatLabel(rule: RepeatRule): String = when (repeatChoiceOf(rule.kind)) {
     RepeatChoice.DAILY -> stringResource(R.string.repeat_every_day)
     RepeatChoice.WEEKLY -> stringResource(R.string.repeat_every_week)
     RepeatChoice.MONTHLY -> stringResource(R.string.repeat_every_month)
     RepeatChoice.INTERVAL, RepeatChoice.NONE ->
         pluralStringResource(R.plurals.task_repeat_interval, rule.interval, rule.interval)
-}
-
-@Composable
-private fun TaskDescription(text: String) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    Column {
-        Text(text, style = MaterialTheme.typography.bodyMedium, maxLines = if (expanded) Int.MAX_VALUE else 2,
-            overflow = TextOverflow.Ellipsis)
-        if (!expanded) TextButton({ expanded = true }, contentPadding = ButtonDefaults.TextButtonWithIconContentPadding) {
-            Text(stringResource(R.string.task_description_more))
-        }
-    }
 }
 
 @Composable
@@ -273,25 +249,11 @@ private data class TaskIconActions(
 @Composable
 private fun TaskActionIcons(open: Boolean, busy: Boolean, actions: TaskIconActions) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (open) IconAction(R.drawable.ic_close, R.string.not_done, !busy, actions.notDone)
-        IconAction(R.drawable.ic_edit, R.string.edit, !busy, actions.edit)
-        IconAction(R.drawable.ic_notification_reminder, R.string.reminders, !busy && open, actions.reminders)
-        IconAction(R.drawable.ic_format_list_bulleted, R.string.choose_list, !busy && open, actions.list)
-        IconAction(R.drawable.ic_delete, R.string.delete, !busy, actions.delete)
-    }
-}
-
-@Composable
-private fun RowScope.IconAction(
-    @DrawableRes icon: Int, @StringRes label: Int, enabled: Boolean, onClick: () -> Unit,
-) {
-    val color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-    Column(Modifier.weight(1f).heightIn(min = 56.dp).clip(RoundedCornerShape(12.dp))
-        .clickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Icon(painterResource(icon), null, Modifier.size(22.dp), tint = color)
-        Text(stringResource(label), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center,
-            color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else color)
+        if (open) DetailIconAction(R.drawable.ic_close, R.string.not_done, !busy, actions.notDone)
+        DetailIconAction(R.drawable.ic_edit, R.string.edit, !busy, actions.edit)
+        DetailIconAction(R.drawable.ic_notification_reminder, R.string.reminders, !busy && open, actions.reminders)
+        DetailIconAction(R.drawable.ic_format_list_bulleted, R.string.choose_list, !busy && open, actions.list)
+        DetailIconAction(R.drawable.ic_delete, R.string.delete, !busy, actions.delete)
     }
 }
 

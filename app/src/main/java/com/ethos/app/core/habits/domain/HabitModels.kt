@@ -7,6 +7,9 @@ enum class HabitUnit { DAY, WEEK, MONTH }
 enum class HabitStatus { ACTIVE, PAUSED, EXCLUDED }
 enum class PeriodOutcome { OPEN, SUCCESS, FAILURE, PENDING, NEUTRAL }
 
+/** [HabitRule.weekdays] bit mask with Monday to Sunday selected. */
+const val ALL_WEEKDAYS = 127
+
 data class Habit(
     val id: String, val created: LocalDate, val name: String, val description: String = "",
     val listId: String? = null, val color: Int = 0, val icon: Int = 0,

@@ -30,6 +30,8 @@ data class HabitLifecycleDraft(val id: String, val status: HabitStatus, val part
     val destinationChosen: Boolean = false,
     /** Only for excluding: delete the habit completely with its history instead (spec 022). */
     val eraseHistory: Boolean = false) : java.io.Serializable
+/** Manual practice of a timed habit on [date], waiting for confirmation (spec 016). */
+data class TimedPractice(val habitId: String, val date: LocalDate)
 data class HabitsUiState(
     val snapshot: HabitSnapshot = HabitSnapshot(), val today: LocalDate,
     val periods: List<HabitPeriod> = emptyList(), val streaks: Map<String, HabitStreak> = emptyMap(),
@@ -38,15 +40,16 @@ data class HabitsUiState(
     val dayStandings: Map<String, Map<LocalDate, PeriodOutcome>> = emptyMap(),
     val loading: Boolean = true, val busy: Boolean = false, val storageError: Boolean = false,
     val problem: HabitProblem? = null, val draft: HabitDraft? = null, val detail: String? = null,
-    val recordDate: String = "", val correctionId: String? = null,
+    /** Day of a bad habit whose record count is being corrected in the popup's day sheet (spec 023). */
+    val dayEditor: LocalDate? = null,
     val lifecycle: HabitLifecycleDraft? = null, val preview: HabitPeriod? = null,
     val previewReady: Boolean = false,
     val financialPreview: FinancialPreview? = null,
     val lastPractice: HabitAction.SetPractice? = null,
     /** Duration goal in minutes per habit; a habit with a goal is the timed variant. */
     val durations: Map<String, Int> = emptyMap(),
-    /** Timed habit waiting for "Concluir sem completar o tempo?". */
-    val timedConfirmation: String? = null,
+    /** Timed habit day waiting for "Concluir sem completar o tempo?". */
+    val timedConfirmation: TimedPractice? = null,
     /** Game mode (spec 017): off hides difficulty/estimates and skips financial confirmations. */
     val gameMode: Boolean = true,
     /** Excluded habit waiting for "Apagar por completo" to be confirmed (spec 022). */
@@ -187,19 +190,21 @@ class HabitsViewModel @Inject constructor(
             execute(saveAction(), close = true)
         } catch (_: Exception) { mutable.update { it.copy(problem = HabitProblem.INPUT) } }
     }
-    fun detail(id: String?) { mutable.update { it.copy(detail = id, recordDate = clock.today().toString(),
-        correctionId = null, problem = null) } }
-    fun date(value: String) { mutable.update { it.copy(recordDate = value) } }
-    fun correct(record: HabitRecord) { mutable.update { it.copy(correctionId = record.id,
-        recordDate = record.date.toString()) } }
-    fun record() {
-        try {
-            val s = state.value
-            val date = LocalDate.parse(s.recordDate)
-            val action = s.correctionId?.let { HabitAction.Correct(it, date) }
-                ?: HabitAction.Record(UUID.randomUUID().toString(), s.detail ?: return, date)
-            execute(action)
-        } catch (_: Exception) { mutable.update { it.copy(problem = HabitProblem.DATE) } }
+    fun detail(id: String?) { mutable.update { it.copy(detail = id, dayEditor = null, problem = null) } }
+    /** Marks or unmarks a practice day from the popup's week strip; timed habits confirm first (spec 023). */
+    fun setPractice(habitId: String, date: LocalDate, done: Boolean) {
+        if (done && habitId in state.value.durations) {
+            mutable.update { it.copy(timedConfirmation = TimedPractice(habitId, date)) }; return
+        }
+        execute(HabitAction.SetPractice(UUID.randomUUID().toString(), habitId, date, done))
+    }
+    fun editDay(date: LocalDate?) { mutable.update { it.copy(dayEditor = date, problem = null) } }
+    fun addOccurrence(habitId: String, date: LocalDate) {
+        execute(HabitAction.Record(UUID.randomUUID().toString(), habitId, date))
+    }
+    fun removeOccurrence(habitId: String, date: LocalDate) {
+        val record = latestRecord(state.value.snapshot.records, habitId, date) ?: return
+        execute(HabitAction.Correct(record.id, delete = true))
     }
     /** The habit's duration was reached: one practice on [date], undoable from the feedback (spec 016). */
     fun timerCompleted(habitId: String, date: LocalDate) {
@@ -215,7 +220,7 @@ class HabitsViewModel @Inject constructor(
         val existing = snapshot.records.firstOrNull { it.habitId == habitId && it.date == today && !it.deleted }
         val id = UUID.randomUUID().toString()
         if (practice && existing == null && habitId in state.value.durations) {
-            mutable.update { it.copy(timedConfirmation = habitId) }; return
+            mutable.update { it.copy(timedConfirmation = TimedPractice(habitId, today)) }; return
         }
         val action = if (practice) HabitAction.SetPractice(id, habitId, today, existing == null)
             else HabitAction.Record(id, habitId, today)
@@ -223,9 +228,9 @@ class HabitsViewModel @Inject constructor(
     }
     /** Manual practice of a timed habit, after the user accepted not finishing the time. */
     fun confirmTimed(confirm: Boolean) {
-        val id = state.value.timedConfirmation ?: return
+        val pending = state.value.timedConfirmation ?: return
         mutable.update { it.copy(timedConfirmation = null) }
-        if (confirm) execute(HabitAction.SetPractice(UUID.randomUUID().toString(), id, clock.today(), true))
+        if (confirm) execute(HabitAction.SetPractice(UUID.randomUUID().toString(), pending.habitId, pending.date, true))
     }
     fun lifecycle(value: HabitLifecycleDraft?) { mutable.update { it.copy(lifecycle = value, problem = null) } }
     fun dismissPracticeFeedback() { mutable.update { it.copy(lastPractice = null) } }
@@ -319,8 +324,10 @@ class HabitsViewModel @Inject constructor(
                 retryAction = null
                 if (close) draft(null)
                 mutable.update { it.copy(busy = false, storageError = readFailed,
-                    lastPractice = if (action is HabitAction.SetPractice) action else it.lastPractice,
-                    lifecycle = if (close) null else it.lifecycle, correctionId = null) }
+                    // The feedback reads "Prática de hoje …"; past days changed in the popup show it there.
+                    lastPractice = if (action is HabitAction.SetPractice && action.date == it.today) action
+                        else it.lastPractice,
+                    lifecycle = if (close) null else it.lifecycle) }
             } catch (e: CancellationException) { throw e
             } catch (e: HabitRuleException) {
                 mutable.update { it.copy(busy = false, problem = e.reason) }
