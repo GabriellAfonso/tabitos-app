@@ -48,3 +48,9 @@ Registro de pendência. Não é prompt pronto, não executa Spec Kit nem autoriz
 - Descartado: opção A (grade ocupando a tela toda com folha inferior). O usuário não quer o calendário na tela toda.
 - Preferência entre B (grade encolhe ao tocar) e C (grade compacta fixa + lista); criada D, mistura das duas:
   grade compacta, tocar só troca a lista, recolher para a semana ao rolar ou pelo botão.
+
+## Aplicado (2026-11-18)
+
+- Opção C aplicada no app: specs/030-calendar-list-below/spec.md (verificação no mesmo diretório).
+- Continuam em aberto: concluir tarefa direto no Calendário, mostrar concluídas, botão + com a data escolhida,
+  visão inicial ao abrir.

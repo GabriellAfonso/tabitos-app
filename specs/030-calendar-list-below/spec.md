@@ -23,14 +23,15 @@ plan/tasks documents).
 1. Mês, Semana and Dia stay. The segmented control is centered at the top of the page. "Ir para hoje" is an icon
    at its left, shown only when the visible period does not contain today (the slot stays reserved so the control
    does not move); the filter icon is at its right and shows a dot while any filter is active.
-2. One centered period row below: `‹ Novembro 2026 ›` (month), `16–22 nov` / `30 nov – 6 dez` (week),
+2. One centered period row below: `‹ Novembro de 2026 ›` (month), `16–22 nov` / `30 nov – 6 dez` (week),
    `ter, 17 nov` (day); the year shows on week/day labels outside the current year. Arrows move by the view's unit.
 3. Filters (type, list, habit) move to a bottom sheet ("Mostrar", "Lista", "Hábito", Limpar, Pronto) and apply as
    they are tapped. Each active filter appears as a removable chip under the period row. Choosing a habit still
    hides tasks; excluded habits are listed only while selected.
 4. Month view (option C): compact grid always visible at the top, not scrolling with the list. Each cell marks
    what it has, separately: filled primary dot for tasks, filled neutral dot for habit records, tertiary ring for a
-   tracker entry; a legend under the grid names them. Below a divider, only the selected day's list scrolls, with
+   tracker entry (the prototype's green habit dot became the theme's neutral color, as the Ameixa theme has no
+   success color); a legend under the grid names them. Below a divider, only the selected day's list scrolls, with
    the day name pinned at its top. Tapping a day only changes the list.
 5. Week view becomes an agenda of the seven days (Monday–Sunday): day number on the left, tasks, a one-line
    summary of habit records and the tracker line on the right, "Nada" when empty. Tapping a day number opens the
@@ -38,8 +39,9 @@ plan/tasks documents).
 6. Day view: the day name and its list, with the arrows moving one day.
 7. Day list: "Tarefas" (title, list name, time when set, "Vencida" when its due date passed), "Hábitos" (habit tile,
    "Feito" for practice habits or "N vezes" for avoid/limit, which keep the error container colors) and
-   "Acompanhamentos" (habit name, "preenchido às HH:mm" or "Sem dados", "Preencher"/"Editar" inside the tracker
-   limits). Tapping a task or habit opens its existing popup; empty days say "Nada neste dia" (with "com os
+   "Acompanhamentos" (entry rows "habit · preenchido às HH:mm" open the entry with "Editar"; fillable trackers
+   without an entry show "Sem dados" and "Preencher"; the section appears only when some tracker matches the
+   filters). Tapping a task or habit opens its existing popup; empty days say "Nada neste dia" (with "com os
    filtros atuais" when a filter is active).
 8. Grid cells keep their TalkBack text (date and counts, "sem dados" for trackers) and the sideways scroll that
    only appears with large fonts.
