@@ -7,16 +7,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,17 +29,11 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.unit.dp
 import com.ethos.app.R
+import com.ethos.app.core.ui.components.EthosDatePickerDialog
 import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.format.label
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneOffset
-
-/** The Material date picker models a day as UTC midnight; converting through UTC never shifts the day. */
-internal fun LocalDate.toPickerMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
-internal fun pickerMillisToDate(millis: Long): LocalDate = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC)
-    .toLocalDate()
 
 private fun parseDate(text: String): LocalDate? = runCatching { LocalDate.parse(text) }.getOrNull()
 private fun parseTime(text: String): LocalTime? = runCatching { LocalTime.parse(text) }.getOrNull()
@@ -84,33 +74,6 @@ fun DateField(
     if (!open) return
     EthosDatePickerDialog(initial = date ?: today, min = min, max = max,
         onConfirm = { onChange(it.toString()); open = false }, onDismiss = { open = false })
-}
-
-/** Calendar picker without typing (spec 013); [excluded] is a day that cannot be chosen, like the current one. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun EthosDatePickerDialog(
-    initial: LocalDate, onConfirm: (LocalDate) -> Unit, onDismiss: () -> Unit,
-    min: LocalDate? = null, max: LocalDate? = null, excluded: LocalDate? = null,
-    confirmLabel: Int = R.string.picker_ok,
-) {
-    val state = rememberDatePickerState(
-        initialSelectedDateMillis = initial.coerceIn(min ?: LocalDate.MIN, max ?: LocalDate.MAX)
-            .takeIf { it != excluded }?.toPickerMillis(),
-        selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                val day = pickerMillisToDate(utcTimeMillis)
-                return (min == null || day >= min) && (max == null || day <= max) && day != excluded
-            }
-            override fun isSelectableYear(year: Int): Boolean =
-                (min == null || year >= min.year) && (max == null || year <= max.year)
-        },
-    )
-    DatePickerDialog(onDismissRequest = onDismiss,
-        confirmButton = { TextButton({ state.selectedDateMillis?.let { onConfirm(pickerMillisToDate(it)) } },
-            enabled = state.selectedDateMillis != null) { Text(stringResource(confirmLabel)) } },
-        dismissButton = { TextButton(onDismiss) { Text(stringResource(R.string.picker_cancel)) } },
-    ) { DatePicker(state) }
 }
 
 /** Optional 24-hour time; [value] is `HH:mm` text or empty when the task has no time. */
