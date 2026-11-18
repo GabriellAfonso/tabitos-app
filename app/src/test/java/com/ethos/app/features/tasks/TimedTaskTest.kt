@@ -54,7 +54,7 @@ class TimedTaskTest {
         assertEquals(TaskStatus.DONE, tasks.data.value.occurrences.single().status)
     }
 
-    @Test fun reachedDurationCompletesOnceWithUndo() = runTest(dispatcher) {
+    @Test fun reachedDurationCompletesOnceAndTheCheckboxReopensIt() = runTest(dispatcher) {
         val tasks = Tasks()
         tasks.execute(TaskAction.Create("t", TaskFields(title = "Ler", deadline = DeadlineKind.DAY, date = day),
             RepeatRule(start = day)))
@@ -68,10 +68,10 @@ class TimedTaskTest {
         vm.timerCompleted("t:1", day)
         advanceUntilIdle()
         assertEquals(1, tasks.data.value.history.count { it.kind == AuditKind.COMPLETED })
-        vm.undoTimerDone()
+        // No "Desfazer" message anymore: unchecking the completed card is the way back (spec 016).
+        vm.quickCheck("t:1")
         advanceUntilIdle()
         assertEquals(TaskStatus.OPEN, tasks.data.value.occurrences.single().status)
-        assertNull(vm.state.value.timerDone)
     }
 
     @Test fun listCreatedFromEditorReceivesTheTaskBeingWritten() = runTest(dispatcher) {

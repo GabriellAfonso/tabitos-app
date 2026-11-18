@@ -49,8 +49,6 @@ data class TasksUiState(
     val selectedListId: String? = null,
     val financialPreview: FinancialPreview? = null,
     val discardConfirmation: Boolean = false,
-    /** Occurrence just completed by its timer, offered for undo (spec 016). */
-    val timerDone: String? = null,
     /** Duration goal in minutes per task series; a task with a goal is the timed variant. */
     val durations: Map<String, Int> = emptyMap(),
     /** Timed occurrence waiting for "Concluir sem completar o tempo?". */
@@ -266,15 +264,8 @@ class TasksViewModel @Inject constructor(
     fun timerCompleted(id: String, date: LocalDate) {
         val o = state.value.snapshot.occurrences.firstOrNull { it.id == id } ?: return
         if (o.status != TaskStatus.OPEN) return
-        mutable.update { it.copy(timerDone = id) }
         execute(TaskAction.SetCompleted(id, true, date), confirmed = true)
     }
-    fun undoTimerDone() {
-        val id = state.value.timerDone ?: return
-        mutable.update { it.copy(timerDone = null) }
-        execute(TaskAction.SetCompleted(id, false, clock.today()), confirmed = true)
-    }
-    fun dismissTimerDone() { mutable.update { it.copy(timerDone = null) } }
     /** Manual completion of a timed task, after the user accepted not finishing the time. */
     fun confirmTimed(confirm: Boolean) {
         val id = state.value.timedConfirmation ?: return

@@ -54,7 +54,6 @@ import com.ethos.app.features.calendar.CalendarScreen
 import com.ethos.app.features.calendar.CalendarViewModel
 import com.ethos.app.features.habits.HabitDialogs
 import com.ethos.app.features.habits.HabitPage
-import com.ethos.app.features.habits.HabitPracticeFeedback
 import com.ethos.app.features.habits.HabitsContent
 import com.ethos.app.features.habits.HabitsRefreshEffect
 import com.ethos.app.features.habits.HabitsUiState
@@ -89,7 +88,6 @@ import com.ethos.app.features.tasks.DrawerListCallbacks
 import com.ethos.app.features.tasks.PostponedSnackbar
 import com.ethos.app.features.tasks.TaskDialogs
 import com.ethos.app.features.tasks.TaskDrawer
-import com.ethos.app.features.tasks.TimerDoneFeedback
 import com.ethos.app.features.tasks.TaskPage
 import com.ethos.app.features.tasks.TasksContent
 import com.ethos.app.features.tasks.TasksRefreshEffect
@@ -98,7 +96,6 @@ import com.ethos.app.features.tasks.TasksViewModel
 import com.ethos.app.features.timers.TimerCardActions
 import com.ethos.app.features.timers.TimerDialogs
 import com.ethos.app.features.timers.TimerSessionCards
-import com.ethos.app.features.timers.TimerStartedFeedback
 import com.ethos.app.features.timers.TimerTicker
 import com.ethos.app.features.timers.TimerUiState
 import com.ethos.app.features.timers.TimerViewModel
@@ -255,12 +252,10 @@ private fun AppShell(
             ))
         },
         snackbar = {
-            if (app.timers.startedSession != null) {
-                TimerStartedFeedback(vm.timers::undoStart, vm.timers::dismissStartUndo)
-            } else if (tasks.timerDone != null) TimerDoneFeedback(vm.tasks::undoTimerDone, vm.tasks::dismissTimerDone)
-            else if (tasks.postponed != null) PostponedSnackbar(tasks.postponed, tasks.today, vm.tasks::undoPostpone,
-                vm.tasks::dismissPostponed)
-            else HabitPracticeFeedback(habits, vm.habits::undoPractice, vm.habits::dismissPracticeFeedback)
+            tasks.postponed?.let {
+                PostponedSnackbar(it, tasks.today, undo = vm.tasks::undoPostpone,
+                    dismiss = vm.tasks::dismissPostponed)
+            }
         },
         requested = requests.destination,
         onRequestHandled = { requests.destination = null },

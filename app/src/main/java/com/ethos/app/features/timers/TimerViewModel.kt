@@ -36,8 +36,7 @@ data class TimerUiState(
     val manual: ManualDraft? = null,
     val completion: TimerCompletion? = null, val notificationsVisible: Boolean = true,
     val serviceBlocked: Boolean = false, val unavailable: Boolean = false,
-    /** Session just started or resumed, offering "Desfazer" until dismissed (spec 018). */
-    val startedSession: String? = null, val discard: TimerDiscard? = null,
+    val discard: TimerDiscard? = null,
     /** Alarm still sounding or not yet stopped; shown as a popup with "Parar alarme" (spec 026). */
     val alarm: TimerAlarm? = null,
 )
@@ -98,10 +97,7 @@ class TimerViewModel @Inject constructor(
         when (repository.start(request, pauseOther)) {
             StartResult.CONFLICT -> mutable.update { it.copy(conflict = request) }
             StartResult.UNAVAILABLE -> mutable.update { it.copy(conflict = null, unavailable = true) }
-            StartResult.STARTED -> mutable.update { state ->
-                state.copy(conflict = null, unavailable = false,
-                    startedSession = repository.observe().first().open(request.kind, request.sourceId)?.id)
-            }
+            StartResult.STARTED -> mutable.update { it.copy(conflict = null, unavailable = false) }
         }
         coordinator.request()
     }
@@ -119,12 +115,9 @@ class TimerViewModel @Inject constructor(
     fun confirmDiscard() { state.value.discard?.let { discard(it.sessionId) } }
     fun cancelDiscard() { mutable.update { it.copy(discard = null) } }
 
-    fun undoStart() { state.value.startedSession?.let(::discard) }
-    fun dismissStartUndo() { mutable.update { it.copy(startedSession = null) } }
-
     private fun discard(sessionId: String): Unit = write({ discard(sessionId) }) {
         repository.discardLatest(sessionId)
-        mutable.update { it.copy(discard = null, startedSession = null) }
+        mutable.update { it.copy(discard = null) }
         coordinator.request()
     }
 

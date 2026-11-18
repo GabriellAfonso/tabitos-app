@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -125,21 +124,6 @@ private fun TimerCardMenu(enabled: Boolean, discard: () -> Unit) {
         }
     }
 }
-
-/** "Cronômetro iniciado · Desfazer" right after ▶; it times out like a standard snackbar (spec 018). */
-@Composable
-fun TimerStartedFeedback(undo: () -> Unit, dismiss: () -> Unit) {
-    val accessibility = LocalAccessibilityManager.current
-    val timeout = accessibility?.calculateRecommendedTimeoutMillis(STARTED_FEEDBACK_MILLIS,
-        containsIcons = false, containsText = true, containsControls = true) ?: STARTED_FEEDBACK_MILLIS
-    LaunchedEffect(Unit) { delay(timeout); dismiss() }
-    Snackbar(Modifier.padding(12.dp),
-        action = { TextButton(undo) { Text(stringResource(R.string.undo)) } },
-        dismissAction = { TextButton(dismiss) { Text(stringResource(R.string.close)) } },
-    ) { Text(stringResource(R.string.timer_started)) }
-}
-
-private const val STARTED_FEEDBACK_MILLIS = 8_000L
 
 @Composable
 private fun DiscardDialog(state: TimerUiState, discard: TimerDiscard, vm: TimerViewModel) {

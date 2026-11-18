@@ -33,17 +33,6 @@ import java.time.LocalDate
 enum class HabitPage { TODAY, REVIEW, LIST, EXCLUDED }
 
 @Composable
-fun HabitPracticeFeedback(state: HabitsUiState, undo: () -> Unit, dismiss: () -> Unit) {
-    val last = state.lastPractice ?: return
-    Snackbar(Modifier.padding(12.dp),
-        action = { TextButton(undo, enabled = !state.busy) { Text(stringResource(R.string.habit_undo_quick)) } },
-        dismissAction = { TextButton(dismiss) { Text(stringResource(R.string.habit_feedback_close)) } },
-    ) {
-        Text(stringResource(if (last.done) R.string.habit_marked_today else R.string.habit_unmarked_today))
-    }
-}
-
-@Composable
 fun HabitError(state: HabitsUiState, retry: () -> Unit) {
     if (state.storageError || state.problem != null) OutlinedCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp)) {

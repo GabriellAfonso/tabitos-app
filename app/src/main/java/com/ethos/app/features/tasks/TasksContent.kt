@@ -398,12 +398,3 @@ private fun TaskRowPreview() {
             null, null, null), false, {}, LocalDate.of(2026, 11, 11))
     }
 }
-
-/** "Concluída pelo cronômetro · Desfazer" after a timed task completes by itself (spec 016). */
-@Composable
-fun TimerDoneFeedback(undo: () -> Unit, dismiss: () -> Unit) {
-    Snackbar(Modifier.padding(12.dp),
-        action = { TextButton(undo) { Text(stringResource(R.string.undo)) } },
-        dismissAction = { TextButton(dismiss) { Text(stringResource(R.string.close)) } },
-    ) { Text(stringResource(R.string.task_timer_done)) }
-}

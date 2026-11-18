@@ -33,7 +33,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -67,13 +66,10 @@ class HabitDetailTest {
         advanceUntilIdle()
         val unmarked = habitDetailModel(vm.state.value, ID)!!
         assertEquals(HabitDayMark.OPEN, unmarked.week.single { it.date == today.minusDays(1) }.mark)
-        // The "Feito hoje" feedback is only for today; past days show their change in the strip.
-        assertNull(vm.state.value.lastPractice)
 
         vm.setPractice(ID, today, done = true)
         advanceUntilIdle()
         assertEquals(HabitDetailMain.DONE_TODAY, habitDetailModel(vm.state.value, ID)!!.main)
-        assertNotNull(vm.state.value.lastPractice)
     }
 
     @Test fun weeklyPracticeKeepsThePreviousWeekOpenDuringItsLateDays() = runTest(dispatcher) {

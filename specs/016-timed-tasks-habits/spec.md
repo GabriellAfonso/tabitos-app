@@ -26,8 +26,8 @@ user wants the timer to be a **variant chosen when creating**, which enables onl
 3. **Card control**: a timed item shows a ▶ button with the remaining time on its card in Hoje and lists;
    tapping starts/pauses the countdown there. Elapsed time is kept when paused (resume continues).
 4. **Reaching zero completes automatically** with the normal coins/XP, using the date the time was reached
-   (also when the app was closed: completion is applied on the next sync). An in-app "Concluída pelo
-   cronômetro · Desfazer" message offers undo. The old "Concluir?" prompt is removed.
+   (also when the app was closed: completion is applied on the next sync). No in-app message is shown
+   (removed 2026-11-18): the card goes to Concluídas and unchecking it reopens the item. The old "Concluir?" prompt is removed.
 5. **Alarm**: one global setting "Alarme ao terminar o cronômetro" (on by default). On: alert notification
    on an alarm channel (sound + vibration, high importance). Off: silent notification.
 6. **Manual completion stays possible** (real life happens away from the phone), but checking a timed task
@@ -47,7 +47,7 @@ user wants the timer to be a **variant chosen when creating**, which enables onl
 - **FR-003**: Saving stores the task/habit and its duration goal; normal variant removes any goal.
 - **FR-004**: Timed cards show ▶/❚❚ with remaining time; only one timer counts at a time (spec 008 FR-002).
 - **FR-005**: An objective reached is completed automatically once (persisted confirmation audit), with the
-  reach date; undo is offered in-app.
+  reach date; unchecking the completed card reopens it (no undo message since 2026-11-18).
 - **FR-006**: Alarm setting controls the alert channel; default on.
 - **FR-007**: Manual completion of a timed item asks for confirmation.
 - **FR-008**: No timer entry point for normal items; the timer sheet no longer edits goals nor toggles
@@ -59,7 +59,7 @@ user wants the timer to be a **variant chosen when creating**, which enables onl
 
 ## Acceptance
 
-1. A timed task reaching 0 rings (if enabled) and appears completed with coins, and can be undone.
+1. A timed task reaching 0 rings (if enabled) and appears completed with coins; unchecking it reopens it.
 2. A timed habit "20 min por dia" is marked done for the day when 20 min accumulate.
 3. A normal task shows no timer anywhere; a timed task shows no checklist.
 4. Checking a timed task manually asks for confirmation first.
@@ -80,3 +80,9 @@ user wants the timer to be a **variant chosen when creating**, which enables onl
   for the task being written.
 - Frequency labels renamed for clarity: Diário, Semanal, Mensal (tasks' repetition and habits' frequency,
   including timed habits).
+
+## Change (2026-11-18)
+
+- The "Concluída pelo cronômetro · Desfazer" snackbar was removed: it never timed out, used the inverse
+  (light) colours over the dark theme, and only duplicated unchecking the card in Concluídas, which runs the
+  same `SetCompleted(false)` with the usual refund. Habits marked by their timer likewise show no message.

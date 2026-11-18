@@ -14,11 +14,12 @@ desfazer era pausar, abrir o diálogo, rolar até "Sessões e trechos" e excluir
   `DISCARDED` ("Contagem descartada"). Se a sessão não tiver outro tempo ativo, ela é encerrada e some do topo
   de Hoje, como se nunca tivesse começado.
 - Indisponível para cronômetros de recompensa (o tempo foi comprado e debitado; descartar exigiria estorno) e
-  para sessões cujo objetivo já foi atingido (a conclusão automática tem seu próprio Desfazer, spec 016).
+  para sessões cujo objetivo já foi atingido (a conclusão automática se desfaz desmarcando o cartão, spec 016).
 - Com menos de 1 minuto contado, descarta sem perguntar; com 1 minuto ou mais, pede confirmação mostrando o
   tempo que será descartado.
-- Ao iniciar ou retomar, aparece "Cronômetro iniciado · Desfazer". Desfazer descarta essa contagem. A mensagem
-  some sozinha após o tempo recomendado pela acessibilidade (base de 8 s); perdê-la não perde dados.
+- Ao iniciar ou retomar não aparece mensagem (a de "Cronômetro iniciado · Desfazer" foi removida em
+  2026-11-18): um ▶ acidental se corrige pelo "Descartar contagem atual", que com menos de 1 minuto descarta
+  sem perguntar.
 
 ## Onde fica
 - Cartão "Sessão ativa/pausada" no topo de Hoje: menu ⋮ no canto com "Descartar contagem atual". Não é um

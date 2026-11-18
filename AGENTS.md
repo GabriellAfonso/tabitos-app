@@ -182,7 +182,7 @@ Lembrete ReminderKind.TRACKER: aviso neutro contínuo (dispensável no Android 1
 Calendário substitui busca por data: filtros tipo/lista/hábito, "Sem dados", paridade com inDay das tarefas.
 Paleta Ameixa e modelo B de Hoje implementados: specs/010-ameixa-visual-refresh/spec.md (só interface).
 Moedas em âmbar (tertiary) com ◈; ocorrências evitar/limitar mantêm confirmação financeira.
-Spec011: prática marca/desmarca diretamente em Hoje, com estorno e Desfazer; sem barras/progresso semanal.
+Spec011: prática marca/desmarca diretamente em Hoje, com estorno (tocar de novo desfaz); sem barras/progresso semanal.
 Calendário e progresso nos detalhes; configuração debug restaura base fictícia com confirmação destrutiva.
 Restauração Room transacional preserva tema/permissões; bloqueada com cronômetro contando.
 Spec012: checkbox de tarefa conclui/desmarca direto; Concluídas expandida ao fim, com cartões discretos.
@@ -199,13 +199,15 @@ Refatoração 2026-11-11: MainActivity só trata Intents; montagem em EthosApp.k
 ContentFilter em core/ui/components; seções das páginas de tarefas em função pura (TaskListPresentation).
 Spec015: reordenar sempre por arrastar (core/ui/components/Reorder.kt), vizinhos deslizam; ações TalkBack.
 Spec016: tarefa/hábito "Com cronômetro" escolhido ao criar (sem checklist); ▶ no cartão; ao zerar conclui sozinho
-(Desfazer), alarme global opcional; concluir manual pede confirmação; cronômetro livre removido.
+(desmarcar desfaz), alarme global opcional; concluir manual pede confirmação; cronômetro livre removido.
 Constituição: .specify/memory/constitution.md v1.0.0.
 Spec017: "Modo jogo" no topo de Configurações (DataStore game_mode, padrão ligado); desligar pede confirmação.
 Desligado: esconde Recompensas/Histórico, carteira, preços, dificuldade/estimativa e confirmações financeiras.
 Resultados gravados desligado ficam isentos sem lançamento (nunca pagos depois); desfazer pago ainda estorna.
 Repositórios leem o modo antes da transação; troca bloqueada com cronômetro de recompensa contando.
-Spec018: descartar contagem atual (trecho desde o último ▶) no ⋮ do cartão de Hoje e no diálogo; "Cronômetro iniciado · Desfazer".
+Spec018: descartar contagem atual (trecho desde o último ▶) no ⋮ do cartão de Hoje e no diálogo.
+Mensagens "Desfazer" de cronômetro iniciado/concluído e hábito marcado removidas (2026-11-18); só Adiada fica,
+some sozinha (8 s ajustados pela acessibilidade) e usa cores do tema (surfaceContainerHighest).
 Nunca para recompensa/objetivo atingido; ≥1 min pede confirmação; sessão sem tempo ativo é encerrada; auditoria DISCARDED.
 Spec019: ícones Material Symbols Rounded como vector drawables (res/drawable/ic_*), sem dependência nova;
 índices/chaves de ícones persistidos mantêm a ordem; notificações com ícones próprios; launcher inalterado.

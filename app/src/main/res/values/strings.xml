@@ -493,7 +493,6 @@
     <string name="timer_alarm_channel">Alarme do cronômetro</string>
     <string name="timer_completed">Tempo concluído. Marcado como feito.</string>
     <string name="undo">Desfazer</string>
-    <string name="task_timer_done">Concluída pelo cronômetro</string>
     <string name="timer_chip_start">Iniciar cronômetro de %1$s, faltam %2$s</string>
     <string name="timer_chip_pause">Pausar cronômetro de %1$s, faltam %2$s</string>
     <string name="variant_timed">Com cronômetro</string>
@@ -561,7 +560,6 @@
     <string name="timer_discard_title">Descartar esta contagem?</string>
     <string name="timer_discard_body">%1$s contados desde o último início serão descartados. O tempo anterior continua salvo.</string>
     <string name="timer_discard_confirm">Descartar</string>
-    <string name="timer_started">Cronômetro iniciado</string>
     <string name="timer_more_actions">Mais ações do cronômetro</string>
     <string name="timer_conflict_title">Pausar o cronômetro atual?</string>
     <string name="timer_conflict_body">%1$s está contando. Pausar e iniciar %2$s?</string>
@@ -731,10 +729,6 @@
     <string name="habit_quick_occurrence">Recaída</string>
     <string name="habit_quick_done">✓ Feito hoje</string>
     <string name="habit_quick_unmark_description">Desfazer %1$s de hoje</string>
-    <string name="habit_marked_today">Feito hoje.</string>
-    <string name="habit_unmarked_today">Registro de hoje desfeito.</string>
-    <string name="habit_undo_quick">Desfazer</string>
-    <string name="habit_feedback_close">Fechar</string>
     <plurals name="habit_today_occurrences">
         <item quantity="one">Hoje: %1$d ocorrência</item>
         <item quantity="other">Hoje: %1$d ocorrências</item>

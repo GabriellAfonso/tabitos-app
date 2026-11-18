@@ -39,10 +39,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalAccessibilityManager
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -342,10 +345,20 @@ private fun ListChoiceRow(@DrawableRes icon: Int, tint: Color?, name: String, se
     }
 }
 
-/** "Adiada para amanhã · Desfazer" after a postpone (spec 021). */
+/**
+ * The saved change can be undone until the system-adjusted accessibility timeout expires.
+ */
 @Composable
 fun PostponedSnackbar(feedback: PostponeFeedback, today: LocalDate, undo: () -> Unit, dismiss: () -> Unit) {
+    val accessibility = LocalAccessibilityManager.current
+    val timeout = accessibility?.calculateRecommendedTimeoutMillis(UNDO_FEEDBACK_MILLIS,
+        containsIcons = false, containsText = true, containsControls = true) ?: UNDO_FEEDBACK_MILLIS
+    LaunchedEffect(feedback, timeout) { delay(timeout); dismiss() }
     Snackbar(Modifier.padding(12.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        actionContentColor = MaterialTheme.colorScheme.primary,
+        dismissActionContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         action = { TextButton(undo) { Text(stringResource(R.string.undo)) } },
         dismissAction = { TextButton(dismiss) { Text(stringResource(R.string.close)) } },
     ) {
@@ -353,6 +366,8 @@ fun PostponedSnackbar(feedback: PostponeFeedback, today: LocalDate, undo: () -> 
             else stringResource(R.string.task_postponed_to, EthosDates.shortWithWeekday(feedback.to, today)))
     }
 }
+
+private const val UNDO_FEEDBACK_MILLIS = 8_000L
 
 @Preview
 @Composable

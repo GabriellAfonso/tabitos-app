@@ -46,7 +46,6 @@ data class HabitsUiState(
     val lifecycle: HabitLifecycleDraft? = null, val preview: HabitPeriod? = null,
     val previewReady: Boolean = false,
     val financialPreview: FinancialPreview? = null,
-    val lastPractice: HabitAction.SetPractice? = null,
     /** Duration goal in minutes per habit; a habit with a goal is the timed variant. */
     val durations: Map<String, Int> = emptyMap(),
     /** Timed habit day waiting for "Concluir sem completar o tempo?". */
@@ -240,11 +239,6 @@ class HabitsViewModel @Inject constructor(
         if (confirm) execute(HabitAction.SetPractice(UUID.randomUUID().toString(), pending.habitId, pending.date, true))
     }
     fun lifecycle(value: HabitLifecycleDraft?) { mutable.update { it.copy(lifecycle = value, problem = null) } }
-    fun dismissPracticeFeedback() { mutable.update { it.copy(lastPractice = null) } }
-    fun undoPractice() {
-        val last = state.value.lastPractice ?: return
-        if (!state.value.busy) execute(last.copy(id = UUID.randomUUID().toString(), done = !last.done))
-    }
     fun confirmLifecycle() {
         try {
             val d = state.value.lifecycle ?: return
@@ -331,9 +325,6 @@ class HabitsViewModel @Inject constructor(
                 retryAction = null
                 if (close) draft(null)
                 mutable.update { it.copy(busy = false, storageError = readFailed,
-                    // The feedback reads "Prática de hoje …"; past days changed in the popup show it there.
-                    lastPractice = if (action is HabitAction.SetPractice && action.date == it.today) action
-                        else it.lastPractice,
                     lifecycle = if (close) null else it.lifecycle) }
             } catch (e: CancellationException) { throw e
             } catch (e: HabitRuleException) {
