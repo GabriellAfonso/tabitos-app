@@ -117,15 +117,20 @@
 - Salvar o prompt não autoriza especificar, planejar, implementar ou fazer commits automaticamente.
 
 ## Verificação
-- Os comandos abaixo só se aplicam depois que o app e o Gradle Wrapper forem criados.
-- Windows: `.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug`.
-- Linux/macOS: `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug`.
+- Rotina após mudanças: só testes JVM, filtrando pelo que mudou quando possível (o PC do usuário trava com
+  builds pesados). Windows: `.\gradlew.bat :app:testDebugUnitTest --tests "com.ethos.app.features.tasks.*"`;
+  sem filtro quando a mudança for ampla. Linux/macOS: `./gradlew` com os mesmos argumentos.
+- Verificação completa (`:app:assembleDebug :app:testDebugUnitTest :app:lintDebug`) só quando o usuário pedir;
+  ao fim de uma spec (implement/verificação), pedir permissão antes de rodá-la. Sem permissão, registrar build
+  debug e lint como não executados.
+- Rodar Gradle em segundo plano quando possível; `gradle.properties` limita prioridade, workers e memória para
+  manter o PC usável. Não remover esses limites sem pedido.
 - Testar regras de negócio, persistência/migrações e falhas relevantes. Preferir fakes.
 - Não criar testes que apenas repitam a implementação nem usar retornos Android padrão para esconder falhas.
 - Não usar `clean`, `--rerun-tasks` ou `--no-daemon` rotineiramente; diagnosticar o erro primeiro.
 - Informar claramente verificações não executadas e limitações do ambiente.
 - Testes instrumentados (`connectedDebugAndroidTest`) e emulador só com autorização explícita do usuário
-  a cada vez; por padrão rodar apenas build, testes JVM e lint. Nunca rodar em aparelho físico conectado
+  a cada vez; por padrão rodar apenas testes JVM. Nunca rodar em aparelho físico conectado
   sem autorização. Escrever os testes instrumentados normalmente e registrá-los como não executados.
 
 ## Git e publicação
