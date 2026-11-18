@@ -3,11 +3,14 @@ package com.ethos.app.features.tasks
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -15,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -89,9 +93,24 @@ fun TaskDrawer(state: TasksUiState, highlighted: Boolean, callbacks: DrawerListC
             }
         }
     }
-    NavigationDrawerItem(label = { Text(stringResource(R.string.new_list)) },
-        icon = { Icon(painterResource(R.drawable.ic_add), contentDescription = null) },
-        selected = false, onClick = { if (idle) callbacks.onNew() })
+    CreateListButton(enabled = idle, onClick = callbacks.onNew)
+}
+
+@Composable
+internal fun CreateListButton(enabled: Boolean, onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.86f),
+        ),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(painterResource(R.drawable.ic_add), contentDescription = null, modifier = Modifier.size(16.dp))
+            Text(stringResource(R.string.new_list), style = MaterialTheme.typography.labelMedium)
+        }
+    }
 }
 
 /** Same look as a [NavigationDrawerItem], but the gestures come from [modifier] so the row can be held. */

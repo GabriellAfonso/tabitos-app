@@ -352,11 +352,7 @@ private fun ListOptions(
     RadioOptions(listOf<String?>(null) + lists.map { it.id }, selected, enabled = !busy, onSelect = onSelect,
         label = { listName(lists, it) })
     // Creating the destination without leaving the task being written.
-    TextButton(onNewList, enabled = !busy) {
-        Icon(painterResource(R.drawable.ic_add), contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
-        Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-        Text(stringResource(R.string.new_list))
-    }
+    CreateListButton(enabled = !busy, onClick = onNewList)
 }
 
 @Composable
