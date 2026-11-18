@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ethos.app.core.habits.domain.HabitRepository
 import com.ethos.app.core.habits.domain.HabitSnapshot
+import com.ethos.app.core.habits.domain.HabitStatus
 import com.ethos.app.core.reminders.domain.*
 import com.ethos.app.core.reminders.platform.ReminderCoordinator
 import com.ethos.app.core.tasks.domain.TaskClock
@@ -39,13 +40,32 @@ data class TrackerUiState(
     val loading: Boolean = true, val busy: Boolean = false, val storageError: Boolean = false,
     val problem: TrackerProblem? = null, val problemQuestion: String? = null, val hubHabitId: String? = null,
     val form: TrackerFormDraft? = null, val entry: TrackerEntryDraft? = null, val deleteEntryId: String? = null,
-    val period: Int = 7, val dateText: String = "", val pending: List<Tracker> = emptyList(),
-    val analytics: TrackerAnalytics? = null,
+    val period: Int = 7, val recordWeeks: Int = RECORD_WEEKS_STEP, val pending: List<Tracker> = emptyList(),
+    val analytics: TrackerAnalytics? = null, val page: TrackerPageModel? = null,
 ) {
     val hubTracker: Tracker? get() = snapshot.forHabit(hubHabitId)
-    val hubHabitName: String get() = habits.habits.firstOrNull { it.id == hubHabitId }?.name.orEmpty()
+    fun habitName(habitId: String?): String = habits.habits.firstOrNull { it.id == habitId }?.name.orEmpty()
     fun editable(t: Tracker) = TrackerRules.editable(t, habits)
     fun fillable(t: Tracker, date: LocalDate) = TrackerRules.fillable(t, habits, date, today)
+}
+
+/** Weeks of records shown at first and added by each "Ver mais" (spec 034). */
+const val RECORD_WEEKS_STEP = 4
+
+/** Everything the tracker page draws for [TrackerUiState.hubHabitId], or null while it is closed. */
+internal fun TrackerUiState.pageModel(): TrackerPageModel? {
+    val habitId = hubHabitId ?: return null
+    val habit = habits.habits.firstOrNull { it.id == habitId }
+    val tracker = hubTracker
+    val habitOpen = habit != null && habit.status != HabitStatus.EXCLUDED
+    return TrackerPageModel(
+        habit = habit, today = today, created = tracker?.created, canCreate = habitOpen, canArchive = habitOpen,
+        active = tracker?.active == true,
+        summary = tracker?.let { todaySummary(snapshot, it, habits, today) },
+        records = tracker?.let { recordList(snapshot, it, habits, today, recordWeeks) },
+        analytics = analytics, frequency = analytics?.let(::frequencyGroups).orEmpty(), period = period,
+        questions = tracker?.let { snapshot.current(it.id)?.questions }.orEmpty(), version = tracker?.version ?: 0,
+    )
 }
 
 @HiltViewModel
@@ -55,7 +75,7 @@ class TrackerViewModel @Inject constructor(
     private val clock: TaskClock, private val saved: SavedStateHandle,
 ) : ViewModel() {
     private val mutable = MutableStateFlow(TrackerUiState(today = clock.today(), hubHabitId = saved["trackerHub"],
-        form = saved["trackerForm"], entry = saved["trackerEntry"], dateText = clock.today().toString()))
+        form = saved["trackerForm"], entry = saved["trackerEntry"]))
     val state: StateFlow<TrackerUiState> = mutable.asStateFlow()
     private var observer: Job? = null
     private var definitions: List<ReminderDefinition> = emptyList()
@@ -70,9 +90,10 @@ class TrackerViewModel @Inject constructor(
         val minutes = definitions.filter { it.kind == ReminderKind.TRACKER && it.enabled }
             .associate { it.sourceId to it.minute }
         val hub = s.snapshot.forHabit(s.hubHabitId)
-        return s.copy(reminderMinutes = minutes,
+        val derived = s.copy(reminderMinutes = minutes,
             pending = TrackerRules.pending(s.snapshot, s.habits, minutes, s.today, minuteNow()),
             analytics = hub?.let { TrackerRules.analytics(s.snapshot, it.id, s.today, s.period) })
+        return derived.copy(page = derived.pageModel())
     }
 
     private fun observe() {
@@ -94,11 +115,11 @@ class TrackerViewModel @Inject constructor(
 
     fun open(habitId: String?) {
         saved["trackerHub"] = habitId
-        mutable.update { derive(it.copy(hubHabitId = habitId, problem = null, period = 7,
-            dateText = clock.today().toString())) }
+        mutable.update { derive(it.copy(hubHabitId = habitId, problem = null, period = TrackerRules.PERIODS.first(),
+            recordWeeks = RECORD_WEEKS_STEP)) }
     }
     fun period(days: Int) { mutable.update { derive(it.copy(period = days)) } }
-    fun dateText(value: String) { mutable.update { it.copy(dateText = value) } }
+    fun showMoreRecords() { mutable.update { derive(it.copy(recordWeeks = it.recordWeeks + RECORD_WEEKS_STEP)) } }
 
     fun form(value: TrackerFormDraft?) {
         saved["trackerForm"] = value
@@ -112,11 +133,14 @@ class TrackerViewModel @Inject constructor(
             else TrackerFormDraft(t.id, habitId, t.multiple, s.snapshot.current(t.id)?.questions.orEmpty(),
                 minute?.let { LocalTime.of(it / 60, it % 60).toString() }.orEmpty(), editing = true))
     }
-    fun addQuestion(type: QuestionType, multiple: Boolean = false) {
-        val d = state.value.form ?: return
-        val options = if (type == QuestionType.CHOICE) listOf(newOption()) else emptyList()
-        form(d.copy(questions = d.questions + TrackerQuestion(UUID.randomUUID().toString(), type, "",
-            multiple = multiple, options = options)))
+    /** Adds an empty question of [kind] and returns its id, so the editor can open it. */
+    fun addQuestion(kind: QuestionKind): String {
+        val id = UUID.randomUUID().toString()
+        val d = state.value.form ?: return id
+        val options = if (kind.type == QuestionType.CHOICE) listOf(newOption()) else emptyList()
+        form(d.copy(questions = d.questions + TrackerQuestion(id, kind.type, "", multiple = kind.multiple,
+            options = options)))
+        return id
     }
     fun newOption() = TrackerOption(UUID.randomUUID().toString(), "")
 
@@ -151,11 +175,6 @@ class TrackerViewModel @Inject constructor(
         val existing = if (t.multiple) null else TrackerRules.entryFor(s.snapshot, t.id, date)
         if (existing != null) { editEntry(existing.id); return }
         entry(TrackerEntryDraft(UUID.randomUUID().toString(), t.id, date, t.version))
-    }
-    fun fillTyped(trackerId: String) {
-        val date = try { LocalDate.parse(state.value.dateText.trim()) } catch (_: Exception) {
-            problem(TrackerProblem.DATE); return }
-        fill(trackerId, date)
     }
     fun editEntry(entryId: String) {
         val e = state.value.snapshot.entries.firstOrNull { it.id == entryId } ?: return

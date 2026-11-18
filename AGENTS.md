@@ -269,3 +269,6 @@ Spec030: Calendário opção C — Mês|Semana|Dia centralizado (Hoje à esquerd
 (tarefas/hábitos/acompanhamento) e lista do dia rolando embaixo; Semana = agenda de 7 dias; regras 009 inalteradas.
 Hoje (2026-11-18): "Tudo" mostra tarefas e bons hábitos; maus hábitos (evitar/limitar) só no filtro "Hábitos",
 para não deixar gatilho à vista (ContentFilter.showsBadHabits). Páginas de lista, lembretes e resumo inalterados.
+Spec034: acompanhamento em página cheia (Voltar ao pop-up do hábito) com faixa Hoje e abas Registros/Evolução/
+Perguntas; registros por semana (4 + "Ver mais"), dia vazio preenche; data por calendário, sem aaaa-mm-dd. Editor
+com cartões expansíveis e barra Adicionar; registro em tela cheia com faixa de escala. Regras/schema 009 inalterados.

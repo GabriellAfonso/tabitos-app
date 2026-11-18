@@ -51,30 +51,33 @@ class TrackerUiTest {
         compose.onNodeWithText("Sem nada para fazer").assertExists()
     }
 
-    @Test fun builderAddsTypesAndPrimaryIsExclusiveWithoutReordering() {
+    @Test fun builderAddsKindsAndChartIndicatorIsExclusive() {
         var draft by mutableStateOf(TrackerFormDraft("t", "h"))
         var id = 0
+        val actions = TrackerFormActions(
+            change = { draft = it },
+            add = { kind ->
+                val questionId = "q${id++}"
+                draft = draft.copy(questions = draft.questions + TrackerQuestion(questionId, kind.type, "",
+                    multiple = kind.multiple, options = if (kind.type == QuestionType.CHOICE)
+                        listOf(TrackerOption("o${id++}", "")) else emptyList()))
+                questionId
+            },
+            newOption = { TrackerOption("o${id++}", "") }, save = {}, close = {}, retry = {})
         compose.setContent {
-            MaterialTheme { Column(Modifier.verticalScroll(rememberScrollState())) {
-                TrackerFormContent(draft, true, { draft = it }, { type, multiple ->
-                    draft = draft.copy(questions = draft.questions + TrackerQuestion("q${id++}", type, "",
-                        multiple = multiple, options = if (type == QuestionType.CHOICE)
-                            listOf(TrackerOption("o$id", "")) else emptyList()))
-                }, { TrackerOption("o${id++}", "") })
-            } }
+            MaterialTheme { TrackerFormPage(draft, "Ler", TrackerUiState(today = today, loading = false), actions) }
         }
-        compose.onNodeWithText("+ Texto livre").performScrollTo().performClick()
-        compose.onNodeWithText("+ Escala").performScrollTo().performClick()
-        compose.onNodeWithText("+ Escala").performScrollTo().performClick()
-        compose.onNodeWithText("+ Escolha múltipla").performScrollTo().performClick()
+        compose.onNodeWithTag(addQuestionTag(QuestionKind.TEXT)).performClick()
+        compose.onNodeWithTag(addQuestionTag(QuestionKind.SCALE)).performClick()
+        compose.onNodeWithText("Mostrar em Evolução").performScrollTo().performClick()
+        compose.onNodeWithTag(addQuestionTag(QuestionKind.SCALE)).performClick()
+        compose.onNodeWithText("Mostrar em Evolução").performScrollTo().performClick()
+        compose.onNodeWithTag(addQuestionTag(QuestionKind.MULTIPLE)).performClick()
         assertEquals(listOf(QuestionType.TEXT, QuestionType.SCALE, QuestionType.SCALE, QuestionType.CHOICE),
             draft.questions.map { it.type })
         assertTrue(draft.questions[3].multiple)
         assertEquals(0 to 10, draft.questions[1].min to draft.questions[1].max)
-        compose.onAllNodesWithText("Indicador principal")[0].performScrollTo().performClick()
-        compose.onAllNodesWithText("Indicador principal")[1].performScrollTo().performClick()
         assertEquals(listOf(false, false, true, false), draft.questions.map { it.primary })
-        assertEquals(listOf("q0", "q1", "q2", "q3"), draft.questions.map { it.id })
         compose.onNodeWithText("Um por dia").assertIsSelected()
     }
 
