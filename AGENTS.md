@@ -243,6 +243,10 @@ fechamento de hábitos só após o Hoje; tarefas/hábitos gravam só linhas alte
 Spec029: editores de tarefa/bom/mau hábito em folha que cresce (core/ui/components/GrowingSheet.kt): criar abre
 compacta com chips de valor e teclado; "Mais" ou editar abre tela cheia com linhas rótulo→valor. Sem lembrete no
 editor nem troca de tipo; regras/schema inalterados; mapeamento de hábito em HabitEditorPresentation.kt. 262 JVM.
+Spec031: Estatísticas com histórico grande — PreparedStatistics (StatisticsComputation.kt) monta uma vez por mudança
+de dado/dia/modo jogo; período/filtro/item/"Ver mais" só derivam. Checkpoint do cronômetro ignorado (forStatistics).
+HabitRules.periods indexa registros/intervalos (era quadrático); streak/successRate aceitam períodos prontos.
+5 anos fictícios (StatisticsDataset): abrir 3,0 s→0,27 s, trocar 2,0 s→3 ms (JVM). Sem mudança de schema. 274 JVM.
 <!-- SPECKIT END -->
 Spec025: Configurações em lista agrupada (Aparência/Modo jogo/Notificações e alarmes/Dados), linhas em
 core/ui/components/SettingsRows.kt; Tema abre diálogo; Ganhos e penalidades é sub-página (EARNINGS, só modo jogo).
