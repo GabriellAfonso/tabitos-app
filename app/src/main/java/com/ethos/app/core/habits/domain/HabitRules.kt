@@ -36,6 +36,14 @@ object HabitRules {
     fun periods(s: HabitSnapshot, id: String, today: LocalDate): List<HabitPeriod> {
         val habit = s.habits.firstOrNull { it.id == id } ?: return emptyList()
         val revisions = s.rules.filter { it.habitId == id }.sortedBy { it.effective }
+        // Indexed once per call: scanning every record and interval for each day made years of use slow (spec 031).
+        val habitRecords = s.records.filter { it.habitId == id }
+        val recordedDates = habitRecords.mapTo(HashSet()) { it.date }
+        val liveByDate = habitRecords.filter { !it.deleted }.groupBy { it.date }
+        val intervals = s.intervals.filter { it.habitId == id }
+        fun activeOn(date: LocalDate) = intervals.any { date >= it.start && (it.end == null || date < it.end) }
+        // The first override stored for a key wins, as before.
+        val overrides = s.overrides.asReversed().associate { it.key to it.target }
         return revisions.flatMapIndexed { index, rule ->
             val last = minOf(today, revisions.getOrNull(index + 1)?.effective?.minusDays(1) ?: today)
             if (rule.effective > last) return@flatMapIndexed emptyList()
@@ -44,14 +52,13 @@ object HabitRules {
                     val to = minOf(end(from, rule.unit),
                         revisions.getOrNull(index + 1)?.effective?.minusDays(1) ?: LocalDate.MAX)
                     val eligible = dates(maxOf(from, rule.effective, habit.created), to)
-                        .filter { date -> (active(s, id, date) || s.records.any {
-                            it.habitId == id && it.date == date
-                        }) && scheduled(rule, date) }.toList()
+                        .filter { date -> (activeOn(date) || date in recordedDates) && scheduled(rule, date) }
+                        .toList()
                     if (eligible.isEmpty()) return@mapNotNull null
-                    val records = s.records.filter { !it.deleted && it.habitId == id && it.date in eligible }
+                    val records = eligible.flatMap { liveByDate[it].orEmpty() }
                         .sortedWith(compareBy<HabitRecord> { it.date }.thenBy { it.entered }.thenBy { it.id })
                     val periodKey = key(rule, from)
-                    val target = s.overrides.firstOrNull { it.key == periodKey }?.target ?: rule.target
+                    val target = overrides[periodKey] ?: rule.target
                     val count = if (rule.type == HabitType.PRACTICE) records.map { it.date }.distinct().size
                         else records.size
                     val raw = if (rule.type == HabitType.PRACTICE) count >= target else count <= target
@@ -100,8 +107,12 @@ object HabitRules {
      * Same rule as the card's [successRate], applied to the periods overlapping [range] (statistics, spec 022),
      * so both numbers come from one definition of a counted period.
      */
-    fun successRate(s: HabitSnapshot, id: String, today: LocalDate, range: ClosedRange<LocalDate>): Int? {
-        val counted = periods(s, id, today).filter {
+    fun successRate(s: HabitSnapshot, id: String, today: LocalDate, range: ClosedRange<LocalDate>): Int? =
+        successRate(periods(s, id, today), today, range)
+
+    /** [successRate] over periods already built, so statistics evaluate many ranges from one build (spec 031). */
+    fun successRate(periods: List<HabitPeriod>, today: LocalDate, range: ClosedRange<LocalDate>): Int? {
+        val counted = periods.filter {
             countsForRate(it, today) && it.start <= range.endInclusive && it.end >= range.start
         }
         return if (counted.isEmpty()) null else percentSucceeded(counted, today)
@@ -110,8 +121,10 @@ object HabitRules {
     private fun percentSucceeded(counted: List<HabitPeriod>, today: LocalDate) =
         counted.count { standing(it, today) == PeriodOutcome.SUCCESS } * 100 / counted.size
 
-    fun streak(s: HabitSnapshot, id: String, today: LocalDate): HabitStreak {
-        val periods = periods(s, id, today)
+    fun streak(s: HabitSnapshot, id: String, today: LocalDate): HabitStreak = streak(periods(s, id, today), today)
+
+    /** [streak] over one habit's periods already built (spec 031). */
+    fun streak(periods: List<HabitPeriod>, today: LocalDate): HabitStreak {
         var current = 0
         var best = 0
         var uncertain = false
@@ -185,8 +198,8 @@ object HabitRules {
             }
             is HabitAction.Save -> {
                 val h = action.habit
-                check(h.name.isNotBlank() && h.color in 0 until Habit.COLOR_COUNT && h.icon in 0 until Habit.ICON_COUNT &&
-                    h.difficulty in 0..2 && h.importance in 0..2)
+                check(h.name.isNotBlank() && h.color in 0 until Habit.COLOR_COUNT &&
+                    h.icon in 0 until Habit.ICON_COUNT && h.difficulty in 0..2 && h.importance in 0..2)
                 check(h.listId == null || h.listId in listIds, HabitProblem.DESTINATION)
                 val old = before.habits.firstOrNull { it.id == h.id }
                 val oldRule = currentRule(s, h.id, today)
