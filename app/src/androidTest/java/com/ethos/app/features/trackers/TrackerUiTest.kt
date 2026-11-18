@@ -94,7 +94,7 @@ class TrackerUiTest {
         compose.onNodeWithContentDescription("2026-11-05 · sem dados").performScrollTo().performClick()
         assertEquals(today.minusDays(2), selected)
         compose.onNodeWithText("Sem dados").performScrollTo().assertExists()
-        compose.onNodeWithText("Ler · registros: 1").performScrollTo().assertExists()
-        compose.onNodeWithText("Preencher acompanhamento: Ler").performScrollTo().assertExists()
+        compose.onNodeWithText("Feito").performScrollTo().assertExists()
+        compose.onNodeWithText("Preencher").performScrollTo().assertExists()
     }
 }

@@ -681,7 +681,6 @@
     <string name="calendar_previous">Anterior</string>
     <string name="calendar_next">Próximo</string>
     <string name="calendar_go_today">Ir para hoje</string>
-    <string name="calendar_types">Tipos</string>
     <string name="calendar_trackers">Acompanhamentos</string>
     <string name="calendar_list">Lista</string>
     <string name="calendar_all_lists">Todas as listas</string>
@@ -690,12 +689,35 @@
     <string name="calendar_weekdays">Seg,Ter,Qua,Qui,Sex,Sáb,Dom</string>
     <string name="calendar_cell">%1$s · tarefas: %2$d · registros de hábitos: %3$d · acompanhamentos: %4$d</string>
     <string name="calendar_cell_no_data">%1$s · sem dados</string>
-    <string name="calendar_habit_records">%1$s · registros: %2$d</string>
     <string name="calendar_nothing">Nada neste dia com os filtros atuais.</string>
     <string name="calendar_tracker_entry">%1$s · preenchido às %2$s</string>
-    <string name="calendar_tracker_fill">Preencher acompanhamento: %1$s</string>
-    <string name="calendar_week_range">%1$s a %2$s</string>
     <string name="calendar_selected">selecionado</string>
+    <string name="calendar_filters">Filtros</string>
+    <string name="calendar_filters_active">Filtros, filtro ativo</string>
+    <string name="calendar_remove_filter">Remover filtro %1$s</string>
+    <string name="calendar_no_types">Nenhum tipo</string>
+    <string name="calendar_removed_list">Lista removida</string>
+    <string name="calendar_show">Mostrar</string>
+    <string name="calendar_habit_hides_tasks">Escolher um hábito esconde as tarefas.</string>
+    <string name="calendar_clear_filters">Limpar filtros</string>
+    <string name="calendar_legend_tasks">tarefas</string>
+    <string name="calendar_legend_habits">hábitos</string>
+    <string name="calendar_legend_trackers">acompanhamento</string>
+    <string name="calendar_relative_day">%1$s · %2$s</string>
+    <string name="calendar_nothing_plain">Nada neste dia.</string>
+    <string name="calendar_task_overdue">Vencida</string>
+    <string name="calendar_tracker_edit">Editar</string>
+    <string name="calendar_tracker_fill_short">Preencher</string>
+    <string name="calendar_agenda_empty">Nada</string>
+    <string name="calendar_open_day">Abrir %1$s</string>
+    <plurals name="calendar_habit_practice">
+        <item quantity="one">Feito</item>
+        <item quantity="other">Feito %1$d vezes</item>
+    </plurals>
+    <plurals name="calendar_habit_slips">
+        <item quantity="one">%1$d vez</item>
+        <item quantity="other">%1$d vezes</item>
+    </plurals>
     <!-- Feature 010: Ameixa visual refresh -->
     <string name="wallet_coins">Suas moedas</string>
     <string name="wallet_rewards">Ver recompensas ›</string>

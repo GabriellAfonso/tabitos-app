@@ -67,6 +67,8 @@ class CalendarViewModel @Inject constructor(
     }
     fun view(value: CalendarView) = update { it.copy(view = value) }
     fun select(date: LocalDate) = update { it.copy(anchor = date) }
+    /** Week agenda: tapping a day number shows that day alone. */
+    fun openDay(date: LocalDate) = update { it.copy(anchor = date, view = CalendarView.DAY) }
     fun shift(delta: Long) = update { it.copy(anchor = CalendarModel.shift(it.view, it.anchor, delta)) }
     fun goToday() = update { it.copy(anchor = clock.today(), today = clock.today()) }
     fun filters(value: CalendarFilters) = update { it.copy(filters = value) }

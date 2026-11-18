@@ -1,6 +1,8 @@
 package com.ethos.app.features.calendar
 
 import com.ethos.app.core.habits.domain.Habit
+import com.ethos.app.core.habits.domain.HabitRules
+import com.ethos.app.core.habits.domain.HabitType
 import com.ethos.app.core.habits.domain.HabitSnapshot
 import com.ethos.app.core.tasks.domain.TaskOccurrence
 import com.ethos.app.core.tasks.domain.TaskSnapshot
@@ -20,13 +22,16 @@ data class CalendarFilters(
     companion object { const val ALL_LISTS = "*"; const val INBOX = "" }
 }
 
-data class HabitDayRecords(val habit: Habit, val count: Int)
+/** [breaking]: the habit's rule that day avoids or limits it, so records are slips, not practice. */
+data class HabitDayRecords(val habit: Habit, val count: Int, val breaking: Boolean = false)
 data class TrackerDayEntry(val tracker: Tracker, val habit: Habit, val entry: TrackerEntry)
 data class TrackerFill(val tracker: Tracker, val habit: Habit, val existing: TrackerEntry?)
 
 data class CalendarDay(
     val date: LocalDate, val tasks: List<TaskOccurrence> = emptyList(), val habits: List<HabitDayRecords> = emptyList(),
     val entries: List<TrackerDayEntry> = emptyList(), val fills: List<TrackerFill> = emptyList(),
+    /** Some tracker matches the filters, so a day without entries says "Sem dados". */
+    val tracked: Boolean = false,
 ) {
     val habitRecordCount: Int get() = habits.sumOf { it.count }
     val empty: Boolean get() = tasks.isEmpty() && habits.isEmpty() && entries.isEmpty()
@@ -62,8 +67,12 @@ object CalendarModel {
     private fun listMatches(filter: String, listId: String?) =
         filter == CalendarFilters.ALL_LISTS || (filter == CalendarFilters.INBOX && listId == null) || filter == listId
 
+    private fun isBreaking(habits: HabitSnapshot, habitId: String, date: LocalDate) =
+        HabitRules.currentRule(habits, habitId, date)?.type.let { it != null && it != HabitType.PRACTICE }
+
     fun day(s: CalendarSources, f: CalendarFilters, date: LocalDate, today: LocalDate): CalendarDay {
-        val habits = s.habits.habits.filter { listMatches(f.list, it.listId) && (f.habitId == null || it.id == f.habitId) }
+        val habits = s.habits.habits
+            .filter { listMatches(f.list, it.listId) && (f.habitId == null || it.id == f.habitId) }
         val habitIds = habits.associateBy { it.id }
         // Same rule as the former typed-date lookup, so no task visible there disappears here.
         val tasks = if (CalendarType.TASKS !in f.types || f.habitId != null) emptyList()
@@ -71,7 +80,8 @@ object CalendarModel {
                 .sortedWith(compareBy<TaskOccurrence> { it.position }.thenBy { it.id })
         val records = if (CalendarType.HABITS !in f.types) emptyList() else s.habits.records
             .filter { !it.deleted && it.date == date && it.habitId in habitIds }.groupBy { it.habitId }
-            .map { (id, rows) -> HabitDayRecords(habitIds.getValue(id), rows.size) }.sortedBy { it.habit.name }
+            .map { (id, rows) -> HabitDayRecords(habitIds.getValue(id), rows.size, isBreaking(s.habits, id, date)) }
+            .sortedBy { it.habit.name }
         val trackers = if (CalendarType.TRACKERS !in f.types) emptyList()
             else s.trackers.trackers.filter { it.habitId in habitIds }
         val entries = trackers.flatMap { t -> s.trackers.entries.filter { it.trackerId == t.id && it.date == date }
@@ -80,7 +90,7 @@ object CalendarModel {
             TrackerFill(t, habitIds.getValue(t.habitId),
                 if (t.multiple) null else TrackerRules.entryFor(s.trackers, t.id, date))
         }
-        return CalendarDay(date, tasks, records, entries, fills)
+        return CalendarDay(date, tasks, records, entries, fills, tracked = trackers.isNotEmpty())
     }
 
     fun cells(
