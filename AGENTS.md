@@ -234,4 +234,13 @@ Spec024: Estatísticas com filtro acima das abas (vale no Resumo e no Histórico
 Tempo/Moedas. Item (habitId ou série taskId) só pelo próprio item, sem lista: "Ver histórico" nos pop-ups, linha de
 hábito no Resumo e aviso de item excluído; chip "Nome ✕" volta ao tipo. Filtro/item/aba só em memória
 (StatisticsSelection.kt; navegação via AppRequests.destination).
+Spec026: alarme do cronômetro com "Parar alarme" na notificação (também na versão pública) e pop-up no app;
+Abrir/deslizar também param. Só silencia (cancela a notificação do canal); conclusão/Desfazer inalterados.
+Spec027: abertura rápida — Hoje aparece completo (TodayReadiness) e depois Calendário/Recompensas/Lembretes,
+um por vez (core/startup/StartupSequence); abrir a página ou notificação carrega na hora. Refresh de tarefas e
+fechamento de hábitos só após o Hoje; tarefas/hábitos gravam só linhas alteradas (core/tasks/data/ChangedRows.kt).
+"Fully drawn" no logcat mede o tempo até o Hoje. 243 JVM; instrumentados não executados; medição no celular pendente.
 <!-- SPECKIT END -->
+Spec025: Configurações em lista agrupada (Aparência/Modo jogo/Notificações e alarmes/Dados), linhas em
+core/ui/components/SettingsRows.kt; Tema abre diálogo; Ganhos e penalidades é sub-página (EARNINGS, só modo jogo).
+Aviso de notificações só quando bloqueadas; resumo diário com seletor de hora; sem mudança de regras/schema.
