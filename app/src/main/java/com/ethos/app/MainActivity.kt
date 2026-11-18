@@ -59,7 +59,10 @@ class MainActivity : ComponentActivity() {
         when (data.scheme) {
             REMINDER_SCHEME -> requests.reminder = data.toString() to UUID.randomUUID().toString()
             TIMER_SCHEME -> if (data.pathSegments.firstOrNull() == TIMER_OPEN) {
-                requests.timerSession = data.pathSegments.getOrNull(1)
+                val sessionId = data.pathSegments.getOrNull(1)
+                // "Abrir" on a ringing alert is a deliberate look at the timer, so it silences the alarm (spec 026).
+                sessionId?.let(timerCoordinator::stopAlarm)
+                requests.timerSession = sessionId
             }
         }
     }

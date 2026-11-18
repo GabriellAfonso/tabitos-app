@@ -2,6 +2,7 @@ package com.ethos.app.core.timers.platform
 
 import android.media.AudioAttributes
 import android.media.RingtoneManager
+import androidx.annotation.StringRes
 import com.ethos.app.core.preferences.AppearanceRepository
 import android.Manifest
 import android.app.*
@@ -74,13 +75,18 @@ class TimerNotifications @Inject constructor(@param:ApplicationContext private v
             .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
 
+    /** [publicActions] stay usable on a lock screen that hides the private content. */
     @Suppress("DEPRECATION")
-    private fun builder(channel: String): Notification.Builder {
+    private fun builder(
+        channel: String, @StringRes publicText: Int = R.string.timer_private,
+        publicActions: List<Notification.Action> = emptyList(),
+    ): Notification.Builder {
         fun base() = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(context, channel)
             else Notification.Builder(context)
         val public = base().setSmallIcon(R.drawable.ic_notification_timer)
             .setContentTitle(context.getString(R.string.app_name))
-            .setContentText(context.getString(R.string.timer_private))
+            .setContentText(context.getString(publicText))
+        publicActions.forEach(public::addAction)
         return base().setSmallIcon(R.drawable.ic_notification_timer)
             .setVisibility(Notification.VISIBILITY_PRIVATE).setPublicVersion(public.build())
     }
@@ -104,10 +110,13 @@ class TimerNotifications @Inject constructor(@param:ApplicationContext private v
         return b.build()
     }
 
-    /** [alarm] rings on the alarm channel when the user keeps "Alarme ao terminar o cronômetro" on. */
+    /**
+     * [alarm] rings on the alarm channel when the user keeps "Alarme ao terminar o cronômetro" on. A ringing alert
+     * offers "Parar alarme"; cancelling the notification is what silences its sound (spec 026).
+     */
     fun alert(session: TimerSession, kind: TimerAuditKind, alarm: Boolean): Boolean = try {
-        val channel = if (alarm && kind == TimerAuditKind.REACHED) ALARMS else ALERTS
-        manager.notify("ethos:timer:${session.id}", 0, builder(channel).setAutoCancel(true)
+        val builder = if (ringsAlarm(kind, alarm)) alarmBuilder(session) else builder(ALERTS)
+        manager.notify(alertTag(session.id), 0, builder.setAutoCancel(true)
             .setContentTitle(session.title)
             .setContentText(context.getString(if (kind == TimerAuditKind.EXHAUSTED) R.string.timer_exhausted
                 else R.string.timer_completed))
@@ -115,15 +124,39 @@ class TimerNotifications @Inject constructor(@param:ApplicationContext private v
         true
     } catch (_: SecurityException) { false }
 
+    /** Removing the alert stops its sound; a no-op when it was already tapped or dismissed. */
+    fun cancelAlert(sessionId: String) = manager.cancel(alertTag(sessionId), 0)
+
+    private fun alarmBuilder(session: TimerSession): Notification.Builder {
+        val stopIntent = PendingIntent.getBroadcast(context, session.id.hashCode(),
+            Intent(context, TimerActionReceiver::class.java).setAction(ACTION_STOP_ALARM)
+                .putExtra(EXTRA_SESSION, session.id),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val stop = Notification.Action.Builder(null, context.getString(R.string.timer_alarm_stop), stopIntent).build()
+        val open = Notification.Action.Builder(null, context.getString(R.string.timer_open), open(session.id)).build()
+        // Swiping the alert away silences it too, so the in-app popup must forget it the same way.
+        return builder(ALARMS, R.string.timer_alarm_private, listOf(stop)).setCategory(Notification.CATEGORY_ALARM)
+            .setDeleteIntent(stopIntent).addAction(stop).addAction(open)
+    }
+
+    private fun alertTag(sessionId: String) = "ethos:timer:$sessionId"
+
     companion object {
+        /** Only a reached task or habit goal rings; bought reward time always ends with a silent notice. */
+        fun ringsAlarm(kind: TimerAuditKind, alarm: Boolean) = alarm && kind == TimerAuditKind.REACHED
+
         const val SESSIONS = "ethos_timers"
         const val ALERTS = "ethos_timer_alerts_silent"
         const val ALARMS = "ethos_timer_alarms"
         const val ONGOING_ID = 8001
         const val ACTION_PAUSE = "com.ethos.app.TIMER_PAUSE"
+        const val ACTION_STOP_ALARM = "com.ethos.app.TIMER_STOP_ALARM"
         const val EXTRA_SESSION = "session"
     }
 }
+
+/** A finished task or habit timer whose alarm notification is still sounding or waiting to be stopped. */
+data class TimerAlarm(val sessionId: String, val title: String)
 
 /** Serializes timer syncs, mirrors the running session in the foreground service and posts alerts once. */
 @Singleton
@@ -137,6 +170,9 @@ class TimerCoordinator @Inject constructor(
     private var started = false
     @Volatile private var closed: Set<Pair<TimerKind, String>> = emptySet()
     val serviceBlocked = MutableStateFlow(false)
+    private val ringing = MutableStateFlow<TimerAlarm?>(null)
+    /** Kept in memory only: after a process restart the notification itself still offers "Parar alarme". */
+    val alarm: StateFlow<TimerAlarm?> = ringing.asStateFlow()
 
     fun start() {
         if (started) return
@@ -171,7 +207,11 @@ class TimerCoordinator @Inject constructor(
             val sessions = repository.observe().first().sessions
             val alarm = preferences.timerAlarm.first()
             result.alerts.forEach { alert ->
-                sessions.firstOrNull { it.id == alert.sessionId }?.let { notifications.alert(it, alert.kind, alarm) }
+                val session = sessions.firstOrNull { it.id == alert.sessionId } ?: return@forEach
+                val posted = notifications.alert(session, alert.kind, alarm)
+                if (posted && TimerNotifications.ringsAlarm(alert.kind, alarm)) {
+                    ringing.value = TimerAlarm(session.id, session.title)
+                }
             }
         }
         if (!manageService) return@withLock result
@@ -189,6 +229,12 @@ class TimerCoordinator @Inject constructor(
             // Android may refuse a background start; time stays correct and the app retries when visible.
             serviceBlocked.value = true
         } catch (_: SecurityException) { serviceBlocked.value = true }
+    }
+
+    /** Silences and forgets the alarm of [sessionId]; the completion it announced stays as it is. */
+    fun stopAlarm(sessionId: String) {
+        notifications.cancelAlert(sessionId)
+        ringing.update { current -> current?.takeUnless { it.sessionId == sessionId } }
     }
 
     suspend fun pause(sessionId: String) {
@@ -265,9 +311,13 @@ class TimerService : Service() {
 class TimerActionReceiver : BroadcastReceiver() {
     @Inject lateinit var coordinator: TimerCoordinator
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != TimerNotifications.ACTION_PAUSE) return
         val id = intent.getStringExtra(TimerNotifications.EXTRA_SESSION) ?: return
-        val result = goAsync()
-        CoroutineScope(Dispatchers.IO).launch { try { coordinator.pause(id) } finally { result.finish() } }
+        when (intent.action) {
+            TimerNotifications.ACTION_STOP_ALARM -> coordinator.stopAlarm(id)
+            TimerNotifications.ACTION_PAUSE -> {
+                val result = goAsync()
+                CoroutineScope(Dispatchers.IO).launch { try { coordinator.pause(id) } finally { result.finish() } }
+            }
+        }
     }
 }

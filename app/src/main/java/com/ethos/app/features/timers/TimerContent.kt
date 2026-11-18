@@ -193,6 +193,28 @@ fun TimerDialogs(
     state.manual?.let { ManualEditor(state, it, vm) }
     state.conflict?.let { ConflictDialog(state, it, vm) }
     state.discard?.let { DiscardDialog(state, it, vm) }
+    state.alarm?.let { TimerAlarmDialog(it.title, vm::stopAlarm) }
+}
+
+/** Any way of leaving the popup silences the alarm: it only exists to stop the sound (spec 026). */
+@Composable
+private fun TimerAlarmDialog(title: String, stop: () -> Unit) {
+    AlertDialog(onDismissRequest = stop,
+        icon = { Icon(painterResource(R.drawable.ic_alarm), contentDescription = null) },
+        title = { Text(stringResource(R.string.timer_alarm_title)) },
+        text = {
+            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                Text(stringResource(R.string.timer_alarm_body), textAlign = TextAlign.Center)
+            }
+        },
+        confirmButton = {
+            val description = stringResource(R.string.timer_alarm_stop_description, title)
+            Button(stop, Modifier.fillMaxWidth().semantics { contentDescription = description }) {
+                Text(stringResource(R.string.timer_alarm_stop))
+            }
+        })
 }
 
 /** "Abrir" on a session: countdown ring, one main control, recent segments; full list behind "Ver tudo". */
@@ -495,6 +517,12 @@ private fun ManualEditor(state: TimerUiState, draft: ManualDraft, vm: TimerViewM
         confirmButton = { TextButton(vm::saveManual, enabled = !state.busy) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton({ vm.manual(null) }, enabled = !state.busy) {
             Text(stringResource(R.string.cancel)) } })
+}
+
+@Preview
+@Composable
+private fun TimerAlarmDialogPreview() {
+    MaterialTheme { TimerAlarmDialog("Ler 30 minutos", stop = {}) }
 }
 
 @Preview

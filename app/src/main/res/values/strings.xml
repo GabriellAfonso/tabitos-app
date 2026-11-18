@@ -400,6 +400,11 @@
     <string name="habit_per_week">Semanal</string>
     <string name="timer_alarm_setting">Alarme ao terminar o cronômetro</string>
     <string name="timer_alarm_setting_hint">Toca como despertador quando o tempo de uma tarefa ou hábito acaba.</string>
+    <string name="timer_alarm_title">Tempo concluído</string>
+    <string name="timer_alarm_body">Marcado como feito.</string>
+    <string name="timer_alarm_stop">Parar alarme</string>
+    <string name="timer_alarm_stop_description">Parar alarme de %1$s</string>
+    <string name="timer_alarm_private">Tempo do cronômetro concluído.</string>
     <string name="timer_private">Uma sessão de tempo está em andamento.</string>
     <string name="timer_running">Cronômetro em andamento</string>
     <string name="timer_notice_remaining">Tempo restante</string>

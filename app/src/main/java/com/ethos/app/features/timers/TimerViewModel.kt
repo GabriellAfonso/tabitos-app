@@ -3,6 +3,7 @@ package com.ethos.app.features.timers
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ethos.app.core.timers.domain.*
+import com.ethos.app.core.timers.platform.TimerAlarm
 import com.ethos.app.core.timers.platform.TimerCoordinator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
@@ -37,6 +38,8 @@ data class TimerUiState(
     val serviceBlocked: Boolean = false, val unavailable: Boolean = false,
     /** Session just started or resumed, offering "Desfazer" until dismissed (spec 018). */
     val startedSession: String? = null, val discard: TimerDiscard? = null,
+    /** Alarm still sounding or not yet stopped; shown as a popup with "Parar alarme" (spec 026). */
+    val alarm: TimerAlarm? = null,
 )
 
 @HiltViewModel
@@ -56,7 +59,11 @@ class TimerViewModel @Inject constructor(
         viewModelScope.launch {
             coordinator.serviceBlocked.collect { b -> mutable.update { it.copy(serviceBlocked = b) } }
         }
+        viewModelScope.launch { coordinator.alarm.collect { a -> mutable.update { it.copy(alarm = a) } } }
     }
+
+    /** Silences the alarm from the in-app popup; the timer already completed its task or habit (spec 016). */
+    fun stopAlarm() { state.value.alarm?.let { coordinator.stopAlarm(it.sessionId) } }
 
     private fun observe() {
         observer?.cancel()
