@@ -1,16 +1,16 @@
 package com.ethos.app.core.rewards.domain
 
+import com.ethos.app.core.icons.AppIcon
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
 
 object RewardRules {
-    val icons = listOf("GIFT", "GAME", "FOOD", "REST")
     val periods = listOf("DAY", "WEEK", "MONTH")
 
     fun validate(reward: Reward) {
         require(reward.id.isNotBlank() && reward.name.isNotBlank() && reward.cost > 0)
-        require(reward.icon in icons && reward.period in periods)
+        require(AppIcon.fromKey(reward.icon) != null && reward.period in periods)
         require(reward.limit == null || reward.limit > 0)
         require(reward.minutes == null || reward.minutes in 1..1440)
     }

@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,33 +34,46 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ethos.app.R
+import com.ethos.app.core.icons.AppIcon
 import com.ethos.app.core.ui.theme.EthosTheme
 
 /** A pickable icon; [name] is read by TalkBack since the drawing alone carries no meaning. */
 data class IconOption(@param:DrawableRes val icon: Int, @param:StringRes val name: Int)
 
-/** Shows the icons themselves so the user picks by sight, mirroring [ColorPicker]. */
+/**
+ * One row with the editor's [principal] icons plus "see more", which opens the whole catalog in a sheet, so
+ * offering many icons never makes the editor taller.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun IconPicker(
     @StringRes label: Int,
-    options: List<IconOption>,
-    selected: Int,
+    principal: List<AppIcon>,
+    selected: AppIcon,
     enabled: Boolean = true,
     tint: Color = MaterialTheme.colorScheme.onSurface,
-    onSelect: (Int) -> Unit,
+    onSelect: (AppIcon) -> Unit,
 ) {
+    var catalogOpen by rememberSaveable { mutableStateOf(false) }
     Text(stringResource(label), style = MaterialTheme.typography.labelLarge)
     FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        options.forEachIndexed { index, option ->
-            IconOptionButton(option, isSelected = selected == index, enabled = enabled, tint = tint,
-                onClick = { onSelect(index) })
+        principalRow(principal, selected).forEach { icon ->
+            IconOptionButton(icon.option, isSelected = icon == selected, enabled = enabled, tint = tint,
+                onClick = { onSelect(icon) })
         }
+        MoreIconsButton(enabled = enabled, onClick = { catalogOpen = true })
+    }
+    if (catalogOpen) {
+        IconCatalogSheet(selected = selected, tint = tint, onDismiss = { catalogOpen = false },
+            onChoose = { icon ->
+                catalogOpen = false
+                onSelect(icon)
+            })
     }
 }
 
 @Composable
-private fun IconOptionButton(
+internal fun IconOptionButton(
     option: IconOption, isSelected: Boolean, enabled: Boolean, tint: Color, onClick: () -> Unit,
 ) {
     val name = stringResource(option.name)
@@ -71,6 +89,19 @@ private fun IconOptionButton(
     }
 }
 
+@Composable
+private fun MoreIconsButton(enabled: Boolean, onClick: () -> Unit) {
+    val name = stringResource(R.string.icon_more)
+    val colors = MaterialTheme.colorScheme
+    Box(Modifier.size(48.dp).clip(CircleShape)
+        .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+        .semantics { contentDescription = name }
+        .border(1.dp, colors.outline, CircleShape),
+        contentAlignment = Alignment.Center) {
+        Icon(painterResource(R.drawable.ic_more_horiz), contentDescription = null, tint = colors.onSurfaceVariant)
+    }
+}
+
 @Preview
 @Composable
 private fun IconPickerPreview() {
@@ -78,11 +109,8 @@ private fun IconPickerPreview() {
         Column {
             IconPicker(
                 label = R.string.icon_label,
-                options = listOf(IconOption(R.drawable.ic_format_list_bulleted, R.string.icon_list),
-                    IconOption(R.drawable.ic_home, R.string.icon_home),
-                    IconOption(R.drawable.ic_favorite, R.string.icon_health),
-                    IconOption(R.drawable.ic_star, R.string.icon_star)),
-                selected = 1,
+                principal = listOf(AppIcon.LIST, AppIcon.WORK, AppIcon.HOME, AppIcon.STUDY),
+                selected = AppIcon.PETS,
                 tint = itemColors[1],
                 onSelect = {},
             )

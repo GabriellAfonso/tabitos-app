@@ -73,7 +73,7 @@ fun TaskDrawer(state: TasksUiState, highlighted: Boolean, callbacks: DrawerListC
         ),
     ) { list, handle ->
         Box {
-            DrawerListRow(list.name, listIcons[list.icon].icon, itemColors[list.color],
+            DrawerListRow(list.name, list.iconDrawable, itemColors[list.color],
                 selected = highlighted && state.selectedListId == list.id, modifier = handle,
                 onOpen = { if (idle) callbacks.onSelect(list.id) }, onActions = { if (idle) menuFor = list.id })
             DropdownMenu(expanded = menuFor == list.id, onDismissRequest = { menuFor = null }) {
@@ -128,6 +128,6 @@ private fun DrawerListRow(
 @Composable
 private fun DrawerListRowPreview() {
     EthosTheme {
-        DrawerListRow("Casa", listIcons[1].icon, itemColors[2], selected = true, onOpen = {}, onActions = {})
+        DrawerListRow("Casa", R.drawable.ic_home, itemColors[2], selected = true, onOpen = {}, onActions = {})
     }
 }

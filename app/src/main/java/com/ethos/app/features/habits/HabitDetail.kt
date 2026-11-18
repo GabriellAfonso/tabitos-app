@@ -124,7 +124,7 @@ private fun HabitDetailTitle(habit: Habit) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(itemColors[habit.color]),
             contentAlignment = Alignment.Center) {
-            Icon(painterResource(habitIcons[habit.icon].icon), contentDescription = null, tint = Color.White)
+            Icon(painterResource(habit.iconDrawable), contentDescription = null, tint = Color.White)
         }
         Text(habit.name, Modifier.weight(1f))
     }

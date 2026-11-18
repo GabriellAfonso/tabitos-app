@@ -152,7 +152,7 @@ private fun TaskSummaryLine(model: TaskDetailModel, today: LocalDate, busy: Bool
             if (model.isOverdue) stringResource(R.string.task_overdue_suffix, dueWithTime) else dueWithTime,
             emphasized = model.isOverdue)
         val list = model.list
-        DetailSummaryItem(if (list == null) R.drawable.ic_checklist else listIcons[list.icon].icon,
+        DetailSummaryItem(if (list == null) R.drawable.ic_checklist else list.iconDrawable,
             list?.name ?: stringResource(R.string.inbox), tint = list?.let { itemColors[it.color] })
         model.repeat?.let { DetailSummaryItem(R.drawable.ic_repeat, repeatLabel(it)) }
         if (model.isOpen && model.reminderCount > 0) {
@@ -324,7 +324,7 @@ private fun ListChoiceDialog(
                 ListChoiceRow(R.drawable.ic_checklist, null, stringResource(R.string.inbox), selected == null) {
                     onSelect(null) }
                 lists.forEach { list ->
-                    ListChoiceRow(listIcons[list.icon].icon, itemColors[list.color], list.name,
+                    ListChoiceRow(list.iconDrawable, itemColors[list.color], list.name,
                         selected == list.id) { onSelect(list.id) }
                 }
             }

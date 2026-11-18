@@ -17,6 +17,7 @@ class RewardRulesTest {
                 catch (_: IllegalArgumentException) { }
             }
         RewardRules.validate(reward.copy(cost = Long.MAX_VALUE, limit = Int.MAX_VALUE))
+        listOf("GIFT", "GAME", "FOOD", "REST", "PETS").forEach { RewardRules.validate(reward.copy(icon = it)) }
     }
 
     @Test fun civilWeeksMonthsAndIndependentUsage() {

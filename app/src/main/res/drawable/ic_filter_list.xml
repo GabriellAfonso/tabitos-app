@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Filter list: three centered rounded bars, drawn on the Material Symbols Rounded grid (weight 400). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="960"
+    android:viewportHeight="960">
+    <path
+        android:fillColor="@android:color/black"
+        android:pathData="M150,240h660a30,30 0,0 1,0 60h-660a30,30 0,0 1,0 -60ZM270,450h420a30,30 0,0 1,0 60h-420a30,30 0,0 1,0 -60ZM430,660h100a30,30 0,0 1,0 60h-100a30,30 0,0 1,0 -60Z" />
+</vector>

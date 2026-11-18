@@ -146,7 +146,7 @@ fun HabitRow(
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(itemColors[habit.color]),
                     contentAlignment = Alignment.Center) {
-                    Icon(painterResource(habitIcons[habit.icon].icon), contentDescription = null, tint = Color.White)
+                    Icon(painterResource(habit.iconDrawable), contentDescription = null, tint = Color.White)
                 }
                 Column(Modifier.weight(1f)) {
                     Text(habit.name, style = MaterialTheme.typography.titleSmall)

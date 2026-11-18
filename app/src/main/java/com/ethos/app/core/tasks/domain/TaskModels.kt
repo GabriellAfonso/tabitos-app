@@ -1,5 +1,6 @@
 package com.ethos.app.core.tasks.domain
 
+import com.ethos.app.core.icons.AppIconTables
 import java.time.LocalDate
 
 enum class DeadlineKind { NONE, DAY, WEEK, WORK_WEEK }
@@ -29,9 +30,9 @@ data class TaskList(
     val position: Int = 0, val deleted: Boolean = false,
 ) : java.io.Serializable {
     companion object {
-        /** Sizes of the color and icon choices shown in the list editor; saved indices must stay inside them. */
+        /** Sizes of the color choices and of the persisted icon table; saved indices must stay inside them. */
         const val COLOR_COUNT = 7
-        const val ICON_COUNT = 6
+        val ICON_COUNT = AppIconTables.list.size
     }
 }
 

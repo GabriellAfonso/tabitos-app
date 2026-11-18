@@ -1,5 +1,6 @@
 package com.ethos.app.core.habits.domain
 
+import com.ethos.app.core.icons.AppIconTables
 import java.time.LocalDate
 
 enum class HabitType { PRACTICE, AVOID, LIMIT }
@@ -17,9 +18,9 @@ data class Habit(
     val status: HabitStatus = HabitStatus.ACTIVE,
 ) : java.io.Serializable {
     companion object {
-        /** Sizes of the color and icon choices shown in the editor; saved indices must stay inside them. */
+        /** Sizes of the color choices and of the persisted icon table; saved indices must stay inside them. */
         const val COLOR_COUNT = 7
-        const val ICON_COUNT = 17
+        val ICON_COUNT = AppIconTables.habit.size
     }
 }
 

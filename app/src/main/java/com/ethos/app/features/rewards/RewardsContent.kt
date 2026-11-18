@@ -1,27 +1,20 @@
 package com.ethos.app.features.rewards
 
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
-import com.ethos.app.core.ui.components.CoinAmount
-import com.ethos.app.core.ui.components.LazyReorderState
-import com.ethos.app.core.ui.components.lazyReorderGestures
-import com.ethos.app.core.ui.components.moved
-import com.ethos.app.core.ui.components.reorderActions
-import com.ethos.app.core.ui.components.reorderableItem
-import com.ethos.app.core.ui.components.CoinGlyph
-import com.ethos.app.core.ui.components.Eyebrow
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -31,10 +24,18 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
 import com.ethos.app.R
-import androidx.compose.foundation.background
+import com.ethos.app.core.icons.AppIcon
 import com.ethos.app.core.rewards.domain.*
-import com.ethos.app.core.ui.components.IconOption
+import com.ethos.app.core.ui.components.CoinAmount
+import com.ethos.app.core.ui.components.CoinGlyph
+import com.ethos.app.core.ui.components.Eyebrow
 import com.ethos.app.core.ui.components.IconPicker
+import com.ethos.app.core.ui.components.LazyReorderState
+import com.ethos.app.core.ui.components.lazyReorderGestures
+import com.ethos.app.core.ui.components.moved
+import com.ethos.app.core.ui.components.reorderActions
+import com.ethos.app.core.ui.components.reorderableItem
+import com.ethos.app.core.ui.rewards.rewardAppIcon
 import com.ethos.app.core.ui.rewards.rewardIcon
 import kotlinx.coroutines.delay
 
@@ -45,15 +46,8 @@ data class RewardActions(
     val retry: () -> Unit = {}, val confirmPause: () -> Unit = {}, val cancelPause: () -> Unit = {},
 )
 
-// Same order as RewardRules.icons, whose keys are what gets persisted.
-private val rewardIconOptions = RewardRules.icons.map { key ->
-    IconOption(rewardIcon(key), when (key) {
-        "GAME" -> R.string.reward_game
-        "FOOD" -> R.string.reward_food
-        "REST" -> R.string.reward_rest
-        else -> R.string.reward_gift
-    })
-}
+/** Icons offered in the reward editor's row; the rest are under "see more". */
+private val rewardPrincipalIcons = listOf(AppIcon.GIFT, AppIcon.GAME, AppIcon.FOOD, AppIcon.REST)
 
 @Composable
 fun RewardsScreen(viewModel: RewardsViewModel, sessions: @Composable () -> Unit = {}) {
@@ -205,8 +199,8 @@ private fun RewardEditor(state: RewardsUiState, draft: List<String>, actions: Re
                         label = { Text(stringResource(label)) }, modifier = Modifier.fillMaxWidth(),
                         singleLine = index != 2)
                 }
-                IconPicker(R.string.reward_icon, rewardIconOptions, RewardRules.icons.indexOf(draft[3]),
-                    !state.busy) { field(3, RewardRules.icons[it]) }
+                IconPicker(R.string.reward_icon, rewardPrincipalIcons, rewardAppIcon(draft[3]), !state.busy) {
+                    field(3, it.name) }
                 Text(stringResource(R.string.reward_period))
                 RewardRules.periods.forEach { period ->
                     FilterChip(selected = draft[6] == period, onClick = { field(6, period) },

@@ -1,13 +1,12 @@
 package com.ethos.app.core.ui.rewards
 
 import androidx.annotation.DrawableRes
-import com.ethos.app.R
+import com.ethos.app.core.icons.AppIcon
+import com.ethos.app.core.ui.components.option
 
-/** Drawing for a persisted reward icon key (RewardRules.icons); unknown keys fall back to the gift. */
+/** Catalog icon of a persisted reward icon key; unknown keys fall back to the gift. */
+fun rewardAppIcon(icon: String): AppIcon = AppIcon.fromKey(icon) ?: AppIcon.GIFT
+
+/** Drawing for a persisted reward icon key. */
 @DrawableRes
-fun rewardIcon(icon: String): Int = when (icon) {
-    "GAME" -> R.drawable.ic_sports_esports
-    "FOOD" -> R.drawable.ic_restaurant
-    "REST" -> R.drawable.ic_coffee
-    else -> R.drawable.ic_redeem
-}
+fun rewardIcon(icon: String): Int = rewardAppIcon(icon).option.icon
