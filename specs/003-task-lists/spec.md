@@ -1,7 +1,7 @@
 # Feature Specification: Lists, tasks and recurrence
 
 > Spec 012 updates the card checkbox: direct completion/reopening, without checklist/financial
-> confirmation. Completed tasks appear in an initially expanded Concluídas section at the end.
+> confirmation. The Concluídas section starts collapsed at the end. Tap its header to show completed tasks.
 > Detail/notification flows retain their confirmations and recurrence guards remain unchanged.
 >
 > Spec 013 changes only the editor UI: full-screen quick capture with "Mais opções", date/time pickers

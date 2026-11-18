@@ -190,7 +190,7 @@ Moedas em âmbar (tertiary) com ◈; ocorrências evitar/limitar mantêm confirm
 Spec011: prática marca/desmarca diretamente em Hoje, com estorno (tocar de novo desfaz); sem barras/progresso semanal.
 Calendário e progresso nos detalhes; configuração debug restaura base fictícia com confirmação destrutiva.
 Restauração Room transacional preserva tema/permissões; bloqueada com cronômetro contando.
-Spec012: checkbox de tarefa conclui/desmarca direto; Concluídas expandida ao fim, com cartões discretos.
+Spec012: checkbox de tarefa conclui/desmarca direto; Concluídas recolhida por padrão ao fim, com cartões discretos.
 Detalhes/notificações preservam confirmações; recorrência e estornos mantêm regras existentes.
 Spec013: editor de tarefa em tela cheia, captura rápida + "Mais opções", seletores de data/hora (sem digitar).
 Datas pt-BR únicas (Hoje/Amanhã/Ontem, "10 nov", ano só se diferente); revisão só se vencida e data mudar.

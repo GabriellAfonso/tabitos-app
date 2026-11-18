@@ -5,6 +5,7 @@ import com.ethos.app.core.ui.components.ContentFilter
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.SavedStateHandle
@@ -26,6 +27,39 @@ class DirectTaskCheckboxTest {
     private val clock = object : TaskClock {
         override fun today(): LocalDate = LocalDate.of(2026, 11, 10)
         override fun nowMillis() = 100L
+    }
+
+    @Test fun completedCardsRetractUnderTheHeaderAndExpandAgain() {
+        val today = clock.today()
+        val fields = TaskFields(title = "Ler", deadline = DeadlineKind.DAY, date = today)
+        val created = TaskRules.apply(TaskSnapshot(), TaskAction.Create("t", fields, RepeatRule(start = today)),
+            today, clock.nowMillis())
+        val done = TaskRules.apply(created, TaskAction.Resolve("t:1", true, today), today, clock.nowMillis())
+        compose.setContent {
+            EthosTheme {
+                TasksContent(TasksUiState(done, today, loading = false), TaskPage.TODAY, ContentFilter.ALL,
+                    onOpen = {}, onAction = {}, onRetry = {}, onDismissError = {})
+            }
+        }
+        val header = compose.onNodeWithText("Concluídas (1)")
+        val card = compose.onNodeWithTag("task:t:1")
+        card.assertDoesNotExist()
+        header.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Recolhida")).performClick()
+        card.assertIsDisplayed()
+        val fullHeight = card.fetchSemanticsNode().boundsInRoot.height
+        compose.mainClock.autoAdvance = false
+        try {
+            header.performClick()
+            compose.mainClock.advanceTimeBy(100)
+            val closingHeight = card.fetchSemanticsNode().boundsInRoot.height
+            assertTrue(closingHeight > 0f && closingHeight < fullHeight)
+        } finally {
+            compose.mainClock.autoAdvance = true
+        }
+        card.assertDoesNotExist()
+        header.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Recolhida")).performClick()
+        card.assertIsDisplayed()
+        header.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Expandida"))
     }
 
     @Test fun todayMovesToCompletedBelowHabitsAndUncheckingReturnsWithoutDialogs() {
@@ -51,7 +85,7 @@ class DirectTaskCheckboxTest {
             compose.waitUntil(15000) {
                 compose.onAllNodesWithText("Concluídas (1)").fetchSemanticsNodes().isNotEmpty()
             }
-            compose.onNodeWithText("Concluídas (1)").performScrollTo().assertIsDisplayed()
+            compose.onNodeWithText("Concluídas (1)").performScrollTo().assertIsDisplayed().performClick()
             compose.onNodeWithContentDescription("Desmarcar Preparar mochila").assertIsOn()
             assertTrue(compose.onNodeWithText("Hábitos do dia").getUnclippedBoundsInRoot().top <
                 compose.onNodeWithText("Concluídas (1)").getUnclippedBoundsInRoot().top)

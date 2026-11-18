@@ -1,5 +1,12 @@
 package com.ethos.app.features.tasks
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Transition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -17,6 +24,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -28,7 +36,9 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextDecoration
@@ -64,6 +74,8 @@ import kotlinx.coroutines.delay
 enum class TaskPage { LIST, TODAY, REVIEW }
 
 private const val UNCONFIRMED_CHECK_RESET_MILLIS = 1_500L
+private const val SECTION_TOGGLE_MILLIS = 250
+private const val CHEVRON_DOWN_DEGREES = 90f
 
 @Composable
 fun TaskError(state: TasksUiState, retry: () -> Unit, dismiss: () -> Unit) {
@@ -100,7 +112,10 @@ fun TasksContent(
     header: @Composable () -> Unit = {},
 ) {
     val recurring = state.snapshot.definitions.filter { it.rule.kind != RepeatKind.NONE }.map { it.id }.toSet()
-    var collapsed by rememberSaveable(page, state.selectedListId) { mutableStateOf(false) }
+    var collapsed by rememberSaveable(page, state.selectedListId) { mutableStateOf(true) }
+    val completedSection = key(page, state.selectedListId) {
+        updateTransition(targetState = !collapsed, label = "Completed section")
+    }
     var habits by rememberSaveable(state.selectedListId) { mutableStateOf(false) }
     val sections = remember(state.snapshot, page, filter, state.today, state.selectedListId, habits) {
         state.snapshot.sections(page, filter, state.today, state.selectedListId, habits)
@@ -172,12 +187,44 @@ fun TasksContent(
         }
         if (showsHabitItems) extraItems?.invoke(this)
         if (sections.completed.isNotEmpty()) {
-            item("completed-section") { TextButton({ collapsed = !collapsed }) {
-                Text(stringResource(R.string.resolved_section, sections.completed.size)) } }
-            if (!collapsed) items(sections.completed, key = { it.id }) { o ->
-                TaskRow(o, state.busy, { onOpen(o.id) }, state.today, Modifier.animateItem(),
-                    recurring = o.taskId in recurring) { onComplete(o.id) }
+            item("completed-section") {
+                CompletedSectionHeader(sections.completed.size, completedSection, onToggle = { collapsed = !collapsed })
             }
+            if (completedSection.currentState || completedSection.targetState || completedSection.isRunning) {
+                items(sections.completed, key = { it.id }) { o ->
+                    completedSection.AnimatedVisibility(
+                        visible = { it },
+                        modifier = Modifier.animateItem(),
+                        enter = expandVertically(tween(SECTION_TOGGLE_MILLIS), expandFrom = Alignment.Bottom),
+                        exit = shrinkVertically(tween(SECTION_TOGGLE_MILLIS), shrinkTowards = Alignment.Bottom),
+                    ) {
+                        TaskRow(o, state.busy, { onOpen(o.id) }, state.today,
+                            recurring = o.taskId in recurring) { onComplete(o.id) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CompletedSectionHeader(count: Int, expansion: Transition<Boolean>, onToggle: () -> Unit) {
+    val rotation by expansion.animateFloat(
+        transitionSpec = { tween(SECTION_TOGGLE_MILLIS) }, label = "Completed section chevron",
+    ) { expanded -> if (expanded) CHEVRON_DOWN_DEGREES else 0f }
+    val status = stringResource(if (expansion.targetState) R.string.section_expanded else R.string.section_collapsed)
+    TextButton(
+        onClick = onToggle,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
+            heading()
+            stateDescription = status
+        },
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null,
+                modifier = Modifier.size(20.dp).rotate(rotation))
+            Text(stringResource(R.string.resolved_section, count))
         }
     }
 }

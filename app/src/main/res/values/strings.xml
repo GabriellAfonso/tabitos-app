@@ -118,6 +118,8 @@
     <string name="delete_list_confirm">Excluir a lista e suas tarefas? Os hábitos dela vão para Hábitos excluídos, com histórico.</string>
     <string name="delete_task_confirm">Excluir a tarefa? O histórico fica guardado, a não ser que você marque a opção abaixo.</string>
     <string name="resolved_section">Concluídas (%1$d)</string>
+    <string name="section_expanded">Expandida</string>
+    <string name="section_collapsed">Recolhida</string>
     <string name="weekly_section">Nesta semana · sem dia definido</string>
     <string name="task_empty_real">Nenhuma tarefa aqui. Capture uma tarefa quando precisar.</string>
     <string name="loading_tasks">Carregando tarefas…</string>

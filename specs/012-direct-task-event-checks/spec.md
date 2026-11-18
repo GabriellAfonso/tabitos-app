@@ -7,8 +7,11 @@ Autorizado pelo usuário em 2026-11-10, após implementação da spec 011.
   o dia local do registro de não realização; listas mostram os resultados da própria lista.
 - Checkbox da tarefa conclui com data de hoje sem abrir detalhes, confirmação financeira
   ou confirmação de checklist pendente. Não marcar automaticamente os itens do checklist.
-- Concluídas aparecem ao fim do conteúdo sob **Concluídas (n)**, inicialmente expandida,
+- A seção **Concluídas (n)** começa recolhida ao fim do conteúdo. Ao expandir, os cartões aparecem
   com texto riscado e cores discretas. Checkbox marcado desmarca e devolve às pendentes.
+- Tocar no cabeçalho expande ou recolhe os cartões com animação.
+  A seta gira entre direita (recolhida) e baixo (expandida).
+  A contagem fica visível nos dois estados, e o TalkBack anuncia o estado da seção.
 - Nas listas, respeitar a lista atual e a ordem manual ao retornar. Hoje mostra conclusões
   realizadas hoje; Revisão mantém acessíveis as conclusões feitas hoje de tarefas vencidas.
   Não carregar todo o histórico em Hoje/Revisão; ocultar tarefas com filtro Hábitos.
