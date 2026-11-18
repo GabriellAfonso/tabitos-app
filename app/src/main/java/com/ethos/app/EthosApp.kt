@@ -309,7 +309,8 @@ private fun TaskDestination(
         extraItems = {
             habitItems(app.habits, habitPage, tasks.selectedListId, vm.habits::detail, vm.habits::retry,
                 vm.habits::quickRecord,
-                timerChip = { app.timerChip(vm, TimerKind.HABIT, it.id, app.habits.durations[it.id]) })
+                timerChip = { app.timerChip(vm, TimerKind.HABIT, it.id, app.habits.durations[it.id]) },
+                filter = filter)
         },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

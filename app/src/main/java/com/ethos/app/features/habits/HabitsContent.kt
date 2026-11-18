@@ -24,6 +24,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import com.ethos.app.core.ui.components.ContentFilter
 import com.ethos.app.core.ui.components.WeekBars
 import com.ethos.app.core.ui.components.itemColors
 import com.ethos.app.core.habits.domain.*
@@ -60,14 +61,15 @@ fun outcomeLabel(p: HabitPeriod, today: LocalDate): Int = when {
 fun LazyListScope.habitItems(
     state: HabitsUiState, page: HabitPage, listId: String?,
     open: (String) -> Unit, retry: () -> Unit, record: ((String) -> Unit)? = null,
-    timerChip: (Habit) -> TimerChip? = { null },
+    timerChip: (Habit) -> TimerChip? = { null }, filter: ContentFilter = ContentFilter.HABITS,
 ) {
     // Revisão is for tasks only (spec 014).
     if (page == HabitPage.REVIEW) return
-    item("habit-errors") { HabitError(state, retry) }
+    if (state.storageError || state.problem != null) item("habit-errors") { HabitError(state, retry) }
     if (state.loading) item("habit-loading") { Text(stringResource(R.string.habit_loading)) }
-    val habits = visibleHabits(state, page, listId)
-    if (!state.loading && habits.isEmpty()) item("habit-empty") {
+    val habits = visibleHabits(state, page, listId, filter.showsBadHabits)
+    val showsEmptyMessage = page != HabitPage.TODAY || filter == ContentFilter.HABITS
+    if (showsEmptyMessage && !state.loading && habits.isEmpty()) item("habit-empty") {
         Text(stringResource(if (page == HabitPage.EXCLUDED) R.string.habit_excluded_empty
             else R.string.habit_empty_real))
     }
@@ -82,17 +84,26 @@ fun LazyListScope.habitItems(
     }
 }
 
-/** Hoje shows active habits whose period includes today; a list page its own; Settings the excluded ones. */
-internal fun visibleHabits(state: HabitsUiState, page: HabitPage, listId: String?): List<Habit> =
+/**
+ * Hoje shows active habits whose period includes today, bad habits only when [showsBadHabits]; a list page its
+ * own; Settings the excluded ones.
+ */
+internal fun visibleHabits(
+    state: HabitsUiState, page: HabitPage, listId: String?, showsBadHabits: Boolean = true,
+): List<Habit> =
     state.snapshot.habits.filter { h ->
         when (page) {
             HabitPage.TODAY -> h.status == HabitStatus.ACTIVE &&
-                state.periods.any { it.habitId == h.id && state.today in it.start..it.end }
+                state.periods.any { it.habitId == h.id && state.today in it.start..it.end &&
+                    (showsBadHabits || !it.isBadHabit) }
             HabitPage.LIST -> h.status != HabitStatus.EXCLUDED && h.listId == listId
             HabitPage.EXCLUDED -> h.status == HabitStatus.EXCLUDED
             HabitPage.REVIEW -> false
         }
     }
+
+/** Avoid and limit periods ("Quebrar mau hábito"); practice is the good habit. */
+private val HabitPeriod.isBadHabit: Boolean get() = rule?.type?.let { it != HabitType.PRACTICE } == true
 
 /** Quick action on a habit card; null when the habit cannot be recorded today. */
 data class HabitQuick(val label: Int, val description: Int, val done: Boolean, val run: () -> Unit)
@@ -125,7 +136,7 @@ fun HabitRow(
     week: List<Boolean>? = null, todayCount: Int? = null, today: LocalDate,
     consistency: Pair<Int, Int?>? = null, timer: TimerChip? = null,
 ) {
-    val breaking = period?.rule?.type?.let { it != HabitType.PRACTICE } == true
+    val breaking = period?.isBadHabit == true
     val colors = MaterialTheme.colorScheme
     OutlinedCard(open, Modifier.fillMaxWidth(), enabled = !busy, shape = RoundedCornerShape(17.dp),
         colors = CardDefaults.outlinedCardColors(

@@ -14,6 +14,9 @@ enum class ContentFilter(@param:StringRes val title: Int) {
 
     val showsTasks: Boolean get() = this != HABITS
     val showsHabits: Boolean get() = this != TASKS
+
+    /** Bad habits stay out of "Tudo" so Hoje does not keep a possible trigger in sight; "Hábitos" lists them. */
+    val showsBadHabits: Boolean get() = this == HABITS
 }
 
 @Composable

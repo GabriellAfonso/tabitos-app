@@ -266,3 +266,5 @@ só acrescentar no fim do enum, nunca renomear (AppIconTest fixa a ordem). Sem m
 Spec030: Calendário opção C — Mês|Semana|Dia centralizado (Hoje à esquerda só fora do período, filtro à direita),
 "‹ período ›" abaixo, filtros em folha com chips removíveis; Mês = grade compacta fixa com pontos separados
 (tarefas/hábitos/acompanhamento) e lista do dia rolando embaixo; Semana = agenda de 7 dias; regras 009 inalteradas.
+Hoje (2026-11-18): "Tudo" mostra tarefas e bons hábitos; maus hábitos (evitar/limitar) só no filtro "Hábitos",
+para não deixar gatilho à vista (ContentFilter.showsBadHabits). Páginas de lista, lembretes e resumo inalterados.
