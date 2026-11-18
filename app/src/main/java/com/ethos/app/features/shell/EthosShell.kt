@@ -172,7 +172,7 @@ private fun ShellDrawer(
 
 private class HeaderActions(val openMenu: () -> Unit, val back: () -> Unit, val openSettings: () -> Unit)
 
-/** Model B header: date eyebrow over a large title (spec 010). Sub-pages show Back and no settings button. */
+/** Model B header: date eyebrow over a large title (spec 010). Sub-pages show Back instead of the menu. */
 @Composable
 private fun ShellHeader(today: LocalDate, current: ShellDestination, actions: HeaderActions) {
     val isSubPage = current.parent != null
@@ -190,7 +190,7 @@ private fun ShellHeader(today: LocalDate, current: ShellDestination, actions: He
             Text(stringResource(current.title), style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold)
         }
-        if (!isSubPage) {
+        if (current.showsSettingsButton) {
             HeaderButton(ShellDestination.SETTINGS.icon, R.string.open_settings, outlined = true,
                 onClick = actions.openSettings)
         }

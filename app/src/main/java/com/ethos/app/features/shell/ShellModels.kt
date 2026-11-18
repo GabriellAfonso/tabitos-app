@@ -28,6 +28,9 @@ enum class ShellDestination(
     /** Exists only with game mode on (spec 017); off, requests for it land on Hoje. */
     val isGameOnly: Boolean get() = this == REWARDS || this == EARNINGS
 
+    /** The header's settings shortcut: absent inside Settings itself and on its sub-pages (which show Back). */
+    val showsSettingsButton: Boolean get() = this != SETTINGS && parent == null
+
     companion object {
         private val drawer = listOf(TODAY, CALENDAR, REVIEW, REWARDS, STATISTICS)
 
