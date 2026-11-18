@@ -1,6 +1,7 @@
 package com.ethos.app.features.statistics
 
 import com.ethos.app.core.accounting.domain.LedgerEntry
+import com.ethos.app.core.habits.domain.HabitPeriod
 import com.ethos.app.core.habits.domain.HabitRules
 import com.ethos.app.core.habits.domain.HabitSnapshot
 import com.ethos.app.core.habits.domain.HabitStatus
@@ -71,19 +72,29 @@ private const val LEDGER_MATCH_MILLIS = 5_000L
 fun historyFilters(gameMode: Boolean): List<HistoryFilter> =
     HistoryFilter.entries.filter { gameMode || it != HistoryFilter.COINS }
 
-fun historyItems(
-    sources: HistorySources, range: ClosedRange<LocalDate>, today: LocalDate, zone: ZoneId, gameMode: Boolean,
-    filter: HistoryFilter,
-): List<HistoryItem> {
-    val ledger = if (gameMode) sources.ledger else emptyList()
-    if (filter == HistoryFilter.COINS) {
-        return if (gameMode) ledger.map { coinItem(it, sources, zone) }.filter { it.day in range }
-            .sortedWith(newestFirst) else emptyList()
+/**
+ * Every history item of all time in display order, built once per data change (spec 031); a period, filter or item
+ * only picks from it. Ledger entries are matched to their records once, whatever period or filter is shown.
+ */
+class PreparedHistory private constructor(
+    private val all: List<HistoryItem>, private val coins: List<HistoryItem>,
+) {
+    fun items(range: ClosedRange<LocalDate>, filter: HistoryFilter): List<HistoryItem> =
+        (if (filter == HistoryFilter.COINS) coins else all).filter { it.day in range && it.matches(filter) }
+
+    companion object {
+        fun of(
+            sources: HistorySources, today: LocalDate, zone: ZoneId, gameMode: Boolean,
+            periodsOf: (String) -> List<HabitPeriod> = { HabitRules.periods(sources.habits, it, today) },
+        ): PreparedHistory {
+            val ledger = if (gameMode) sources.ledger else emptyList()
+            val coins = ledger.map { coinItem(it, sources, zone) }.sortedWith(newestFirst)
+            val matcher = LedgerMatcher(ledger)
+            val all = taskItems(sources.tasks, matcher, zone) + habitItems(sources.habits, matcher, today, zone, periodsOf) +
+                timerItems(sources) + matcher.unused().map { coinItem(it, sources, zone) }
+            return PreparedHistory(all.sortedWith(newestFirst), coins)
+        }
     }
-    val matcher = LedgerMatcher(ledger)
-    val items = taskItems(sources.tasks, matcher, zone) + habitItems(sources.habits, matcher, today, zone) +
-        timerItems(sources) + matcher.unused().map { coinItem(it, sources, zone) }
-    return items.filter { it.day in range && it.matches(filter) }.sortedWith(newestFirst)
 }
 
 /** Items sit on their day; inside a day the latest moment comes first. */
@@ -148,6 +159,7 @@ private fun TaskAudit.to(): LocalDate? =
 
 private fun habitItems(
     habits: HabitSnapshot, matcher: LedgerMatcher, today: LocalDate, zone: ZoneId,
+    periodsOf: (String) -> List<HabitPeriod>,
 ): List<HistoryItem> {
     val byId = habits.habits.associateBy { it.id }
     fun subject(id: String) = HistorySubject.Habit(id, byId[id]?.status?.let { it != HabitStatus.EXCLUDED } == true)
@@ -160,7 +172,7 @@ private fun habitItems(
             record.entered))
     }
     val settled = habits.habits.flatMap { h ->
-        HabitRules.periods(habits, h.id, today).filter { it.rule.type != HabitType.PRACTICE && it.end < today }
+        periodsOf(h.id).filter { it.rule.type != HabitType.PRACTICE && it.end < today }
             .mapNotNull { p ->
                 val kind = when (HabitRules.standing(p, today)) {
                     PeriodOutcome.SUCCESS -> HistoryKind.HABIT_DAY_OK

@@ -3,6 +3,7 @@ package com.ethos.app.features.statistics
 import com.ethos.app.core.accounting.domain.AccountingSnapshot
 import com.ethos.app.core.accounting.domain.Progress
 import com.ethos.app.core.habits.domain.Habit
+import com.ethos.app.core.habits.domain.HabitPeriod
 import com.ethos.app.core.habits.domain.HabitRules
 import com.ethos.app.core.habits.domain.HabitSnapshot
 import com.ethos.app.core.habits.domain.HabitStatus
@@ -106,12 +107,14 @@ private fun bucketStarts(range: ClosedRange<LocalDate>, unit: BucketUnit): List<
 fun habitSummary(
     habits: HabitSnapshot, range: ClosedRange<LocalDate>, today: LocalDate,
     included: (Habit) -> Boolean = { it.status != HabitStatus.EXCLUDED },
+    periodsOf: (String) -> List<HabitPeriod> = { HabitRules.periods(habits, it, today) },
 ): HabitSummary {
     val items = habits.habits.filter(included).sortedBy { it.name.lowercase() }.map { h ->
-        val streak = HabitRules.streak(habits, h.id, today)
+        val periods = periodsOf(h.id)
+        val streak = HabitRules.streak(periods, today)
         val type = HabitRules.currentRule(habits, h.id, today)?.type ?: HabitType.PRACTICE
         HabitStat(h.id, h.name, h.color, h.icon, bad = type != HabitType.PRACTICE,
-            ratePercent = HabitRules.successRate(habits, h.id, today, range), streak = streak.current,
+            ratePercent = HabitRules.successRate(periods, today, range), streak = streak.current,
             unit = streak.unit)
     }
     val rates = items.mapNotNull { it.ratePercent }

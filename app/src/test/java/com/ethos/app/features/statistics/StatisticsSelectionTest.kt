@@ -64,8 +64,8 @@ class StatisticsSelectionTest {
         TaskAudit(id, occurrence, AuditKind.COMPLETED, moment, today, null)
 
     private fun history(filter: HistoryFilter) =
-        historyItems(HistorySources(tasks, habits, emptyList(), emptyList(), emptyList()), week, today, zone,
-            gameMode = true, filter = filter)
+        PreparedHistory.of(HistorySources(tasks, habits, emptyList(), emptyList(), emptyList()), today, zone,
+            gameMode = true).items(week, filter)
 
     @Test fun badHabitsHaveTheirOwnFilter() {
         assertEquals(setOf(HistoryKind.HABIT_DONE), history(HistoryFilter.HABITS).map { it.kind }.toSet())

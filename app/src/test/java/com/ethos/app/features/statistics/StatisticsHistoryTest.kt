@@ -39,8 +39,8 @@ class StatisticsHistoryTest {
     private fun items(
         tasks: TaskSnapshot, ledger: List<LedgerEntry> = emptyList(), gameMode: Boolean = true,
         filter: HistoryFilter = HistoryFilter.ALL, purchases: List<Purchase> = emptyList(),
-    ) = historyItems(HistorySources(tasks, HabitSnapshot(), emptyList(), ledger, purchases), week, today, zone,
-        gameMode, filter)
+    ) = PreparedHistory.of(HistorySources(tasks, HabitSnapshot(), emptyList(), ledger, purchases), today, zone,
+        gameMode).items(week, filter)
 
     @Test fun showsResultsAndPostponesButNotCreationsEditsOrChecks() {
         val tasks = TaskSnapshot(occurrences = listOf(occurrence("o:1")), history = listOf(
