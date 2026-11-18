@@ -1,0 +1,642 @@
+<title>Acompanhamento de hábito</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap">
+<style>
+/* Layout: cabeçalho com controles (tela, estado, tema) · fila de 4 celulares (Como está + A, B, C) · ficha de cada opção · o que fica igual · pendências. */
+:root{
+  --paper:#f5f4f7; --sheet:#ffffff; --ink:#1e1a23; --muted:#625b6b; --line:#e3dee8;
+  --plum:#6e4a8e; --plum-soft:#efe6f6; --amber:#93601a; --amber-soft:#fbf0e0;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif; --body:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--body)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.wrap{max-width:1680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 8px}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+h1{font:800 clamp(30px,4.4vw,46px)/1.05 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+h2{font:700 22px/1.2 var(--display);margin:0 0 6px;text-wrap:balance}
+h3{font:700 16px/1.3 var(--display);margin:0}
+.lede{max-width:78ch;color:var(--muted);margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.ctl{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;min-width:0}
+.ctl>span{font-size:12.5px;color:var(--muted);font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--paper);padding:5px 11px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:var(--sheet);font-weight:600}
+main{padding-block:22px 60px;display:grid;gap:34px}
+.phones{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:26px;align-items:start}
+.col{display:grid;gap:12px;min-width:0}
+.col-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--plum-soft);color:var(--plum);font-weight:600;white-space:nowrap}
+.badge.now{background:var(--amber-soft);color:var(--amber)}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0}
+.card ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.card h5{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+.card h5:first-child{margin-top:0}
+.keep{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px}
+
+/* CELULAR — tokens Ameixa (core/ui/theme/EthosTheme.kt) */
+.phone{--p:#6E4A8E;--onp:#fff;--pc:#F1E7F8;--onpc:#2E1A40;--sc:#F1E7F8;--t:#93601A;--tc:#FBF0E0;--bg:#FBF8FC;--on:#231D29;--onv:#655C6E;--low:#fff;--cont:#F3EEF6;--high:#F1E9F5;--ol:#8F8498;--olv:#E6DEEB;--err:#B3261E;--errc:#F9DEDC;--onerrc:#410E0B;--hab:#3F7E7A;
+  width:100%;max-width:380px;height:760px;margin:0 auto;border:8px solid #26212b;border-radius:44px;background:var(--bg);color:var(--on);position:relative;overflow:hidden;display:flex;flex-direction:column;font:14px/1.4 Roboto,system-ui,sans-serif;box-shadow:0 18px 40px rgba(30,20,40,.18)}
+.phone.dark{--p:#D7B8F2;--onp:#3B1F55;--pc:#44325A;--onpc:#F1E2FC;--sc:#3A2D47;--t:#E8BE7A;--tc:#352A1F;--bg:#171419;--on:#ECE4F0;--onv:#B1A6B8;--low:#211C25;--cont:#1F1A23;--high:#2A2430;--ol:#82788A;--olv:#372F3D;--err:#F2B8B5;--errc:#8C1D18;--onerrc:#F9DEDC;--hab:#5FA39E}
+.phone *{box-sizing:border-box}
+.phone button{color:inherit;font-family:inherit}
+.p-status{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;font-weight:600}
+.p-head{display:flex;align-items:center;gap:4px;padding:6px 6px 8px;flex:none}
+.ib{width:44px;height:44px;border:0;background:none;font-size:19px;border-radius:50%;display:grid;place-items:center;color:var(--on);flex:none}
+.ib:hover{background:var(--cont)}
+.p-head .tt{flex:1;min-width:0}
+.p-head .sub{font-size:11.5px;color:var(--onv)}
+.p-head .h{font-size:20px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-body{flex:1;overflow-y:auto;padding:4px 16px 24px;display:flex;flex-direction:column;gap:10px}
+.p-foot{flex:none;padding:10px 16px 18px;border-top:1px solid var(--olv);background:var(--bg);display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.ghost{opacity:.5;pointer-events:none;padding:4px 16px;display:grid;gap:8px}
+.ghost .gl{height:56px;border-radius:16px;background:var(--cont)}
+/* diálogos e folhas */
+.m-scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:6;display:flex;align-items:center;justify-content:center;padding:20px}
+.m-scrim.bottom{align-items:flex-end;padding:0}
+.m-scrim.top{z-index:9}
+.m-dialog{background:var(--high);border-radius:28px;padding:22px 20px 10px;width:100%;max-height:96%;display:flex;flex-direction:column;gap:10px}
+.m-dialog h6{font-size:21px;font-weight:400;margin:0}
+.m-dialog .scroll{overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
+.m-dialog .acts{display:flex;justify-content:flex-end;gap:4px;flex:none}
+.sheet{background:var(--low);border-radius:28px 28px 0 0;width:100%;max-height:92%;display:flex;flex-direction:column;padding:8px 16px 18px;gap:10px}
+.phone.dark .sheet{background:var(--high)}
+.sheet .grab{width:32px;height:4px;border-radius:2px;background:var(--ol);opacity:.5;margin:4px auto 2px;flex:none}
+.sheet .scroll{overflow-y:auto;display:flex;flex-direction:column;gap:10px;min-height:0}
+.m-tbtn{border:0;background:none;color:var(--p)!important;font-weight:500;font-size:14px;padding:10px 12px;border-radius:20px;align-self:flex-start}
+.m-tbtn:hover{background:var(--cont)}
+.m-tbtn.danger{color:var(--err)!important}
+.m-fbtn{border:0;border-radius:20px;background:var(--p);color:var(--onp)!important;padding:10px 22px;font-weight:500;font-size:14px}
+.m-fbtn.wide{width:100%}
+.m-obtn{border:1px solid var(--ol);border-radius:20px;background:none;color:var(--p)!important;padding:9px 18px;font-weight:500;font-size:14px}
+.m-tonal{border:0;border-radius:20px;background:var(--sc);color:var(--onpc)!important;padding:10px 18px;font-weight:500;font-size:14px}
+.phone.dark .m-tonal{color:var(--on)!important}
+.m-field{border:1px solid var(--ol);border-radius:4px;padding:20px 12px 8px;position:relative;font-size:14.5px;min-height:52px}
+.m-field small{position:absolute;top:5px;left:12px;font-size:11px;color:var(--onv)}
+.m-field.empty{color:var(--onv)}
+.m-sw{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px;padding:4px 0}
+.sw{width:44px;height:26px;border-radius:13px;background:var(--olv);border:2px solid var(--ol);position:relative;flex:none}
+.sw::after{content:"";position:absolute;width:14px;height:14px;border-radius:50%;background:var(--ol);top:4px;left:4px}
+.sw.on{background:var(--p);border-color:var(--p)}
+.sw.on::after{background:var(--onp);width:18px;height:18px;top:2px;left:20px}
+.chip{border:1px solid var(--ol);border-radius:8px;background:none;padding:6px 12px;font-size:13px;color:var(--on)!important}
+.chip.on{background:var(--sc);border-color:var(--sc);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.m-lab{font-size:12px;letter-spacing:.04em;color:var(--onv);font-weight:500}
+.t-s{font-size:14px;font-weight:500}
+.t-b{font-size:12.5px;color:var(--onv)}
+.o-card{border:1px solid var(--olv);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.hr{height:1px;background:var(--olv);flex:none}
+/* cabeçalho do hábito */
+.tile{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-size:19px;flex:none;background:var(--hab)}
+.k-head{display:flex;gap:12px;align-items:center}
+.k-head .ttl{flex:1;min-width:0}
+.k-head .ttl b{display:block;font-size:19px;font-weight:500;line-height:1.2}
+.k-head .ttl span{font-size:12.5px;color:var(--onv)}
+/* status de hoje */
+.today{display:flex;gap:10px;align-items:center;border-radius:16px;padding:10px 10px 10px 14px;background:var(--sc)}
+.today .tx{flex:1;min-width:0}
+.today .tx b{display:block;font-size:14px;font-weight:500}
+.today .tx span{font-size:12px;color:var(--onv)}
+.today.done{background:var(--cont)}
+.pill{display:inline-grid;place-items:center;min-width:28px;height:24px;padding:0 7px;border-radius:12px;background:var(--p);color:var(--onp);font-size:12.5px;font-weight:500;font-variant-numeric:tabular-nums}
+.pill.soft{background:var(--sc);color:var(--onpc)}
+.phone.dark .pill.soft{color:var(--on)}
+.zero{font-size:12px;color:var(--onv);display:flex;gap:6px;align-items:center}
+/* segmentado */
+.segm{display:flex;border:1px solid var(--ol);border-radius:20px;overflow:hidden}
+.segm button{flex:1;border:0;background:none;padding:7px 4px;font-size:13px;color:var(--on)!important;border-left:1px solid var(--ol)}
+.segm button:first-child{border-left:0}
+.segm button.on{background:var(--sc);font-weight:500}
+/* gráfico */
+.chart{width:100%;height:auto;display:block}
+.chart text{font:10px Roboto,sans-serif;fill:var(--onv)}
+.legend{display:flex;gap:12px;font-size:11.5px;color:var(--onv);flex-wrap:wrap}
+/* linhas de registro */
+.row{display:flex;gap:12px;align-items:center;padding:10px 4px;border-radius:12px;cursor:pointer;min-height:52px}
+.row:hover{background:var(--cont)}
+.row .tx{flex:1;min-width:0}
+.row .tx b{display:block;font-size:14px;font-weight:500}
+.row .tx span{display:block;font-size:12px;color:var(--onv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .chev{color:var(--onv);font-size:18px}
+.ic{width:36px;height:36px;border-radius:10px;background:var(--cont);display:grid;place-items:center;font-size:15px;flex:none;color:var(--p)}
+.phone.dark .ic{background:var(--low)}
+.drag{color:var(--onv);font-size:16px;cursor:grab;width:20px;text-align:center;flex:none}
+/* barras de frequência */
+.freq{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:12.5px}
+.freq .b{height:8px;border-radius:4px;background:var(--olv);overflow:hidden}
+.freq .b i{display:block;height:100%;background:var(--t);border-radius:4px}
+.freq .n{font-variant-numeric:tabular-nums;color:var(--onv)}
+/* rótulo → valor (editor 029) */
+.lv{display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid var(--olv);cursor:pointer}
+.lv .l{flex:1;font-size:14px}
+.lv .v{font-size:14px;color:var(--p);font-weight:500}
+.lv .ico{width:24px;text-align:center;color:var(--onv);font-size:16px}
+/* escala de resposta */
+.scale{display:grid;grid-template-columns:repeat(11,1fr);gap:3px}
+.scale button{border:1px solid var(--olv);background:var(--low);border-radius:10px;height:40px;font-size:14px;padding:0;color:var(--on)!important;font-variant-numeric:tabular-nums}
+.phone.dark .scale button{background:var(--cont)}
+.scale button.on{background:var(--p);border-color:var(--p);color:var(--onp)!important;font-weight:500}
+.scale-ends{display:flex;justify-content:space-between;font-size:11.5px;color:var(--onv)}
+.track{display:flex;height:44px;border-radius:22px;background:var(--cont);overflow:hidden;border:1px solid var(--olv)}
+.track button{flex:1;border:0;background:none;font-size:13px;padding:0;color:var(--onv)!important}
+.track button.fill{background:var(--sc);color:var(--onpc)!important}
+.track button.on{background:var(--p);color:var(--onp)!important;font-weight:600;border-radius:22px}
+.q-card{background:var(--low);border:1px solid var(--olv);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.phone.dark .q-card{background:var(--cont)}
+.q-card.sel{border-color:var(--p);box-shadow:0 0 0 1px var(--p)}
+.q-top{display:flex;gap:8px;align-items:flex-start}
+.q-top .t-s{flex:1}
+.req{font-size:11px;color:var(--onv);font-weight:400}
+.textarea{border:1px solid var(--ol);border-radius:4px;min-height:64px;padding:10px 12px;color:var(--onv);font-size:14px}
+/* abas */
+.tabs{display:flex;border-bottom:1px solid var(--olv);flex:none;padding:0 8px}
+.tabs button{flex:1;border:0;background:none;padding:12px 4px 10px;font-size:14px;color:var(--onv)!important;border-bottom:3px solid transparent;font-weight:500}
+.tabs button.on{color:var(--p)!important;border-bottom-color:var(--p)}
+/* calendário de calor */
+.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.heat .wd{font-size:11px;color:var(--onv);padding:2px 0}
+.heat button{aspect-ratio:1;max-width:100%;border:0;border-radius:10px;font-size:12px;padding:0;display:grid;place-items:center;line-height:1;color:var(--on)!important;background:var(--cont)}
+.heat button small{display:block;font-size:9.5px;opacity:.75;margin-top:2px}
+.heat button.l1{background:color-mix(in srgb,var(--p) 22%,var(--bg))}
+.heat button.l2{background:color-mix(in srgb,var(--p) 45%,var(--bg))}
+.heat button.l3{background:color-mix(in srgb,var(--p) 72%,var(--bg));color:var(--onp)!important}
+.heat button.l4{background:var(--p);color:var(--onp)!important}
+.heat button.today{outline:2px solid var(--t);outline-offset:1px}
+.heat button.future,.heat button.out{background:none;color:var(--onv)!important;opacity:.5}
+.heat-scale{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--onv)}
+.heat-scale i{width:14px;height:14px;border-radius:4px;display:inline-block}
+/* modelos */
+.tpl{border:1px solid var(--olv);border-radius:16px;padding:12px;display:flex;gap:12px;align-items:flex-start;cursor:pointer;background:var(--low)}
+.phone.dark .tpl{background:var(--cont)}
+.tpl.on{border-color:var(--p);box-shadow:0 0 0 1px var(--p)}
+.tpl .tx{flex:1;min-width:0}
+.tpl .tx b{display:block;font-size:14px;font-weight:500}
+.tpl .tx span{font-size:12px;color:var(--onv)}
+.steps{display:flex;gap:4px}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--olv)}
+.steps i.on{background:var(--p)}
+.toast{position:absolute;left:16px;right:16px;bottom:22px;background:var(--on);color:var(--bg);padding:12px 14px;border-radius:8px;font-size:13px;z-index:20;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none}
+.toast.show{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+.now-list{font-size:12.5px;line-height:1.5}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Ethos · protótipo de interface</div>
+  <h1>Acompanhamento de hábito</h1>
+  <p class="lede">Hoje o acompanhamento abre num diálogo comprido que mistura preenchimento, data digitada (aaaa-mm-dd), gráfico, lista de pontos em texto, registros e arquivamento. Criar acompanhamento abre outro diálogo com campos soltos e quatro botões "+". Abaixo, três propostas para as três telas: o painel do acompanhamento, criar/editar perguntas e preencher um registro. Dados fictícios: hábito "Meditar" com 3 perguntas.</p>
+  <div class="controls">
+    <div class="ctl"><span>Tela</span><div class="seg" id="c-screen">
+      <button data-v="hub" aria-pressed="true">Acompanhamento</button>
+      <button data-v="form" aria-pressed="false">Criar acompanhamento</button>
+      <button data-v="entry" aria-pressed="false">Preencher registro</button></div></div>
+    <div class="ctl" id="ctl-has"><span>Hábito</span><div class="seg" id="c-has">
+      <button data-v="yes" aria-pressed="true">Com acompanhamento</button>
+      <button data-v="no" aria-pressed="false">Sem acompanhamento</button></div></div>
+    <div class="ctl"><span>Hoje</span><div class="seg" id="c-today">
+      <button data-v="pending" aria-pressed="true">Ainda não preenchido</button>
+      <button data-v="done" aria-pressed="false">Já preenchido</button></div></div>
+    <div class="ctl"><span>Tema dos celulares</span><div class="seg" id="c-theme">
+      <button data-v="page" aria-pressed="true">Igual à página</button>
+      <button data-v="light" aria-pressed="false">Claro</button>
+      <button data-v="dark" aria-pressed="false">Escuro</button></div></div>
+  </div>
+</header>
+
+<main>
+  <section class="phones" id="phones"></section>
+
+  <section>
+    <h2>O que fica igual em todas as opções</h2>
+    <div class="keep">
+      <div class="card"><h5>Regras (spec 009)</h5><ul>
+        <li>Acompanhamento não muda moedas, XP, metas nem sequência do hábito.</li>
+        <li>Mudar perguntas cria nova versão; registros antigos guardam a versão em que foram respondidos.</li>
+        <li>Um registro por dia, ou vários por dia se escolhido. Datas entre a criação e hoje.</li>
+        <li>Arquivar substitui excluir; arquivado fica só para consulta, sem lembrete.</li>
+      </ul></div>
+      <div class="card"><h5>Evolução</h5><ul>
+        <li>Uma coluna por dia, cada registro é um ponto na própria faixa. Sem soma, média nem zero inventado.</li>
+        <li>Dias sem dados ficam marcados, não interpolados.</li>
+        <li>Frequência só conta respostas; o aviso "não indica causa nem diagnóstico" continua.</li>
+      </ul></div>
+      <div class="card"><h5>Acessibilidade</h5><ul>
+        <li>Escala com botões discretos (não arrastar), cada um com "Valor 6 de 0 a 10".</li>
+        <li>Reordenar perguntas e opções por arrastar, com ações do TalkBack.</li>
+        <li>Data escolhida por seletor de calendário em todas as opções: acaba o campo aaaa-mm-dd.</li>
+      </ul></div>
+      <div class="card"><h5>Fora de escopo</h5><ul>
+        <li>Sem mudança de schema (7). Sem notificação nova; lembrete ReminderKind.TRACKER continua.</li>
+        <li>Entrada continua pelo ícone "Acompanhar" no pop-up do hábito e pelo aviso "Preencher".</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Pontos para você decidir</h2>
+    <div class="keep">
+      <div class="card"><ul>
+        <li>Qual opção (ou mistura) para cada tela: painel, criar e preencher podem vir de opções diferentes.</li>
+        <li>Modelos prontos (opção C) entram? São só textos de partida; dá para começar do zero também.</li>
+        <li>Registros antigos: lista (A/B) ou calendário de calor (C)?</li>
+        <li>Preencher numa tela só (A/B) ou uma pergunta por vez (C)?</li>
+      </ul></div>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+(() => {
+const S = { screen: 'hub', has: 'yes', today: 'pending', theme: 'page',
+  per: { now: {}, a: { period: 14 }, b: { tab: 'reg', open: 'q1' }, c: { step: 0, tpl: 'energia', mode: 'edit', qstep: 0 } } };
+
+const HABIT = 'Meditar';
+const Q = [
+  { id: 'q1', type: 'scale', title: 'Como está sua energia?', req: true, primary: true, min: 0, max: 10, minL: 'Esgotado', maxL: 'Muito disposto' },
+  { id: 'q2', type: 'multi', title: 'O que atrapalhou hoje?', opts: ['Sono ruim', 'Trabalho', 'Barulho', 'Celular', 'Nada'] },
+  { id: 'q3', type: 'text', title: 'Observações' },
+];
+// 14 dias até hoje (18 nov); null = sem registro. Último = hoje.
+const DAYS = [5, 6, null, 4, 7, 7, 8, null, 6, 5, null, 7, 6, null];
+const NOTES = ['Sono ruim', 'Trabalho', null, 'Sono ruim · Celular', 'Nada', 'Nada', 'Nada', null, 'Trabalho', 'Sono ruim', null, 'Barulho', 'Celular', null];
+const WD = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const BASE = new Date(2026, 10, 18);
+const dayAt = i => { const d = new Date(BASE); d.setDate(d.getDate() - (DAYS.length - 1 - i)); return d; };
+const MON = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const label = i => { const back = DAYS.length - 1 - i; if (back === 0) return 'Hoje'; if (back === 1) return 'Ontem';
+  const d = dayAt(i); return `${WD[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]}`; };
+const pad = n => String(n).padStart(2, '0');
+const br = i => { const d = dayAt(i); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/2026`; };
+const days = () => S.today === 'done' ? DAYS.slice(0, -1).concat(6) : DAYS;
+const notes = () => S.today === 'done' ? NOTES.slice(0, -1).concat('Trabalho') : NOTES;
+const filled = () => days().map((v, i) => ({ v, i })).filter(x => x.v != null);
+
+const status = () => `<div class="p-status"><span>21:40</span><span>▾ ▴ ▮ 82%</span></div>`;
+const sw = on => `<span class="sw${on ? ' on' : ''}" aria-hidden="true"></span>`;
+const toast = (msg) => `data-toast="${msg}"`;
+
+function chart(n) {
+  const d = days().slice(-n), W = 320, H = 120, step = W / d.length;
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H + 18}" role="img" aria-label="Evolução da energia: ${d.filter(x => x != null).length} registros, ${d.filter(x => x == null).length} dias sem dados">`;
+  [0, 5, 10].forEach(v => { const y = H - 8 - v / 10 * (H - 16);
+    s += `<line x1="18" x2="${W}" y1="${y}" y2="${y}" stroke="var(--olv)" stroke-width="1"/><text x="0" y="${y + 3}">${v}</text>`; });
+  d.forEach((v, k) => { const x = 18 + (W - 18) / d.length * k + (W - 18) / d.length / 2;
+    if (v == null) s += `<line x1="${x}" x2="${x}" y1="${H - 2}" y2="${H - 8}" stroke="var(--ol)" stroke-width="2"/>`;
+    else { const y = H - 8 - v / 10 * (H - 16); s += `<circle cx="${x}" cy="${y}" r="${n > 30 ? 2.5 : 4.5}" fill="var(--p)"/>`; }
+    if (n <= 14 && (k === 0 || k === d.length - 1 || k % 4 === 0)) {
+      const idx = DAYS.length - d.length + k; const dd = dayAt(idx);
+      s += `<text x="${x}" y="${H + 14}" text-anchor="middle">${dd.getDate()}</text>`; }
+  });
+  return s + '</svg>';
+}
+function freq() {
+  const counts = Q[1].opts.map(o => [o, notes().filter(n => n && n.includes(o)).length]).sort((a, b) => b[1] - a[1]);
+  const max = Math.max(...counts.map(c => c[1]), 1);
+  return `<div class="freq">${counts.map(([o, c]) => `<span>${o}</span><span class="b"><i style="width:${c / max * 100}%"></i></span><span class="n">${c}</span>`).join('')}</div>`;
+}
+const pendingToday = () => S.today === 'pending';
+
+/* ---------------- COMO ESTÁ ---------------- */
+function nowHub() {
+  const ghost = `<div class="p-head"><button class="ib">☰</button><div class="tt"><div class="h">Hoje</div></div></div><div class="ghost"><div class="gl"></div><div class="gl"></div><div class="gl"></div></div>`;
+  if (S.has === 'no') return ghost + `<div class="m-scrim"><div class="m-dialog"><h6>Acompanhamento · ${HABIT}</h6><div class="scroll">
+    <div class="t-b">Não muda moedas, XP nem sequência.</div>
+    <div>Sem acompanhamento. Crie perguntas para registrar como foi o dia.</div>
+    <button class="m-fbtn" style="align-self:flex-start" data-go="form">Criar acompanhamento</button></div>
+    <div class="acts"><button class="m-tbtn">Fechar</button></div></div></div>`;
+  const pts = filled().slice(-14);
+  return ghost + `<div class="m-scrim"><div class="m-dialog"><h6>Acompanhamento · ${HABIT}</h6><div class="scroll">
+    <div class="t-b">Não muda moedas, XP nem sequência.</div>
+    ${pendingToday() ? `<div style="color:var(--p)">Pendente hoje: o lembrete já passou e ainda não há registro.</div>` : ''}
+    <button class="m-fbtn" style="align-self:flex-start" data-go="entry">Preencher hoje</button>
+    <div class="m-field"><small>Data de referência (aaaa-mm-dd)</small>2026-11-18</div>
+    <div style="display:flex"><button class="m-tbtn">Ontem</button><button class="m-tbtn">Preencher esta data</button></div>
+    <button class="m-tbtn" data-go="form">Editar formulário</button>
+    <div class="t-s">Evolução e frequência</div>
+    <div class="chips">${[7, 14, 30, 90].map(p => `<button class="chip${p === 14 ? ' on' : ''}">${p} dias</button>`).join('')}</div>
+    ${chart(14)}
+    <div class="now-list t-b">${pts.map(p => `${br(p.i)} 21:${pad(10 + p.i * 3 % 50)} · ${p.v} (faixa 0–10)`).join('<br>')}</div>
+    <div class="t-b">Dias sem dados no período: ${days().filter(v => v == null).length}</div>
+    <div class="t-s">Frequência das opções</div>
+    <div style="font-size:13px;font-weight:500">O que atrapalhou hoje?</div>
+    <div class="now-list">${Q[1].opts.map(o => `${o}: ${notes().filter(n => n && n.includes(o)).length}`).join('<br>')}</div>
+    <div class="t-b">As contagens descrevem seus registros; não indicam causa nem diagnóstico.</div>
+    <div class="t-s">Registros</div>
+    ${filled().reverse().slice(0, 4).map(p => `<div class="o-card"><div>${br(p.i)} · preenchido em ${br(p.i)} 21:${pad(10 + p.i * 3 % 50)}</div>
+      <div class="t-b">Como está sua energia?: ${p.v}</div><div style="display:flex"><button class="m-tbtn">Editar</button><button class="m-tbtn">Excluir</button></div></div>`).join('')}
+    <button class="m-tbtn">Arquivar acompanhamento</button></div>
+    <div class="acts"><button class="m-tbtn">Fechar</button></div></div></div>`;
+}
+function nowForm() {
+  return `<div class="p-head"><button class="ib">☰</button><div class="tt"><div class="h">Hoje</div></div></div><div class="ghost"><div class="gl"></div><div class="gl"></div></div>
+  <div class="m-scrim"><div class="m-dialog"><h6>Formulário do acompanhamento</h6><div class="scroll">
+    <div class="t-b">Mudanças valem para os próximos registros.</div>
+    <div class="t-s">Registros por dia</div>
+    <div class="chips"><button class="chip on">✓ Um por dia</button><button class="chip">Vários por dia</button></div>
+    <div class="o-card"><div style="display:flex;gap:6px;align-items:center"><span class="drag">⠿</span><span style="font-size:13px;font-weight:500">Pergunta 1 · Escala numérica</span></div>
+      <div class="m-field"><small>Pergunta</small>${Q[0].title}</div>
+      <div class="m-sw">Obrigatória ${sw(true)}</div><div class="m-sw">Indicador principal ${sw(true)}</div>
+      <div style="display:flex;gap:8px"><div class="m-field" style="flex:1"><small>Mínimo</small>0</div><div class="m-field" style="flex:1"><small>Máximo</small>10</div></div>
+      <div class="m-field"><small>Descrição do mínimo</small>Esgotado</div><div class="m-field"><small>Descrição do máximo</small>Muito disposto</div>
+      <button class="m-tbtn">Remover pergunta</button></div>
+    <div class="o-card"><div style="display:flex;gap:6px;align-items:center"><span class="drag">⠿</span><span style="font-size:13px;font-weight:500">Pergunta 2 · Escolha múltipla</span></div>
+      <div class="m-field"><small>Pergunta</small>${Q[1].title}</div>
+      <div class="m-sw">Obrigatória ${sw(false)}</div><div class="m-sw">Permitir várias respostas ${sw(true)}</div>
+      <div class="m-field"><small>Opção</small>Sono ruim</div><div class="m-field empty"><small>Descrição curta (opcional)</small></div>
+      <div style="display:flex;align-items:center"><span class="drag">⠿</span><button class="m-tbtn">Remover opção</button></div>
+      <div class="m-field"><small>Opção</small>Trabalho</div><div class="m-field empty"><small>Descrição curta (opcional)</small></div>
+      <div style="display:flex;align-items:center"><span class="drag">⠿</span><button class="m-tbtn">Remover opção</button></div>
+      <button class="m-tbtn">Adicionar opção</button><button class="m-tbtn">Remover pergunta</button></div>
+    ${['+ Escala', '+ Escolha única', '+ Escolha múltipla', '+ Texto livre'].map(t => `<button class="m-obtn">${t}</button>`).join('')}
+    <div class="o-card"><span class="t-b">Lembrete diário</span><span>Sem horário</span></div>
+    <div class="t-b">Aviso diário para preencher. Some quando você salvar.</div></div>
+    <div class="acts"><button class="m-tbtn">Cancelar</button><button class="m-tbtn">Salvar</button></div></div></div>`;
+}
+function nowEntry() {
+  return `<div class="p-head"><button class="ib">☰</button><div class="tt"><div class="h">Hoje</div></div></div><div class="ghost"><div class="gl"></div><div class="gl"></div></div>
+  <div class="m-scrim"><div class="m-dialog"><h6>Registro de 18/11/2026</h6><div class="scroll">
+    <div class="t-s">${HABIT}</div>
+    <div class="t-s">Como está sua energia? (obrigatória)</div>
+    <div class="t-b">0 = Esgotado · 10 = Muito disposto</div>
+    <div class="chips">${Array.from({ length: 11 }, (_, v) => `<button class="chip${v === 6 ? ' on' : ''}" style="padding:6px 9px">${v}</button>`).join('')}</div>
+    <div class="t-s">O que atrapalhou hoje?</div>
+    ${Q[1].opts.map((o, k) => `<div class="m-sw" style="justify-content:flex-start"><span style="width:18px;height:18px;border:2px solid ${k === 1 ? 'var(--p)' : 'var(--ol)'};border-radius:3px;background:${k === 1 ? 'var(--p)' : 'none'}"></span>${o}</div>`).join('')}
+    <button class="m-tbtn">Limpar resposta</button>
+    <div class="t-s">Observações</div>
+    <div class="m-field empty"><small>Observações</small></div></div>
+    <div class="acts"><button class="m-tbtn">Cancelar</button><button class="m-tbtn">Salvar</button></div></div></div>`;
+}
+
+/* ---------------- OPÇÃO A — folha arrumada ---------------- */
+function aHub() {
+  const st = S.per.a, back = `<div class="p-head"><button class="ib">☰</button><div class="tt"><div class="h">Hoje</div></div></div><div class="ghost"><div class="gl"></div><div class="gl"></div></div>`;
+  const head = `<div class="k-head"><div class="tile">◐</div><div class="ttl"><b>${HABIT}</b><span>Acompanhamento · 3 perguntas</span></div>
+    <button class="ib" ${toast('Menu: Editar perguntas · Lembrete diário · Arquivar')} aria-label="Mais opções">⋮</button></div>`;
+  if (S.has === 'no') return back + `<div class="m-scrim bottom"><div class="sheet"><div class="grab"></div>${head.replace('Acompanhamento · 3 perguntas', 'Sem acompanhamento')}
+    <div style="font-size:14px">Registre como foi o dia com perguntas suas: uma nota de 0 a 10, opções para marcar ou um texto curto.</div>
+    <div class="zero">ⓘ Não muda moedas, XP nem sequência.</div>
+    <button class="m-fbtn wide" data-go="form">Criar perguntas</button></div></div>`;
+  const recent = filled().reverse().slice(0, 3);
+  return back + `<div class="m-scrim bottom"><div class="sheet"><div class="grab"></div><div class="scroll">${head}
+    ${pendingToday()
+      ? `<div class="today"><div class="tx"><b>Hoje ainda não preenchido</b><span>Lembrete às 21:00</span></div><button class="m-fbtn" data-go="entry">Preencher</button></div>`
+      : `<div class="today done"><span class="pill">6</span><div class="tx"><b>Hoje preenchido</b><span>Trabalho · às 21:32</span></div><button class="m-tbtn" data-go="entry">Abrir</button></div>`}
+    <button class="m-tbtn" ${toast('Abre o calendário (só datas desde a criação até hoje)')}>📅 Preencher outro dia</button>
+    <div class="hr"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center"><span class="t-s">Energia</span><span class="t-b">${filled().length} registros · ${days().filter(v => v == null).length} dias sem dados</span></div>
+    <div class="segm">${[7, 14, 30, 90].map(p => `<button class="${p === st.period ? 'on' : ''}" data-set="a.period=${p}">${p} dias</button>`).join('')}</div>
+    ${chart(Math.min(st.period, 14))}
+    <div class="legend"><span>● registro</span><span>╷ sem dados</span></div>
+    <div class="t-s" style="margin-top:4px">O que atrapalhou</div>${freq()}
+    <div class="t-b">Contagens dos seus registros; não indicam causa.</div>
+    <div class="hr"></div>
+    <div class="t-s">Registros</div>
+    ${recent.map(p => `<div class="row" data-go="entry"><span class="pill soft">${p.v}</span><div class="tx"><b>${label(p.i)}</b><span>${notes()[p.i] || 'Sem marcações'}</span></div><span class="chev">›</span></div>`).join('')}
+    <button class="m-tbtn" ${toast('Abre a lista completa de registros')}>Ver todos (${filled().length})</button>
+  </div></div></div>`;
+}
+function aForm() {
+  const st = S.per.a;
+  const qs = Q.map(q => ({ ...q, sum: q.type === 'scale' ? `Nota 0–10 · obrigatória · principal` : q.type === 'multi' ? `Várias respostas · ${q.opts.length} opções` : 'Texto livre', ico: q.type === 'scale' ? '①' : q.type === 'multi' ? '☑' : '¶' }));
+  let html = `<div class="p-head"><button class="ib" aria-label="Fechar">✕</button><div class="tt"><div class="h">Novo acompanhamento</div><div class="sub">${HABIT}</div></div><button class="m-fbtn" style="margin-right:8px">Salvar</button></div>
+  <div class="p-body">
+    <div class="lv" ${toast('Abre opções: Um por dia / Vários por dia')}><span class="ico">⟳</span><span class="l">Registros por dia</span><span class="v">Um por dia</span></div>
+    <div class="lv" ${toast('Abre o seletor de hora')}><span class="ico">⏰</span><span class="l">Lembrete diário</span><span class="v">21:00</span></div>
+    <div class="m-lab" style="margin-top:8px">PERGUNTAS</div>
+    ${qs.map(q => `<div class="row" data-set="a.q=${q.id}"><span class="drag" aria-hidden="true">⠿</span><span class="ic">${q.ico}</span><div class="tx"><b>${q.title}</b><span>${q.sum}</span></div><span class="chev">›</span></div>`).join('')}
+    <button class="m-tonal" style="align-self:flex-start" data-set="a.add=1">＋ Adicionar pergunta</button>
+    <div class="t-b">Segure e arraste ⠿ para mudar a ordem. Mudanças valem para os próximos registros.</div>
+  </div>`;
+  if (st.add) html += `<div class="m-scrim bottom"><div class="sheet"><div class="grab"></div><div class="t-s" style="font-size:16px">Tipo de pergunta</div>
+    ${[['①', 'Nota numa escala', 'Ex.: energia de 0 a 10. Pode virar o gráfico de evolução.'], ['◉', 'Escolher uma opção', 'Ex.: Tranquila · Corrida · Caótica'], ['☑', 'Marcar várias opções', 'Ex.: o que atrapalhou'], ['¶', 'Texto livre', 'Observações do dia']]
+      .map(([i, t, d]) => `<div class="row" data-set="a.add=0"><span class="ic">${i}</span><div class="tx"><b>${t}</b><span>${d}</span></div></div>`).join('')}
+    <button class="m-tbtn" data-set="a.add=0">Cancelar</button></div></div>`;
+  if (st.q) { const q = Q.find(x => x.id === st.q);
+    html += `<div class="m-scrim bottom"><div class="sheet"><div class="grab"></div><div class="scroll">
+      <div class="m-field"><small>Pergunta</small>${q.title}</div>
+      ${q.type === 'scale' ? `<div class="lv"><span class="l">Faixa</span><span class="v">0 a 10</span></div>
+        <div style="display:flex;gap:8px"><div class="m-field" style="flex:1"><small>0 quer dizer</small>${q.minL}</div><div class="m-field" style="flex:1"><small>10 quer dizer</small>${q.maxL}</div></div>
+        <div class="m-sw">Mostrar no gráfico de evolução ${sw(true)}</div>` : ''}
+      ${q.type === 'multi' ? `<div class="m-sw">Permitir várias respostas ${sw(true)}</div>${q.opts.map(o => `<div class="row" style="min-height:40px;padding:4px"><span class="drag">⠿</span><div class="tx"><b style="font-weight:400">${o}</b></div><button class="ib" aria-label="Remover ${o}">✕</button></div>`).join('')}<button class="m-tbtn">＋ Opção</button>` : ''}
+      <div class="m-sw">Obrigatória ${sw(!!q.req)}</div>
+      <div style="display:flex;justify-content:space-between"><button class="m-tbtn danger">Remover pergunta</button><button class="m-fbtn" data-set="a.q=">Pronto</button></div></div></div></div>`; }
+  return html;
+}
+function aEntry() {
+  const v = S.per.a.v ?? 6;
+  return `<div class="p-head"><button class="ib">☰</button><div class="tt"><div class="h">Hoje</div></div></div><div class="ghost"><div class="gl"></div><div class="gl"></div></div>
+  <div class="m-scrim bottom"><div class="sheet"><div class="grab"></div><div class="scroll">
+    <div class="k-head"><div class="tile" style="width:32px;height:32px;font-size:15px;border-radius:10px">◐</div><div class="ttl"><b style="font-size:17px">${HABIT} · Hoje</b><span>Não muda moedas, XP nem sequência</span></div></div>
+    <div class="t-s">Como está sua energia? <span class="req">obrigatória</span></div>
+    <div class="scale">${Array.from({ length: 11 }, (_, k) => `<button class="${k === v ? 'on' : ''}" data-set="a.v=${k}" aria-label="Valor ${k} de 0 a 10">${k}</button>`).join('')}</div>
+    <div class="scale-ends"><span>Esgotado</span><span>Muito disposto</span></div>
+    <div class="t-s" style="margin-top:4px">O que atrapalhou hoje?</div>
+    <div class="chips">${Q[1].opts.map((o, k) => `<button class="chip${k === 1 ? ' on' : ''}">${k === 1 ? '✓ ' : ''}${o}</button>`).join('')}</div>
+    <div class="m-field empty" style="margin-top:4px"><small>Observações</small>Opcional</div>
+    <button class="m-fbtn wide">Salvar</button></div></div></div>`;
+}
+
+/* ---------------- OPÇÃO B — página com abas ---------------- */
+function bHub() {
+  const st = S.per.b;
+  const top = `<div class="p-head"><button class="ib" aria-label="Voltar">←</button><div class="tt"><div class="h">Acompanhamento</div><div class="sub">${HABIT}</div></div><button class="ib" ${toast('Menu: Lembrete diário · Arquivar')}>⋮</button></div>`;
+  if (S.has === 'no') return top + `<div class="p-body" style="justify-content:center;align-items:center;text-align:center;gap:14px">
+    <div class="tile" style="width:64px;height:64px;font-size:30px;border-radius:20px">◐</div>
+    <div style="font-size:18px;font-weight:500">Como foi meditar hoje?</div>
+    <div class="t-b" style="max-width:260px">Crie perguntas para registrar energia, o que atrapalhou ou um comentário. Os registros viram gráfico e contagem.</div>
+    <button class="m-fbtn" data-go="form">Criar acompanhamento</button><div class="zero">Não muda moedas, XP nem sequência.</div></div>`;
+  const today = pendingToday()
+    ? `<div class="today"><div class="tx"><b>Hoje, 18 nov</b><span>Ainda não preenchido · lembrete 21:00</span></div><button class="m-fbtn" data-go="entry">Preencher</button></div>`
+    : `<div class="today done"><span class="pill">6</span><div class="tx"><b>Hoje, 18 nov</b><span>Preenchido às 21:32</span></div><button class="m-tbtn" data-go="entry">Abrir</button></div>`;
+  const tabs = `<div class="tabs">${[['reg', 'Registros'], ['evo', 'Evolução'], ['per', 'Perguntas']].map(([k, t]) => `<button class="${st.tab === k ? 'on' : ''}" data-set="b.tab=${k}">${t}</button>`).join('')}</div>`;
+  let body = '';
+  if (st.tab === 'reg') {
+    const list = days().map((v, i) => ({ v, i })).reverse();
+    body = `<div class="m-lab">ESTA SEMANA</div>` + list.slice(0, 4).map(rowB).join('') + `<div class="m-lab" style="margin-top:6px">SEMANA PASSADA</div>` + list.slice(4, 11).map(rowB).join('')
+      + `<button class="m-tbtn" ${toast('Abre o calendário para preencher um dia passado')}>📅 Preencher outro dia</button>`;
+  } else if (st.tab === 'evo') {
+    body = `<div class="segm">${[7, 14, 30, 90].map(p => `<button class="${p === 14 ? 'on' : ''}">${p} dias</button>`).join('')}</div>
+      <div class="q-card"><div class="t-s">Como está sua energia?</div>${chart(14)}<div class="legend"><span>● registro</span><span>╷ sem dados</span><span>${filled().length} registros</span></div></div>
+      <div class="q-card"><div class="t-s">O que atrapalhou hoje?</div>${freq()}</div>
+      <div class="t-b">As contagens descrevem seus registros; não indicam causa nem diagnóstico.</div>`;
+  } else {
+    body = Q.map((q, k) => `<div class="row" style="cursor:default"><span class="ic">${k + 1}</span><div class="tx"><b>${q.title}</b><span>${q.type === 'scale' ? 'Nota 0–10 · obrigatória · no gráfico' : q.type === 'multi' ? 'Várias respostas · 5 opções' : 'Texto livre'}</span></div></div>`).join('')
+      + `<button class="m-tonal" style="align-self:flex-start" data-go="form">✎ Editar perguntas</button><div class="t-b">Versão 2 · registros antigos continuam com as perguntas da época.</div>`;
+  }
+  return top + `<div style="padding:0 16px 10px;flex:none">${today}</div>${tabs}<div class="p-body" style="padding-top:12px">${body}</div>`;
+}
+function rowB({ v, i }) {
+  if (v == null) return `<div class="row" ${toast('Abre o registro deste dia para preencher')}><span class="pill soft" style="background:none;border:1px dashed var(--ol);color:var(--onv)">–</span><div class="tx"><b>${label(i)}</b><span>Sem registro · tocar para preencher</span></div><span class="chev">＋</span></div>`;
+  return `<div class="row" data-go="entry"><span class="pill">${v}</span><div class="tx"><b>${label(i)}</b><span>${notes()[i] || 'Sem marcações'}</span></div><span class="chev">›</span></div>`;
+}
+function bForm() {
+  const open = S.per.b.open;
+  const card = q => {
+    const isOpen = open === q.id, kind = q.type === 'scale' ? 'Escala' : q.type === 'multi' ? 'Várias opções' : 'Texto';
+    if (!isOpen) return `<div class="q-card" data-set="b.open=${q.id}" style="cursor:pointer"><div class="q-top"><span class="drag">⠿</span><div class="t-s">${q.title}<div class="t-b" style="font-weight:400">${kind}${q.req ? ' · obrigatória' : ''}</div></div><span class="chev">⌄</span></div></div>`;
+    return `<div class="q-card sel"><div class="q-top"><span class="drag">⠿</span><div class="t-s">Pergunta</div><button class="ib" style="width:32px;height:32px" data-set="b.open=" aria-label="Recolher">⌃</button></div>
+      <div class="m-field"><small>Texto da pergunta</small>${q.title}</div>
+      <div class="segm">${['Escala', 'Uma opção', 'Várias opções', 'Texto'].map(t => `<button class="${t === kind ? 'on' : ''}">${t}</button>`).join('')}</div>
+      ${q.type === 'scale' ? `<div style="display:flex;gap:8px;align-items:center;font-size:13px">De <span class="pill soft">− 0 +</span> até <span class="pill soft">− 10 +</span></div>
+        <div style="display:flex;gap:8px"><div class="m-field" style="flex:1"><small>No 0</small>${q.minL}</div><div class="m-field" style="flex:1"><small>No 10</small>${q.maxL}</div></div>
+        <div class="m-sw">Mostrar em Evolução ${sw(true)}</div>` : ''}
+      ${q.type === 'multi' ? `<div class="chips">${q.opts.map(o => `<span class="chip on">${o} ✕</span>`).join('')}<button class="chip">＋ opção</button></div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center"><div class="m-sw" style="gap:10px">Obrigatória ${sw(!!q.req)}</div><button class="m-tbtn danger">Remover</button></div></div>`;
+  };
+  return `<div class="p-head"><button class="ib" aria-label="Fechar">✕</button><div class="tt"><div class="h">Novo acompanhamento</div><div class="sub">${HABIT}</div></div><button class="m-fbtn" style="margin-right:8px">Salvar</button></div>
+  <div class="p-body">
+    <div class="o-card" style="flex-direction:row;align-items:center"><div style="flex:1"><div class="t-s">Registros por dia</div></div><div class="segm" style="flex:none"><button class="on" style="padding:6px 10px">Um</button><button style="padding:6px 10px">Vários</button></div></div>
+    ${Q.map(card).join('')}
+    <div class="o-card"><div class="t-s">Lembrete diário</div><div class="chips"><button class="chip">Sem lembrete</button><button class="chip on">21:00</button><button class="chip">Outro horário</button></div></div>
+  </div>
+  <div class="p-foot" style="justify-content:flex-start;gap:6px;overflow-x:auto"><span class="m-lab" style="white-space:nowrap">＋</span>${['Escala', 'Uma opção', 'Várias', 'Texto'].map(t => `<button class="chip" style="white-space:nowrap">${t}</button>`).join('')}</div>`;
+}
+function bEntry() {
+  const v = S.per.b.v ?? 6;
+  return `<div class="p-head"><button class="ib" aria-label="Fechar">✕</button><div class="tt"><div class="h">Hoje, 18 nov</div><div class="sub">${HABIT}</div></div><button class="ib" ${toast('Abre o calendário para trocar o dia')} aria-label="Trocar dia">📅</button></div>
+  <div class="p-body">
+    <div class="q-card"><div class="t-s">Como está sua energia? <span class="req">obrigatória</span></div>
+      <div class="track">${Array.from({ length: 11 }, (_, k) => `<button class="${k === v ? 'on' : k < v ? 'fill' : ''}" data-set="b.v=${k}" aria-label="Valor ${k} de 0 a 10">${k}</button>`).join('')}</div>
+      <div class="scale-ends"><span>0 · Esgotado</span><span>Muito disposto · 10</span></div></div>
+    <div class="q-card"><div class="t-s">O que atrapalhou hoje? <span class="req">marque quantas quiser</span></div>
+      <div class="chips">${Q[1].opts.map((o, k) => `<button class="chip${k === 1 ? ' on' : ''}">${k === 1 ? '✓ ' : ''}${o}</button>`).join('')}</div></div>
+    <div class="q-card"><div class="t-s">Observações</div><div class="textarea">Escreva se quiser…</div></div>
+    <div class="zero" style="justify-content:center">Não muda moedas, XP nem sequência.</div>
+  </div>
+  <div class="p-foot"><button class="m-tbtn">Cancelar</button><button class="m-fbtn">Salvar</button></div>`;
+}
+
+/* ---------------- OPÇÃO C — calendário + modelos ---------------- */
+function cHub() {
+  const top = `<div class="p-head"><button class="ib" aria-label="Voltar">←</button><div class="tt"><div class="h">${HABIT}</div><div class="sub">Acompanhamento · energia</div></div><button class="ib" ${toast('Menu: Editar perguntas · Lembrete · Arquivar')}>⋮</button></div>`;
+  if (S.has === 'no') return top + `<div class="p-body"><div style="font-size:18px;font-weight:500;margin-top:8px">Acompanhar ${HABIT.toLowerCase()}</div>
+    <div class="t-b">Comece por um modelo e ajuste as perguntas depois.</div>${tplList()}<button class="m-fbtn wide" data-go="form">Continuar</button><div class="zero">Não muda moedas, XP nem sequência.</div></div>`;
+  const d = days(), lv = v => v == null ? '' : v <= 2 ? 'l1' : v <= 4 ? 'l2' : v <= 7 ? 'l3' : 'l4';
+  // Novembro 2026 começa num domingo.
+  let cells = WD.map(w => `<span class="wd">${w[0].toUpperCase()}</span>`).join('');
+  for (let day = 1; day <= 30; day++) {
+    const idx = DAYS.length - 1 - (18 - day), v = idx >= 0 && idx < DAYS.length ? d[idx] : (day < 18 - 13 ? [6, 5, 7, null][day % 4] : undefined);
+    const fut = day > 18, cls = fut ? 'future' : (v == null ? '' : lv(v));
+    cells += `<button class="${cls}${day === 18 ? ' today' : ''}" ${fut ? 'disabled' : (day === 18 || v != null) ? 'data-go="entry"' : toast('Abre o registro de ' + day + ' nov para preencher')} aria-label="${day} de novembro${v != null && !fut ? ', energia ' + v : fut ? '' : ', sem registro'}">${day}${v != null && !fut ? `<small>${v}</small>` : ''}</button>`;
+  }
+  return top + `<div class="p-body">
+    ${pendingToday() ? `<div class="today"><div class="tx"><b>Hoje ainda não preenchido</b><span>Toque no dia ou aqui</span></div><button class="m-fbtn" data-go="entry">Preencher</button></div>`
+      : `<div class="today done"><span class="pill">6</span><div class="tx"><b>Hoje preenchido</b><span>Trabalho · 21:32</span></div></div>`}
+    <div style="display:flex;align-items:center;justify-content:space-between"><button class="ib">‹</button><span class="t-s">Novembro 2026</span><button class="ib">›</button></div>
+    <div class="heat">${cells}</div>
+    <div class="heat-scale">Energia: 0 <i style="background:color-mix(in srgb,var(--p) 22%,var(--bg))"></i><i style="background:color-mix(in srgb,var(--p) 45%,var(--bg))"></i><i style="background:color-mix(in srgb,var(--p) 72%,var(--bg))"></i><i style="background:var(--p)"></i> 10 · vazio = sem dados</div>
+    <div class="hr"></div>
+    <div class="t-s">O que atrapalhou em novembro</div>${freq()}
+    <button class="m-tbtn" ${toast('Abre Estatísticas filtradas por este hábito')}>Ver evolução em Estatísticas ›</button>
+  </div>`;
+}
+function tplList() {
+  const t = S.per.c.tpl;
+  return [['energia', '⚡', 'Energia e o que atrapalhou', 'Nota 0–10 · opções · observações'], ['humor', '☺', 'Humor do dia', 'Uma opção: Ótimo · Bem · Normal · Mal'], ['gatilho', '⚠', 'Gatilhos (mau hábito)', 'Situação · intensidade da vontade 0–10'], ['zero', '＋', 'Começar do zero', 'Sem perguntas prontas']]
+    .map(([k, i, n, d]) => `<div class="tpl${t === k ? ' on' : ''}" data-set="c.tpl=${k}"><span class="ic">${i}</span><div class="tx"><b>${n}</b><span>${d}</span></div></div>`).join('');
+}
+function cForm() {
+  const st = S.per.c;
+  if (st.step === 0) return `<div class="p-head"><button class="ib" aria-label="Fechar">✕</button><div class="tt"><div class="h">Novo acompanhamento</div><div class="sub">${HABIT} · passo 1 de 2</div></div></div>
+    <div class="p-body"><div class="steps"><i class="on"></i><i></i></div><div class="t-s" style="font-size:16px">Por onde começar?</div>${tplList()}</div>
+    <div class="p-foot"><button class="m-fbtn" data-set="c.step=1">Continuar</button></div>`;
+  const edit = st.mode === 'edit';
+  const qcard = (q, k) => {
+    let inner = '';
+    if (q.type === 'scale') inner = `<div class="scale">${Array.from({ length: 11 }, (_, n) => `<button tabindex="-1">${n}</button>`).join('')}</div><div class="scale-ends"><span>${q.minL}</span><span>${q.maxL}</span></div>`;
+    if (q.type === 'multi') inner = `<div class="chips">${q.opts.map(o => `<span class="chip">${o}</span>`).join('')}</div>`;
+    if (q.type === 'text') inner = `<div class="textarea">Escreva se quiser…</div>`;
+    return `<div class="q-card"${edit ? ` ${toast('Abre a folha para editar esta pergunta')} style="cursor:pointer"` : ''}><div class="q-top">${edit ? '<span class="drag">⠿</span>' : ''}<div class="t-s">${q.title} ${q.req ? '<span class="req">obrigatória</span>' : ''}</div>${edit ? '<span class="chev" style="color:var(--p)">✎</span>' : ''}</div>${inner}</div>`;
+  };
+  return `<div class="p-head"><button class="ib" data-set="c.step=0" aria-label="Voltar">←</button><div class="tt"><div class="h">Perguntas</div><div class="sub">${HABIT} · passo 2 de 2</div></div><button class="m-fbtn" style="margin-right:8px">Salvar</button></div>
+  <div style="padding:0 16px 10px;flex:none;display:grid;gap:10px"><div class="steps"><i class="on"></i><i class="on"></i></div>
+    <div class="segm"><button class="${edit ? 'on' : ''}" data-set="c.mode=edit">✎ Editar</button><button class="${edit ? '' : 'on'}" data-set="c.mode=view">👁 Ver como fica</button></div></div>
+  <div class="p-body">${Q.map(qcard).join('')}
+    ${edit ? `<button class="m-tonal" style="align-self:flex-start" ${toast('Abre a escolha do tipo de pergunta')}>＋ Pergunta</button>
+    <div class="lv"><span class="ico">⏰</span><span class="l">Lembrete diário</span><span class="v">21:00</span></div>
+    <div class="lv"><span class="ico">⟳</span><span class="l">Registros por dia</span><span class="v">Um por dia</span></div>` : '<div class="t-b" style="text-align:center">É assim que vai aparecer na hora de preencher.</div>'}
+  </div>`;
+}
+function cEntry() {
+  const st = S.per.c, k = st.qstep, q = Q[k], v = st.v ?? 6;
+  let inner = '';
+  if (q.type === 'scale') inner = `<div class="scale" style="gap:4px">${Array.from({ length: 11 }, (_, n) => `<button class="${n === v ? 'on' : ''}" style="height:52px;font-size:16px" data-set="c.v=${n}" aria-label="Valor ${n} de 0 a 10">${n}</button>`).join('')}</div><div class="scale-ends"><span>Esgotado</span><span>Muito disposto</span></div>`;
+  if (q.type === 'multi') inner = `<div style="display:grid;gap:8px">${q.opts.map((o, n) => `<button class="tpl${n === 1 ? ' on' : ''}" style="align-items:center"><span class="tx"><b style="font-weight:400">${o}</b></span>${n === 1 ? '✓' : ''}</button>`).join('')}</div>`;
+  if (q.type === 'text') inner = `<div class="textarea" style="min-height:140px">Escreva se quiser…</div>`;
+  return `<div class="p-head"><button class="ib" aria-label="Fechar">✕</button><div class="tt"><div class="h">${HABIT} · Hoje</div><div class="sub">Pergunta ${k + 1} de ${Q.length}</div></div></div>
+  <div style="padding:0 16px;flex:none"><div class="steps">${Q.map((_, n) => `<i class="${n <= k ? 'on' : ''}"></i>`).join('')}</div></div>
+  <div class="p-body" style="justify-content:center;gap:18px"><div style="font-size:22px;font-weight:500;line-height:1.25">${q.title}</div>${q.req ? '<div class="t-b" style="margin-top:-12px">Obrigatória</div>' : ''}${inner}</div>
+  <div class="p-foot" style="justify-content:space-between">${k > 0 ? `<button class="m-tbtn" data-set="c.qstep=${k - 1}">Voltar</button>` : '<span></span>'}
+    <div style="display:flex;gap:6px">${!q.req && k < Q.length - 1 ? `<button class="m-tbtn" data-set="c.qstep=${k + 1}">Pular</button>` : ''}
+    ${k < Q.length - 1 ? `<button class="m-fbtn" data-set="c.qstep=${k + 1}">Próxima</button>` : `<button class="m-fbtn" data-set="c.qstep=0">Salvar</button>`}</div></div>`;
+}
+
+const OPTS = [
+  { key: 'now', badge: 'Como está', now: true, title: 'App atual', hint: 'Lido de features/trackers/TrackerContent.kt (diálogos TrackerHub, formulário e registro).',
+    r: { hub: nowHub, form: nowForm, entry: nowEntry },
+    notes: ['<h5>Problemas</h5><ul><li>Tudo num AlertDialog: rola muito, botões de texto soltos, sem hierarquia.</li><li>Data digitada em aaaa-mm-dd.</li><li>Evolução repetida em texto, ponto por ponto.</li><li>Criar: campos sempre abertos, Remover em cada opção, quatro botões "+".</li><li>Registro: chips 0–10 quebram em duas linhas.</li></ul>'] },
+  { key: 'a', badge: 'Opção A', title: 'Folha arrumada', hint: 'Mesmos fluxos, organizados como as folhas de editor (spec 029).',
+    r: { hub: aHub, form: aForm, entry: aEntry },
+    notes: ['<h5>Muda</h5><ul><li>Painel vira folha inferior: cabeçalho do hábito, faixa "Hoje" com Preencher, gráfico, contagem em barras e 3 registros recentes.</li><li>"Preencher outro dia" abre calendário; Editar/Arquivar vão para o ⋮.</li><li>Criar em tela cheia com linhas rótulo→valor; cada pergunta é uma linha, editada numa folha própria. "＋ Adicionar pergunta" pergunta o tipo com exemplos.</li><li>Registro numa folha: escala 0–10 numa linha só, opções como chips.</li></ul>',
+      '<h5>Vantagens</h5><ul><li>Menor mudança: reaproveita GrowingSheet, SettingsRows, ContentFilter.</li><li>Formulário curto: só mostra os campos da pergunta aberta.</li></ul>',
+      '<h5>Impacto</h5><ul><li>Só interface; ViewModel ganha estado "pergunta aberta" e "escolher tipo".</li><li>Painel continua em folha: pouco espaço para histórico longo.</li></ul>'] },
+  { key: 'b', badge: 'Opção B', title: 'Página com abas', hint: 'Acompanhamento vira página própria: Registros · Evolução · Perguntas.',
+    r: { hub: bHub, form: bForm, entry: bEntry },
+    notes: ['<h5>Muda</h5><ul><li>"Acompanhar" abre página com Voltar; faixa Hoje fixa no topo.</li><li>Registros por semana, dia vazio com "＋" para preencher (sem campo de data).</li><li>Evolução e frequência em cartões numa aba separada.</li><li>Criar: cartões que expandem um por vez, tipo trocado por segmentado, faixa com − / +, opções como chips; barra inferior com os tipos para adicionar.</li><li>Registro em tela cheia com cartões e barra de escala.</li></ul>',
+      '<h5>Vantagens</h5><ul><li>Cabe histórico longo e gráfico maior.</li><li>Dias sem registro ficam visíveis e preenchíveis direto.</li></ul>',
+      '<h5>Impacto</h5><ul><li>Nova rota de navegação (destino com habitId) e Voltar do sistema.</li><li>Mais código de tela; regras inalteradas.</li></ul>'] },
+  { key: 'c', badge: 'Opção C', title: 'Calendário e modelos', hint: 'Mês colorido pela nota, criação por modelo e preenchimento uma pergunta por vez.',
+    r: { hub: cHub, form: cForm, entry: cEntry },
+    notes: ['<h5>Muda</h5><ul><li>Painel é um mês com cor pela nota principal; tocar no dia abre ou preenche.</li><li>Evolução detalhada vai para Estatísticas (filtro do hábito, spec 024).</li><li>Criar em 2 passos: modelo (ou do zero) e perguntas mostradas como vão aparecer, com "Editar | Ver como fica".</li><li>Registro uma pergunta por tela, com Pular nas opcionais.</li></ul>',
+      '<h5>Vantagens</h5><ul><li>Começar fica fácil: um toque e já tem perguntas boas.</li><li>Preencher pelo aviso fica rápido, com alvos grandes.</li></ul>',
+      '<h5>Impacto</h5><ul><li>Modelos são textos novos em strings.xml; nada no schema.</li><li>Gráfico por dia sai do painel; Estatísticas precisa mostrar o acompanhamento.</li><li>Uma pergunta por vez fica mais lento para quem responde muitas.</li></ul>'] },
+];
+
+function phone(o) {
+  const dark = S.theme === 'dark' || (S.theme === 'page' && (document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches)));
+  return `<div class="col"><div class="col-head"><span class="badge${o.now ? ' now' : ''}">${o.badge}</span><h3>${o.title}</h3></div><p class="hint">${o.hint}</p>
+    <div class="phone${dark ? ' dark' : ''}" data-opt="${o.key}">${status()}${o.r[S.screen]()}<div class="toast" role="status"></div></div>
+    <div class="card">${o.notes.join('')}</div></div>`;
+}
+function render() {
+  document.getElementById('phones').innerHTML = OPTS.map(phone).join('');
+  document.getElementById('ctl-has').hidden = S.screen !== 'hub';
+}
+function setSeg(id, key) {
+  document.getElementById(id).addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return;
+    S[key] = b.dataset.v; [...e.currentTarget.children].forEach(x => x.setAttribute('aria-pressed', x === b));
+    Object.values(S.per).forEach(p => { delete p.q; delete p.add; }); render(); });
+}
+setSeg('c-screen', 'screen'); setSeg('c-has', 'has'); setSeg('c-today', 'today'); setSeg('c-theme', 'theme');
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+document.getElementById('phones').addEventListener('click', e => {
+  const ph = e.target.closest('.phone'); if (!ph) return;
+  const go = e.target.closest('[data-go]'), set = e.target.closest('[data-set]'), t = e.target.closest('[data-toast]');
+  if (set) { const [path, val] = set.dataset.set.split('='); const [opt, k] = path.split('.');
+    S.per[opt][k] = val === '' ? undefined : (/^\d+$/.test(val) ? +val : val); render(); return; }
+  if (go) { S.screen = go.dataset.go; S.has = 'yes';
+    document.querySelectorAll('#c-screen button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === S.screen));
+    document.querySelectorAll('#c-has button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === 'yes'));
+    render(); return; }
+  if (t) { const el = ph.querySelector('.toast'); el.textContent = t.dataset.toast; el.classList.add('show');
+    clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 2200); }
+});
+render();
+})();
+</script>
