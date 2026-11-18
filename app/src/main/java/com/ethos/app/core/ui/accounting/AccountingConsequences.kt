@@ -2,6 +2,7 @@
 
 package com.ethos.app.core.ui.accounting
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -24,6 +25,10 @@ fun financialTime(time: Long): String = Instant.ofEpochMilli(time).atZone(ZoneId
     .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
 
 private val difficultyLabels = listOf(R.string.easy, R.string.medium, R.string.hard)
+
+/** Name of a price row's difficulty ("Fácil", "Médio", "Difícil"). */
+@StringRes
+fun difficultyLabel(price: Price): Int = difficultyLabels[price.category]
 private val importanceLabels = listOf(R.string.low, R.string.medium, R.string.high)
 
 /** How coins and XP work, as two small tables and short facts instead of a paragraph. */
@@ -32,7 +37,7 @@ fun AccountingExplanation(prices: List<Price>) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         PriceTable(R.string.finance_gain_title, R.string.finance_col_difficulty,
             listOf(R.string.finance_col_coins, R.string.finance_col_xp),
-            prices.map { listOf(stringResource(difficultyLabels[it.category]), "+${it.coins}", "+${it.xp}") })
+            prices.map { listOf(stringResource(difficultyLabel(it)), "+${it.coins}", "+${it.xp}") })
         PriceTable(R.string.finance_penalty_title, R.string.finance_col_importance, listOf(R.string.finance_col_coins),
             prices.map { listOf(stringResource(importanceLabels[it.category]), "−${it.penalty}") })
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {

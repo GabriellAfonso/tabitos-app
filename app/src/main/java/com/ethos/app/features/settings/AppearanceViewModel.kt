@@ -22,7 +22,10 @@ data class AppearanceUiState(
     val error: AppearanceError? = null,
     val attemptedMode: AppearanceMode? = null,
     val timerAlarm: Boolean = true,
-)
+) {
+    /** A failed read leaves the stored choice unknown, so choosing waits for a successful retry. */
+    val canChoose: Boolean get() = !loading && !saving && error != AppearanceError.READ
+}
 
 @HiltViewModel
 class AppearanceViewModel @Inject constructor(private val repository: AppearanceRepository) : ViewModel() {
@@ -63,8 +66,7 @@ class AppearanceViewModel @Inject constructor(private val repository: Appearance
     }
 
     fun select(mode: AppearanceMode) {
-        val current = state.value
-        if (current.loading || current.saving || current.error == AppearanceError.READ) return
+        if (!state.value.canChoose) return
         mutableState.update { it.copy(saving = true, error = null, attemptedMode = mode) }
         viewModelScope.launch {
             try {

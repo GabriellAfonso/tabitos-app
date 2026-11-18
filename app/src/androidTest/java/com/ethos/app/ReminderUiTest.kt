@@ -12,6 +12,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.ethos.app.features.reminders.*
 import com.ethos.app.core.reminders.domain.*
+import com.ethos.app.core.reminders.platform.NotificationCapability
 import java.time.LocalDate
 import org.junit.Assert.*
 import org.junit.Rule
@@ -20,21 +21,34 @@ import org.junit.Test
 class ReminderUiTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun summaryStartsOffAndRequiresChosenTimeAtLargeFont() {
+    @Test fun summaryStartsOffAndIsTurnedOnByPickingATimeAtLargeFont() {
         var chosen: String? = null
         compose.setContent {
             val density = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(density.density, 2f)) {
                 MaterialTheme { Column(Modifier.verticalScroll(rememberScrollState())) {
-                    ReminderSettingsPanel(ReminderUiState(loading = false), { chosen = it }, {})
+                    NotificationSettings(ReminderUiState(loading = false), actions(summary = { chosen = it }))
                 } }
             }
         }
-        compose.onNodeWithText("Desativado. Escolha um horário para ativar.").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Horário (HH:mm)").performScrollTo().performTextInput("18:45")
-        compose.onNodeWithText("Salvar horário e ativar resumo").performScrollTo().performClick()
-        assertEquals("18:45", chosen)
-        compose.onNodeWithText("Desativar resumo").assertDoesNotExist()
+        compose.onNodeWithText("Desligado").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Resumo diário").performScrollTo().performClick()
+        compose.onNodeWithText("Horário do resumo").assertIsDisplayed()
+        compose.onNodeWithText("OK").performClick()
+        assertEquals("09:00", chosen)
+    }
+    @Test fun blockedWarningAppearsOnlyWhenSomethingIsBlocked() {
+        var capability by mutableStateOf(NotificationCapability(reminders = false, summaries = false, exact = true))
+        var allowed = false
+        compose.setContent { MaterialTheme { Column {
+            NotificationSettings(ReminderUiState(loading = false, capability = capability),
+                actions(allow = { allowed = true }))
+        } } }
+        compose.onNodeWithText("Lembretes e resumos não aparecem. Os itens continuam no app.").assertIsDisplayed()
+        compose.onNodeWithText("Permitir").performClick()
+        assertTrue(allowed)
+        capability = NotificationCapability(reminders = true, summaries = true, exact = true)
+        compose.onNodeWithText("Notificações bloqueadas").assertDoesNotExist()
     }
     @Test fun habitEditorHasWeekdaysAndNeverCompletionAction() {
         var draft by mutableStateOf(ReminderDraft(ReminderDefinition("r", kind = ReminderKind.HABIT,
@@ -52,9 +66,14 @@ class ReminderUiTest {
     @Test fun storageFailureExplainsRetryWithoutClaimingSuccess() {
         var retried = false
         compose.setContent { MaterialTheme { Column {
-            ReminderSettingsPanel(ReminderUiState(loading = false, error = true), {}, { retried = true })
+            NotificationSettings(ReminderUiState(loading = false, error = true), actions(retry = { retried = true }))
         } } }
         compose.onNodeWithText("Tentar novamente").performClick()
         assertTrue(retried)
     }
+
+    private fun actions(
+        allow: () -> Unit = {}, summary: (String?) -> Unit = {}, retry: () -> Unit = {},
+    ) = NotificationSettingsActions(allowNotifications = allow, openExactAlarms = {}, openChannel = {},
+        saveSummary = summary, retry = retry)
 }

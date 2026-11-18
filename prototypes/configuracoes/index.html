@@ -1,0 +1,471 @@
+<title>Configurações do Ethos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap">
+<style>
+/* Layout: cabeçalho com controles · fila de 4 celulares (Como está + A, B, C) com ficha sob cada um · o que fica igual. */
+:root{
+  --paper:#f5f4f7; --sheet:#ffffff; --ink:#1e1a23; --muted:#625b6b; --line:#e3dee8;
+  --plum:#6e4a8e; --plum-soft:#efe6f6; --amber:#93601a; --amber-soft:#fbf0e0;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif; --body:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--body)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.wrap{max-width:1680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 8px}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+h1{font:800 clamp(30px,4.4vw,46px)/1.05 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+h2{font:700 22px/1.2 var(--display);margin:0 0 6px}
+h3{font:700 16px/1.3 var(--display);margin:0}
+.lede{max-width:78ch;color:var(--muted);margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.ctl{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;min-width:0}
+.ctl>span{font-size:12.5px;color:var(--muted);font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--paper);padding:5px 11px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:var(--sheet);font-weight:600}
+main{padding-block:22px 60px;display:grid;gap:34px}
+.phones{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:26px;align-items:start}
+.col{display:grid;gap:12px;min-width:0}
+.col-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--plum-soft);color:var(--plum);font-weight:600;white-space:nowrap}
+.badge.now{background:var(--amber-soft);color:var(--amber)}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0}
+.card ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.card h5{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+.card h5:first-child{margin-top:0}
+.keep{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px}
+
+/* CELULAR — tokens Ameixa (core/ui/theme/EthosTheme.kt) */
+.phone{--p:#6E4A8E;--onp:#fff;--pc:#F1E7F8;--onpc:#2E1A40;--sc:#F1E7F8;--t:#93601A;--tc:#FBF0E0;--ontc:#3A2606;--bg:#FBF8FC;--on:#231D29;--onv:#655C6E;--low:#fff;--cont:#F3EEF6;--high:#F1E9F5;--ol:#8F8498;--olv:#E6DEEB;--err:#B3261E;--errc:#F9DEDC;--onerrc:#410E0B;--ok:#2E7D4F;--okc:#DDF1E4;
+  width:100%;max-width:380px;height:760px;margin:0 auto;border:8px solid #26212b;border-radius:44px;background:var(--bg);color:var(--on);position:relative;overflow:hidden;display:flex;flex-direction:column;font:14px/1.4 Roboto,system-ui,sans-serif;box-shadow:0 18px 40px rgba(30,20,40,.18)}
+.phone.dark{--p:#D7B8F2;--onp:#3B1F55;--pc:#44325A;--onpc:#F1E2FC;--sc:#3A2D47;--t:#E8BE7A;--tc:#352A1F;--ontc:#F6E3C4;--bg:#171419;--on:#ECE4F0;--onv:#B1A6B8;--low:#211C25;--cont:#1F1A23;--high:#2A2430;--ol:#82788A;--olv:#372F3D;--err:#F2B8B5;--errc:#8C1D18;--onerrc:#F9DEDC;--ok:#8BD3A6;--okc:#1E3A2A}
+.phone *{box-sizing:border-box}
+.phone button{color:inherit;font-family:inherit}
+.p-status{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;font-weight:600}
+.p-head{display:flex;align-items:center;gap:4px;padding:6px 6px 8px;flex:none}
+.ib{width:44px;height:44px;border:0;background:none;font-size:19px;border-radius:50%;display:grid;place-items:center;color:var(--on);flex:none}
+.ib:hover{background:var(--cont)}
+.p-head .h{font-size:22px;font-weight:500;flex:1;min-width:0;padding-left:4px}
+.p-body{flex:1;overflow-y:auto;padding:4px 16px 28px;display:flex;flex-direction:column;gap:8px}
+.p-body.flush{padding:0 0 28px;gap:0}
+.p-nav{height:18px;flex:none;display:grid;place-items:center}
+.p-nav i{width:110px;height:4px;border-radius:2px;background:var(--on);opacity:.35}
+.m-scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:6;display:flex;align-items:center;justify-content:center;padding:20px}
+.m-dialog{background:var(--high);border-radius:28px;padding:22px 20px 14px;width:100%;max-height:94%;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.m-dialog h6{font-size:22px;font-weight:400;margin:0}
+.m-dialog p{margin:0;color:var(--onv);font-size:14px}
+.m-actions{display:flex;justify-content:flex-end;gap:4px}
+.m-tbtn{border:0;background:none;color:var(--p)!important;font-weight:500;font-size:14px;padding:10px 12px;border-radius:20px}
+.m-tbtn:hover{background:var(--cont)}
+.m-tbtn.left{align-self:flex-start;padding:8px 10px;margin-left:-10px}
+.m-fbtn{border:0;border-radius:20px;background:var(--p);color:var(--onp)!important;padding:10px 22px;font-weight:500;font-size:14px}
+.m-tonal{border:0;border-radius:20px;background:var(--sc);color:var(--onpc)!important;padding:8px 16px;font-weight:500;font-size:13.5px;white-space:nowrap}
+.phone.dark .m-tonal{color:var(--on)!important}
+.m-field{border:1px solid var(--ol);border-radius:4px;padding:20px 14px 10px;position:relative;font-size:15px;color:var(--onv)}
+.m-field small{position:absolute;top:6px;left:14px;font-size:11px}
+.m-radio{display:flex;gap:14px;align-items:center;min-height:48px;border:0;background:none;width:100%;text-align:left;font-size:15px;padding:0 4px;border-radius:12px}
+.m-radio:hover{background:var(--cont)}
+.rad{width:20px;height:20px;border-radius:50%;border:2px solid var(--onv);flex:none;display:grid;place-items:center}
+.rad.on{border-color:var(--p)}
+.rad.on::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--p)}
+.sw{width:52px;height:32px;border-radius:16px;border:2px solid var(--ol);background:var(--olv);position:relative;flex:none;transition:background .15s}
+.sw::after{content:"";position:absolute;top:6px;left:6px;width:16px;height:16px;border-radius:50%;background:var(--ol);transition:all .15s}
+.sw.on{background:var(--p);border-color:var(--p)}
+.sw.on::after{left:22px;top:2px;width:24px;height:24px;background:var(--onp)}
+.dim{color:var(--onv)}
+.err-t{color:var(--err)}
+
+/* Como está */
+.n-h{font-size:24px;font-weight:400;margin:2px 0 0}
+.n-t{font-size:16px;font-weight:500}
+.n-s{font-size:12px;color:var(--onv)}
+.n-row{display:flex;align-items:center;gap:12px;min-height:56px}
+.n-row>div{flex:1;min-width:0}
+.n-tbl{font-size:12px;border-collapse:collapse;width:100%}
+.n-tbl td,.n-tbl th{padding:4px 6px;border-bottom:1px solid var(--olv);text-align:left}
+.n-tbl th{font-weight:500;color:var(--onv)}
+
+/* A — lista agrupada */
+.a-sec{font-size:13px;font-weight:500;color:var(--p);padding:18px 20px 4px;letter-spacing:.02em}
+.a-row{display:flex;align-items:center;gap:16px;min-height:64px;padding:8px 20px;border:0;background:none;width:100%;text-align:left;font-size:15px}
+.a-row:hover{background:var(--cont)}
+.a-row .ic{width:24px;text-align:center;font-size:19px;color:var(--onv);flex:none}
+.a-row .tx{flex:1;min-width:0;display:grid;gap:1px}
+.a-row .tx b{font-weight:400;font-size:16px}
+.a-row .tx span{font-size:13.5px;color:var(--onv)}
+.a-row.warn .ic,.a-row.warn .tx span{color:var(--err)}
+.a-row .chev{color:var(--onv);font-size:18px}
+.a-div{height:1px;background:var(--olv);margin:8px 20px 0}
+
+/* B — cartões por assunto */
+.b-sec{font-size:13px;font-weight:500;color:var(--onv);padding:14px 6px 6px}
+.b-group{display:flex;flex-direction:column;gap:2px;border-radius:20px;overflow:hidden}
+.b-item{background:var(--low);display:flex;align-items:center;gap:14px;padding:12px 16px;min-height:60px;border:0;width:100%;text-align:left;font-size:15px}
+.phone:not(.dark) .b-item{background:var(--cont)}
+button.b-item:hover{filter:brightness(.97)}
+.b-item .tile{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:17px;flex:none;background:var(--pc);color:var(--onpc)}
+.b-item .tile.amber{background:var(--tc);color:var(--t)}
+.b-item .tx{flex:1;min-width:0;display:grid;gap:1px}
+.b-item .tx b{font-weight:500;font-size:15px}
+.b-item .tx span{font-size:12.5px;color:var(--onv)}
+.b-stack{flex-direction:column;align-items:stretch;gap:10px}
+.b-stack .top{display:flex;gap:14px;align-items:center}
+.b-segm{display:flex;border:1px solid var(--ol);border-radius:20px;overflow:hidden}
+.b-segm button{flex:1;border:0;background:none;padding:8px 4px;font-size:13px;font-weight:500;border-right:1px solid var(--ol)}
+.b-segm button:last-child{border-right:0}
+.b-segm button.on{background:var(--sc);color:var(--onpc)}
+.phone.dark .b-segm button.on{color:var(--on)}
+.b-health{border-radius:20px;padding:12px 14px;display:flex;gap:12px;align-items:center;font-size:13.5px}
+.b-health.ok{background:var(--okc);color:var(--on)}
+.b-health.ok .dot{color:var(--ok)}
+.b-health.bad{background:var(--errc);color:var(--onerrc)}
+.b-health .dot{font-size:18px}
+.b-health>div{flex:1;min-width:0}
+.b-health b{display:block;font-weight:600;font-size:14px}
+.b-chip{border:1px solid var(--ol);background:none;border-radius:8px;padding:6px 12px;font-size:13.5px;font-weight:500;color:var(--on)}
+.b-chip:disabled{opacity:.38}
+.b-price{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.b-price div{background:var(--bg);border-radius:12px;padding:6px 8px;display:grid}
+.b-price b{font-size:15px;font-weight:500;color:var(--t);font-variant-numeric:tabular-nums}
+.b-price span{font-size:11px;color:var(--onv)}
+
+/* C — central com sub-páginas */
+.c-hero{border-radius:24px;padding:16px;display:grid;gap:4px;background:var(--pc);color:var(--onpc);margin-bottom:6px}
+.phone.dark .c-hero{color:var(--on)}
+.c-hero b{font-size:16px;font-weight:500}
+.c-hero span{font-size:13px;opacity:.85}
+.c-hero.bad{background:var(--errc);color:var(--onerrc)}
+.c-hero .m-tonal{justify-self:start;margin-top:6px}
+.c-cat{display:flex;align-items:center;gap:14px;border:1px solid var(--olv);background:var(--low);border-radius:20px;padding:14px;width:100%;text-align:left}
+.c-cat:hover{background:var(--cont)}
+.c-cat .tile{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:20px;flex:none;background:var(--sc);color:var(--p)}
+.c-cat .tile.amber{background:var(--tc);color:var(--t)}
+.c-cat .tx{flex:1;min-width:0;display:grid;gap:2px}
+.c-cat .tx b{font-weight:500;font-size:16px}
+.c-cat .tx span{font-size:12.5px;color:var(--onv)}
+.c-cat .pill{font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px;background:var(--errc);color:var(--onerrc)}
+.c-lead{font-size:13.5px;color:var(--onv);margin:0 0 4px}
+.c-row{display:flex;align-items:center;gap:12px;min-height:60px;padding:6px 0;border:0;border-bottom:1px solid var(--olv);background:none;width:100%;text-align:left;font-size:15px}
+.c-row:last-child{border-bottom:0}
+.c-row .tx{flex:1;min-width:0;display:grid;gap:1px}
+.c-row .tx b{font-weight:400;font-size:16px}
+.c-row .tx span{font-size:13px;color:var(--onv)}
+.c-row.warn .tx span{color:var(--err)}
+.c-box{background:var(--low);border:1px solid var(--olv);border-radius:20px;padding:4px 16px}
+.c-tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.c-tbl th,.c-tbl td{padding:8px 4px;text-align:left;border-bottom:1px solid var(--olv);font-variant-numeric:tabular-nums}
+.c-tbl th{font-size:12px;color:var(--onv);font-weight:500}
+.c-tbl td.coin{color:var(--t);font-weight:500}
+.c-tbl tr:last-child td{border-bottom:0}
+.c-facts{margin:0;padding-left:18px;font-size:13px;color:var(--onv);display:grid;gap:4px}
+</style>
+
+<header class="top wrap">
+  <div class="eyebrow">Protótipo · Configurações</div>
+  <h1>Configurações reorganizadas</h1>
+  <p class="lede">Hoje a página empilha títulos soltos, textos de estado e oito botões de texto. Abaixo, a tela real ao lado de três jeitos de organizar o mesmo conteúdo. Os controles mudam o estado de todos os celulares ao mesmo tempo, e os toques dentro de cada celular funcionam.</p>
+  <div class="controls">
+    <div class="ctl"><span>Tema dos celulares</span><div class="seg" id="c-theme">
+      <button data-v="light" aria-pressed="false">Claro</button><button data-v="dark" aria-pressed="false">Escuro</button><button data-v="page" aria-pressed="true">Igual à página</button></div></div>
+    <div class="ctl"><span>Notificações do Android</span><div class="seg" id="c-notif">
+      <button data-v="on" aria-pressed="true">Permitidas</button><button data-v="off" aria-pressed="false">Bloqueadas</button></div></div>
+    <div class="ctl"><span>Alarmes precisos</span><div class="seg" id="c-exact">
+      <button data-v="on" aria-pressed="false">Permitidos</button><button data-v="off" aria-pressed="true">Aproximados</button></div></div>
+    <div class="ctl"><span>Modo jogo</span><div class="seg" id="c-game">
+      <button data-v="on" aria-pressed="true">Ligado</button><button data-v="off" aria-pressed="false">Desligado</button></div></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="phones">
+    <div class="col">
+      <div class="col-head"><h2>Como está</h2><span class="badge now">tela real</span></div>
+      <p class="hint">SettingsPage em EthosApp.kt: Modo jogo, Aparência, Alarme, Ganhos, Hábitos excluídos e Lembretes, um embaixo do outro.</p>
+      <div class="phone" data-opt="now"></div>
+      <div class="card"><h5>Problemas</h5><ul>
+        <li>Cinco níveis de título diferentes, sem seções nem separadores.</li>
+        <li>Lembretes mostra três frases de estado mesmo quando está tudo certo.</li>
+        <li>Oito botões de texto no fim da página, sem relação visual com o que ajustam.</li>
+        <li>O alarme do cronômetro fica entre Aparência e Ganhos, longe dos avisos.</li>
+        <li>Tabela de ganhos ocupa meia tela para algo que quase nunca muda.</li>
+      </ul></div>
+    </div>
+
+    <div class="col">
+      <div class="col-head"><h2>A · Lista agrupada</h2><span class="badge">proposta</span></div>
+      <p class="hint">Padrão das Configurações do Android: seções com nome, uma linha por ajuste mostrando o valor atual.</p>
+      <div class="phone" data-opt="a"></div>
+      <div class="card"><h5>O que muda</h5><ul>
+        <li>Quatro seções: Aparência, Modo jogo, Notificações e alarmes, Dados.</li>
+        <li>Tema vira uma linha ("Seguir o sistema") que abre o diálogo de escolha.</li>
+        <li>Estado das notificações só aparece quando há algo a resolver, em vermelho e com "Permitir".</li>
+        <li>Ganhos e penalidades vira sub-página; a linha mostra o resumo das moedas.</li>
+        <li>Os dois canais do Android ficam numa linha só, "Sons e vibração no Android".</li>
+      </ul><h5>Vantagens</h5><ul>
+        <li>Familiar para quem usa Android; cabe tudo em uma tela sem rolar.</li>
+        <li>Componente de linha único reaproveitado em todos os ajustes.</li>
+      </ul><h5>Impacto previsto</h5><ul>
+        <li>Só interface: novo SettingsRow em core/ui/components e duas sub-páginas (Tema é diálogo).</li>
+        <li>Horário do resumo passa a usar o seletor de hora da spec 013, sem digitar.</li>
+      </ul></div>
+    </div>
+
+    <div class="col">
+      <div class="col-head"><h2>B · Cartões por assunto</h2><span class="badge">proposta</span></div>
+      <p class="hint">Grupos em blocos arredondados, ajustes resolvidos ali mesmo, sem abrir outras telas.</p>
+      <div class="phone" data-opt="b"></div>
+      <div class="card"><h5>O que muda</h5><ul>
+        <li>Tema em botões segmentados dentro do cartão: um toque, sem diálogo.</li>
+        <li>Notificações abre com um aviso de saúde: "Tudo certo" ou "2 ajustes pendentes" com o botão certo.</li>
+        <li>Resumo diário com interruptor e chip de horário na mesma linha.</li>
+        <li>Modo jogo em âmbar, com os preços por dificuldade à vista.</li>
+      </ul><h5>Vantagens</h5><ul>
+        <li>Menos toques: quase tudo se ajusta sem sair da página.</li>
+        <li>Visual mais próximo do cartão de Hoje (modelo B, spec 010).</li>
+      </ul><h5>Impacto previsto</h5><ul>
+        <li>Só interface; precisa de um componente de grupo em core/ui/components.</li>
+        <li>Página mais longa que A; a edição de ganhos continua como sub-página.</li>
+      </ul></div>
+    </div>
+
+    <div class="col">
+      <div class="col-head"><h2>C · Central com sub-páginas</h2><span class="badge">proposta</span></div>
+      <p class="hint">A página principal só tem categorias com resumo; cada uma abre sua própria tela com Voltar.</p>
+      <div class="phone" data-opt="c"></div>
+      <div class="card"><h5>O que muda</h5><ul>
+        <li>Topo com um cartão que resume o que precisa de atenção (ou some quando está tudo certo).</li>
+        <li>Quatro categorias com ícone e resumo: Aparência, Modo jogo, Notificações e alarmes, Hábitos excluídos.</li>
+        <li>Cada sub-página tem uma frase explicando o grupo e só os ajustes dele.</li>
+      </ul><h5>Vantagens</h5><ul>
+        <li>Escala bem quando surgirem mais ajustes (backup, idioma, semana começa em…).</li>
+        <li>Página principal limpa; a explicação de ganhos tem espaço próprio.</li>
+      </ul><h5>Impacto previsto</h5><ul>
+        <li>Mais destinos em ShellDestination (como Hábitos excluídos já é).</li>
+        <li>Um toque a mais para trocar o tema.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>O que fica igual em todas</h2>
+    <div class="keep" style="margin-top:12px">
+      <div class="card"><ul>
+        <li>Desligar o modo jogo pede confirmação; ligar aplica direto (spec 017).</li>
+        <li>Troca do modo jogo bloqueada com cronômetro de recompensa contando.</li>
+        <li>Ganhos e penalidades só aparecem com modo jogo ligado; edição de 0 a 10.000.</li>
+      </ul></div>
+      <div class="card"><ul>
+        <li>Tema salvo no DataStore e aplicado sem reiniciar.</li>
+        <li>Resumo diário desligado por padrão; permissão pedida em contexto (spec 007).</li>
+        <li>Nenhuma regra, dado ou schema muda: é reorganização de interface.</li>
+      </ul></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const S = { page:"page", notif:true, exact:false, game:true, theme:"SYSTEM", alarm:true, summary:"08:00" };
+const V = { now:{}, a:{}, b:{}, c:{} }; // por celular: view, dialog
+const THEME_LABEL = { SYSTEM:"Seguir o sistema", LIGHT:"Claro", DARK:"Escuro" };
+const pageDark = () => S.page==="dark" || (S.page==="page" && (document.documentElement.dataset.theme==="dark" ||
+  (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches)));
+const phoneDark = () => S.theme==="DARK" || (S.theme==="SYSTEM" && pageDark());
+const pending = () => (S.notif?0:1) + (S.exact?0:1);
+const sw = on => `<span class="sw ${on?"on":""}" aria-hidden="true"></span>`;
+const status = `<div class="p-status"><span>9:41</span><span>▴ ◢ ▮</span></div>`;
+const head = (title, back) => `<div class="p-head"><button class="ib" data-act="${back?"back":"menu"}" aria-label="${back?"Voltar":"Abrir menu"}">${back?"←":"☰"}</button><div class="h">${title}</div></div>`;
+const prices = [["Fácil",5,10],["Médio",10,20],["Difícil",20,40]];
+
+function dialogs(v){
+  if(v.dialog==="theme") return `<div class="m-scrim"><div class="m-dialog"><h6>Tema</h6>
+    ${Object.entries(THEME_LABEL).map(([k,l])=>`<button class="m-radio" data-act="theme:${k}" role="radio" aria-checked="${S.theme===k}"><span class="rad ${S.theme===k?"on":""}"></span>${l}</button>`).join("")}
+    <div class="m-actions"><button class="m-tbtn" data-act="close">Cancelar</button></div></div></div>`;
+  if(v.dialog==="gameoff") return `<div class="m-scrim"><div class="m-dialog"><h6>Desligar o modo jogo?</h6>
+    <p>Moedas, XP e recompensas ficam escondidos e o que você concluir enquanto estiver desligado não conta. Nada é apagado: ao religar, tudo volta como estava.</p>
+    <div class="m-actions"><button class="m-tbtn" data-act="close">Cancelar</button><button class="m-tbtn" data-act="gameoff">Desligar</button></div></div></div>`;
+  if(v.dialog==="time") return `<div class="m-scrim"><div class="m-dialog"><h6>Horário do resumo</h6>
+    <p>Seletor de hora da spec 013 (sem digitar).</p>
+    ${["07:00","08:00","21:00"].map(t=>`<button class="m-radio" data-act="time:${t}"><span class="rad ${S.summary===t?"on":""}"></span>${t}</button>`).join("")}
+    <div class="m-actions"><button class="m-tbtn" data-act="close">Cancelar</button></div></div></div>`;
+  if(v.dialog==="channels") return `<div class="m-scrim"><div class="m-dialog"><h6>Sons e vibração</h6>
+    <p>Abre os ajustes do Android para o tipo de aviso escolhido.</p>
+    <button class="m-radio" data-act="close">🔔&nbsp; Lembretes</button><button class="m-radio" data-act="close">☀&nbsp; Resumos</button>
+    <div class="m-actions"><button class="m-tbtn" data-act="close">Fechar</button></div></div></div>`;
+  return "";
+}
+
+/* ---------- Como está ---------- */
+function renderNow(){
+  return status + head("Configurações") + `<div class="p-body">
+    <div class="n-row"><div><div class="n-t">Modo jogo</div><div class="n-s">Moedas, XP, níveis e recompensas pelas tarefas e hábitos.</div></div><button data-act="game" style="border:0;background:none;padding:0" aria-label="Modo jogo">${sw(S.game)}</button></div>
+    <div class="n-h">Aparência</div><div style="font-size:14px">A aparência escolhida vale para todo o app e fica salva neste aparelho.</div>
+    ${Object.entries(THEME_LABEL).map(([k,l])=>`<button class="m-radio" data-act="theme:${k}" style="min-height:56px;padding:0 8px"><span class="rad ${S.theme===k?"on":""}"></span>${l}</button>`).join("")}
+    <div class="n-row"><div><div class="n-t">Alarme ao terminar o cronômetro</div><div class="n-s">Toca como despertador quando o tempo de uma tarefa ou hábito acaba.</div></div><button data-act="alarm" style="border:0;background:none;padding:0" aria-label="Alarme">${sw(S.alarm)}</button></div>
+    ${S.game?`<div style="font-size:22px">Como funcionam ganhos e penalidades</div>
+      <div class="n-t" style="font-size:14px">Ganho ao concluir</div>
+      <table class="n-tbl"><tr><th>Dificuldade</th><th>◈ Moedas</th><th>XP</th></tr>${prices.map(p=>`<tr><td>${p[0]}</td><td>${p[1]}</td><td>${p[2]}</td></tr>`).join("")}</table>
+      <div class="n-t" style="font-size:14px">Penalidade se não fizer</div>
+      <table class="n-tbl"><tr><th>Importância</th><th>◈ Moedas</th></tr>${[["Baixa",5],["Média",10],["Alta",20]].map(p=>`<tr><td>${p[0]}</td><td>${p[1]}</td></tr>`).join("")}</table>
+      <div class="n-s">XP nunca é perdido por falha · Saldo mínimo: −300 ◈ · Nível: 100 XP, depois +50 a cada nível · Hábito perdido não custa moedas</div>
+      <button class="m-tbtn left">Editar ganhos e penalidades</button>`:""}
+    <div class="n-row"><span style="color:var(--p);font-size:20px">✿</span><div class="n-t">Hábitos excluídos</div><span class="dim">›</span></div>
+    <div class="n-h">Lembretes</div>
+    <div>${S.notif?"Notificações de lembretes permitidas.":"Notificações de lembretes bloqueadas. Os itens continuam disponíveis no app."}</div>
+    <div>${S.notif?"Notificações de resumos permitidas.":"Notificações de resumos bloqueadas."}</div>
+    <div>${S.exact?"Horário preciso permitido. Restrições do dispositivo ainda podem atrasar avisos.":"Horário aproximado. Permita alarmes precisos para avisos na hora exata."}</div>
+    <div class="n-t">Resumo diário</div>
+    <div>${S.summary?"Ativado no horário escolhido.":"Desativado. Escolha um horário para ativar."}</div>
+    <div class="m-field"><small>Horário</small>${S.summary||""}</div>
+    <button class="m-fbtn" style="align-self:flex-start" data-act="time:08:00">Salvar horário e ativar resumo</button>
+    ${S.summary?`<button class="m-tbtn left" data-act="time:off">Desativar resumo</button>`:""}
+    <button class="m-tbtn left" data-act="notif">Permitir notificações</button>
+    <button class="m-tbtn left">Configurações do canal Lembretes</button>
+    <button class="m-tbtn left">Configurações do canal Resumos</button>
+    ${S.exact?"":`<button class="m-tbtn left" data-act="exact">Permitir alarmes precisos</button>`}
+  </div>`;
+}
+
+/* ---------- A ---------- */
+function aRow({ic,title,sub,trail="",act="",warn=false}){
+  return `<button class="a-row ${warn?"warn":""}" ${act?`data-act="${act}"`:""}><span class="ic">${ic}</span><span class="tx"><b>${title}</b>${sub?`<span>${sub}</span>`:""}</span>${trail}</button>`;
+}
+function renderA(v){
+  if(v.view==="earn") return status + head("Ganhos e penalidades", true) + `<div class="p-body">${earnPage()}</div>`;
+  return status + head("Configurações") + `<div class="p-body flush">
+    <div class="a-sec">Aparência</div>
+    ${aRow({ic:"◐",title:"Tema",sub:THEME_LABEL[S.theme],act:"dlg:theme"})}
+    <div class="a-sec">Modo jogo</div>
+    ${aRow({ic:"◈",title:"Modo jogo",sub:"Moedas, XP, níveis e recompensas",trail:sw(S.game),act:"game"})}
+    ${S.game?aRow({ic:"⚖",title:"Ganhos e penalidades",sub:"Fácil 5 ◈ · Médio 10 ◈ · Difícil 20 ◈",trail:'<span class="chev">›</span>',act:"view:earn"}):""}
+    <div class="a-sec">Notificações e alarmes</div>
+    ${S.notif?"":aRow({ic:"⚠",title:"Notificações bloqueadas",sub:"Lembretes e resumos não aparecem",trail:'<span class="m-tonal" data-act="notif">Permitir</span>',act:"notif",warn:true})}
+    ${aRow({ic:"☀",title:"Resumo diário",sub:S.summary?`Todo dia às ${S.summary}`:"Desligado",trail:sw(!!S.summary),act:S.summary?"time:off":"dlg:time"})}
+    ${aRow({ic:"⏰",title:"Alarme ao terminar o cronômetro",sub:"Toca como despertador",trail:sw(S.alarm),act:"alarm"})}
+    ${aRow({ic:"◎",title:"Horário preciso",sub:S.exact?"Avisos na hora exata":"Aproximado · toque para permitir",act:S.exact?"":"exact",warn:!S.exact})}
+    ${aRow({ic:"♪",title:"Sons e vibração no Android",sub:"Lembretes e resumos",trail:'<span class="chev">↗</span>',act:"dlg:channels"})}
+    <div class="a-sec">Dados</div>
+    ${aRow({ic:"✿",title:"Hábitos excluídos",sub:"3 hábitos",trail:'<span class="chev">›</span>'})}
+  </div>`;
+}
+
+/* ---------- B ---------- */
+function renderB(v){
+  if(v.view==="earn") return status + head("Ganhos e penalidades", true) + `<div class="p-body">${earnPage()}</div>`;
+  const n = pending();
+  const health = n===0
+    ? `<div class="b-health ok"><span class="dot">●</span><div><b>Tudo certo</b>Lembretes e resumos chegam na hora exata.</div></div>`
+    : `<div class="b-health bad"><span class="dot">!</span><div><b>${n===1?"1 ajuste pendente":"2 ajustes pendentes"}</b>${!S.notif?"Notificações bloqueadas.":"Avisos podem chegar alguns minutos atrasados."}</div><button class="m-tonal" data-act="${!S.notif?"notif":"exact"}">${!S.notif?"Permitir":"Corrigir"}</button></div>`;
+  return status + head("Configurações") + `<div class="p-body">
+    <div class="b-sec">Aparência</div>
+    <div class="b-group"><div class="b-item b-stack"><div class="top"><span class="tile">◐</span><span class="tx"><b>Tema</b><span>Vale para todo o app neste aparelho</span></span></div>
+      <div class="b-segm" role="radiogroup">${Object.entries({SYSTEM:"Sistema",LIGHT:"Claro",DARK:"Escuro"}).map(([k,l])=>`<button class="${S.theme===k?"on":""}" data-act="theme:${k}" role="radio" aria-checked="${S.theme===k}">${S.theme===k?"✓ ":""}${l}</button>`).join("")}</div></div></div>
+    <div class="b-sec">Modo jogo</div>
+    <div class="b-group">
+      <button class="b-item" data-act="game"><span class="tile amber">◈</span><span class="tx"><b>Modo jogo</b><span>Moedas, XP, níveis e recompensas</span></span>${sw(S.game)}</button>
+      ${S.game?`<button class="b-item b-stack" data-act="view:earn"><div class="top"><span class="tile amber">⚖</span><span class="tx"><b>Ganhos e penalidades</b><span>Ganho por dificuldade · toque para ver ou editar</span></span><span class="dim">›</span></div>
+        <div class="b-price">${prices.map(p=>`<div><b>${p[1]} ◈</b><span>${p[0]} · ${p[2]} XP</span></div>`).join("")}</div></button>`:""}
+    </div>
+    <div class="b-sec">Notificações e alarmes</div>
+    ${health}
+    <div class="b-group">
+      <div class="b-item"><span class="tile">☀</span><span class="tx"><b>Resumo diário</b><span>Contagem de Hoje e da Revisão</span></span>
+        <button class="b-chip" data-act="dlg:time" ${S.summary?"":"disabled"}>${S.summary||"--:--"}</button>
+        <button data-act="${S.summary?"time:off":"dlg:time"}" style="border:0;background:none;padding:0" aria-label="Resumo diário">${sw(!!S.summary)}</button></div>
+      <button class="b-item" data-act="alarm"><span class="tile">⏰</span><span class="tx"><b>Alarme do cronômetro</b><span>Toca quando o tempo acaba</span></span>${sw(S.alarm)}</button>
+      <button class="b-item" data-act="dlg:channels"><span class="tile">♪</span><span class="tx"><b>Sons e vibração</b><span>Abre os ajustes do Android</span></span><span class="dim">↗</span></button>
+    </div>
+    <div class="b-sec">Dados</div>
+    <div class="b-group"><button class="b-item"><span class="tile">✿</span><span class="tx"><b>Hábitos excluídos</b><span>3 hábitos · restaurar ou apagar histórico</span></span><span class="dim">›</span></button></div>
+  </div>`;
+}
+
+/* ---------- C ---------- */
+function cRow({title,sub,trail="",act="",warn=false}){
+  return `<button class="c-row ${warn?"warn":""}" ${act?`data-act="${act}"`:""}><span class="tx"><b>${title}</b>${sub?`<span>${sub}</span>`:""}</span>${trail}</button>`;
+}
+function renderC(v){
+  const n = pending();
+  if(v.view==="look") return status + head("Aparência", true) + `<div class="p-body"><p class="c-lead">Vale para todo o app e fica salvo neste aparelho.</p><div class="c-box">
+    ${Object.entries(THEME_LABEL).map(([k,l])=>`<button class="m-radio" data-act="theme:${k}" style="min-height:56px"><span class="rad ${S.theme===k?"on":""}"></span>${l}</button>`).join("")}</div></div>`;
+  if(v.view==="game") return status + head("Modo jogo", true) + `<div class="p-body"><p class="c-lead">Moedas, XP, níveis e recompensas pelas tarefas e hábitos.</p>
+    <div class="c-box">${cRow({title:"Modo jogo",sub:S.game?"Ligado":"Desligado",trail:sw(S.game),act:"game"})}</div>
+    ${S.game?earnPage():""}</div>`;
+  if(v.view==="notif") return status + head("Notificações e alarmes", true) + `<div class="p-body"><p class="c-lead">Avisos de lembretes, resumo do dia e cronômetro.</p>
+    <div class="c-box">
+      ${cRow({title:"Notificações",sub:S.notif?"Permitidas":"Bloqueadas · os itens continuam no app",trail:S.notif?"":'<span class="m-tonal">Permitir</span>',act:S.notif?"":"notif",warn:!S.notif})}
+      ${cRow({title:"Horário preciso",sub:S.exact?"Avisos na hora exata":"Aproximado · pode atrasar alguns minutos",trail:S.exact?"":'<span class="m-tonal">Permitir</span>',act:S.exact?"":"exact",warn:!S.exact})}
+    </div>
+    <div class="c-box">
+      ${cRow({title:"Resumo diário",sub:S.summary?`Todo dia às ${S.summary} · toque para mudar`:"Desligado",trail:sw(!!S.summary),act:S.summary?"dlg:time":"dlg:time"})}
+      ${S.summary?`<button class="m-tbtn left" data-act="time:off" style="margin:0 0 6px -10px">Desligar resumo</button>`:""}
+      ${cRow({title:"Alarme ao terminar o cronômetro",sub:"Toca como despertador",trail:sw(S.alarm),act:"alarm"})}
+    </div>
+    <div class="c-box">${cRow({title:"Sons e vibração no Android",sub:"Lembretes e resumos",trail:'<span class="dim">↗</span>',act:"dlg:channels"})}</div>
+  </div>`;
+  const hero = n===0 ? "" : `<div class="c-hero bad"><b>${n===1?"1 ajuste pede atenção":"2 ajustes pedem atenção"}</b><span>${!S.notif?"Notificações bloqueadas: lembretes não aparecem.":"Avisos podem chegar alguns minutos atrasados."}</span><button class="m-tonal" data-act="view:notif">Ver</button></div>`;
+  return status + head("Configurações") + `<div class="p-body">${hero}
+    <button class="c-cat" data-act="view:look"><span class="tile">◐</span><span class="tx"><b>Aparência</b><span>${THEME_LABEL[S.theme]}</span></span><span class="dim">›</span></button>
+    <button class="c-cat" data-act="view:game"><span class="tile amber">◈</span><span class="tx"><b>Modo jogo</b><span>${S.game?"Ligado · Fácil 5 ◈ · Médio 10 ◈ · Difícil 20 ◈":"Desligado"}</span></span><span class="dim">›</span></button>
+    <button class="c-cat" data-act="view:notif"><span class="tile">🔔</span><span class="tx"><b>Notificações e alarmes</b><span>${S.summary?`Resumo às ${S.summary}`:"Resumo desligado"} · alarme ${S.alarm?"ligado":"desligado"}</span></span>${n?`<span class="pill">${n}</span>`:""}<span class="dim">›</span></button>
+    <button class="c-cat"><span class="tile">✿</span><span class="tx"><b>Hábitos excluídos</b><span>3 hábitos</span></span><span class="dim">›</span></button>
+  </div>`;
+}
+
+function earnPage(){
+  return `<p class="c-lead">Ganho ao concluir, por dificuldade. Vale para os próximos registros.</p>
+  <div class="c-box"><table class="c-tbl"><tr><th>Dificuldade</th><th>Moedas</th><th>XP</th></tr>${prices.map(p=>`<tr><td>${p[0]}</td><td class="coin">${p[1]} ◈</td><td>${p[2]}</td></tr>`).join("")}</table></div>
+  <div class="c-box"><table class="c-tbl"><tr><th>Se não fizer · importância</th><th>Penalidade</th></tr>${[["Baixa",5],["Média",10],["Alta",20]].map(p=>`<tr><td>${p[0]}</td><td class="coin">−${p[1]} ◈</td></tr>`).join("")}</table></div>
+  <ul class="c-facts"><li>XP nunca é perdido por falha</li><li>Saldo mínimo: −300 ◈</li><li>Nível: 100 XP, depois +50 a cada nível</li><li>Hábito perdido não custa moedas</li></ul>
+  <button class="m-tonal" style="align-self:flex-start">Editar valores</button>`;
+}
+
+const R = { now:renderNow, a:renderA, b:renderB, c:renderC };
+function render(){
+  document.querySelectorAll(".phone").forEach(ph=>{
+    const k = ph.dataset.opt, v = V[k];
+    const sc = ph.querySelector(".p-body")?.scrollTop || 0;
+    ph.classList.toggle("dark", phoneDark());
+    ph.innerHTML = R[k](v) + `<div class="p-nav"><i></i></div>` + dialogs(v);
+    const b = ph.querySelector(".p-body"); if(b && !v.fresh) b.scrollTop = sc; v.fresh = false;
+  });
+  const sync = (id,val)=>document.querySelectorAll(`#${id} button`).forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===val));
+  sync("c-theme",S.page); sync("c-notif",S.notif?"on":"off"); sync("c-exact",S.exact?"on":"off"); sync("c-game",S.game?"on":"off");
+}
+
+document.addEventListener("click", e=>{
+  const ctl = e.target.closest(".seg button");
+  if(ctl){ const id = ctl.parentElement.id, v = ctl.dataset.v;
+    if(id==="c-theme") S.page = v; if(id==="c-notif") S.notif = v==="on";
+    if(id==="c-exact") S.exact = v==="on"; if(id==="c-game") S.game = v==="on";
+    render(); return; }
+  const el = e.target.closest("[data-act]"); if(!el) return;
+  const ph = el.closest(".phone"); if(!ph) return;
+  e.stopPropagation();
+  const v = V[ph.dataset.opt], [act, arg] = el.dataset.act.split(/:(.*)/);
+  if(act==="theme"){ S.theme = arg; v.dialog = null; }
+  else if(act==="game"){ if(S.game) v.dialog = "gameoff"; else S.game = true; }
+  else if(act==="gameoff"){ S.game = false; v.dialog = null; }
+  else if(act==="alarm") S.alarm = !S.alarm;
+  else if(act==="notif") S.notif = true;
+  else if(act==="exact") S.exact = true;
+  else if(act==="time"){ S.summary = arg==="off" ? null : arg; v.dialog = null; }
+  else if(act==="dlg") v.dialog = arg;
+  else if(act==="close") v.dialog = null;
+  else if(act==="view"){ v.view = arg; v.fresh = true; }
+  else if(act==="back"){ v.view = null; v.fresh = true; }
+  render();
+}, true);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+new MutationObserver(render).observe(document.documentElement, { attributes:true, attributeFilter:["data-theme"] });
+render();
+</script>

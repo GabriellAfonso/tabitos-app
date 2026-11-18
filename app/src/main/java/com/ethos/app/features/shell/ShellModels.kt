@@ -22,10 +22,11 @@ enum class ShellDestination(
     STATISTICS("statistics", R.string.statistics, R.drawable.ic_bar_chart),
     SETTINGS("settings", R.string.settings, R.drawable.ic_settings),
     EXCLUDED_HABITS("excluded-habits", R.string.habit_excluded, R.drawable.ic_self_improvement, parent = SETTINGS),
+    EARNINGS("earnings", R.string.earnings_setting, R.drawable.ic_toll, parent = SETTINGS),
     ;
 
     /** Exists only with game mode on (spec 017); off, requests for it land on Hoje. */
-    val isGameOnly: Boolean get() = this == REWARDS
+    val isGameOnly: Boolean get() = this == REWARDS || this == EARNINGS
 
     companion object {
         private val drawer = listOf(TODAY, CALENDAR, REVIEW, REWARDS, STATISTICS)

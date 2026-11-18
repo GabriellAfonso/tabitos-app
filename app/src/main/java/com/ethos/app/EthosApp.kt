@@ -37,11 +37,14 @@ import com.ethos.app.core.ui.accounting.LocalFinancialPrices
 import com.ethos.app.core.ui.components.ActionBanner
 import com.ethos.app.core.ui.components.ContentFilter
 import com.ethos.app.core.ui.components.FilterRow
+import com.ethos.app.core.ui.components.SettingsLinkRow
+import com.ethos.app.core.ui.components.SettingsSectionHeader
 import com.ethos.app.core.ui.reminders.LocalOpenReminders
 import com.ethos.app.core.ui.theme.EthosTheme
 import com.ethos.app.core.ui.timers.LocalOpenTimer
 import com.ethos.app.core.ui.trackers.LocalOpenTracker
 import com.ethos.app.features.accounting.AccountingSettings
+import com.ethos.app.features.accounting.EarningsSettingRow
 import com.ethos.app.features.accounting.AccountingUiState
 import com.ethos.app.features.accounting.AccountingViewModel
 import com.ethos.app.features.accounting.WalletTiles
@@ -56,18 +59,21 @@ import com.ethos.app.features.habits.HabitsUiState
 import com.ethos.app.features.habits.HabitsViewModel
 import com.ethos.app.features.habits.habitItems
 import com.ethos.app.features.reminders.ReminderDialogs
-import com.ethos.app.features.reminders.ReminderSettingsContent
+import com.ethos.app.features.reminders.NotificationSettings
+import com.ethos.app.features.reminders.NotificationSystemSettings
+import com.ethos.app.features.reminders.notificationSettingsActions
 import com.ethos.app.features.reminders.ReminderUiState
 import com.ethos.app.features.reminders.ReminderViewModel
 import com.ethos.app.features.reminders.rememberNotificationPermissionRequest
 import com.ethos.app.features.rewards.RewardsScreen
 import com.ethos.app.features.rewards.RewardsViewModel
+import com.ethos.app.features.settings.AppearanceActions
+import com.ethos.app.features.settings.AppearanceUiState
 import com.ethos.app.features.settings.AppearanceViewModel
 import com.ethos.app.features.settings.GameModeSetting
 import com.ethos.app.features.settings.GameModeUiState
 import com.ethos.app.features.settings.GameModeViewModel
-import com.ethos.app.features.settings.SettingsContent
-import com.ethos.app.features.settings.SettingsLink
+import com.ethos.app.features.settings.ThemeSetting
 import com.ethos.app.features.settings.TimerAlarmSetting
 import com.ethos.app.features.shell.CreateActions
 import com.ethos.app.features.shell.EthosShell
@@ -192,10 +198,8 @@ fun EthosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
                 vm.habits.detail(null)
                 openStatistics(vm, requests, StatisticsItem.Habit(habitId))
             }
-            AppShell(vm, app, requests) {
-                SettingsContent(appearance, appearanceViewModel::select, appearanceViewModel::retry)
-                TimerAlarmSetting(appearance.timerAlarm, appearanceViewModel::setTimerAlarm)
-            }
+            AppShell(vm, app, requests, appearance, AppearanceActions(appearanceViewModel::select,
+                appearanceViewModel::retry, appearanceViewModel::setTimerAlarm))
             TrackerDialogs(trackers, vm.trackers, requestPermission)
             TimerDialogs(timers, vm.timers, { kind, id ->
                 if (kind == TimerKind.TASK) vm.tasks.detail(id) else vm.habits.detail(id)
@@ -217,7 +221,8 @@ private fun openStatistics(vm: AppViewModels, requests: AppRequests, item: Stati
 
 @Composable
 private fun AppShell(
-    vm: AppViewModels, app: AppState, requests: AppRequests, appearanceSettings: @Composable () -> Unit,
+    vm: AppViewModels, app: AppState, requests: AppRequests, appearance: AppearanceUiState,
+    appearanceActions: AppearanceActions,
 ) {
     val tasks = app.tasks
     val habits = app.habits
@@ -265,16 +270,10 @@ private fun AppShell(
             ), vm.statistics)
             ShellDestination.EXCLUDED_HABITS -> HabitsContent(habits, HabitPage.EXCLUDED, vm.habits::detail,
                 vm.habits::retry)
-            ShellDestination.SETTINGS -> SettingsPage {
-                GameModeSetting(app.gameMode, vm.gameMode::request, vm.gameMode::confirmOff)
-                appearanceSettings()
-                if (app.showsGame) {
-                    AccountingSettings(app.financial, vm.accounting::edit, vm.accounting::draft,
-                        vm.accounting::save, vm.accounting::retry)
-                }
-                SettingsLink(R.string.habit_excluded, ShellDestination.EXCLUDED_HABITS.icon) {
-                    navigate(ShellDestination.EXCLUDED_HABITS) }
-                ReminderSettingsContent(app.reminders, vm.reminders, app.requestPermission)
+            ShellDestination.SETTINGS -> SettingsDestination(vm, app, appearance, appearanceActions, navigate)
+            ShellDestination.EARNINGS -> SettingsSubPage {
+                AccountingSettings(app.financial, vm.accounting::edit, vm.accounting::draft, vm.accounting::save,
+                    vm.accounting::retry)
             }
         }
     }
@@ -367,8 +366,31 @@ private fun AppState.visibleTimerSessions(vm: AppViewModels) =
     visibleSessions(tasks.snapshot, habits.snapshot, timers, vm.timers.zone)
         .filter { showsGame || it.kind != TimerKind.REWARD }
 
+/** Settings as a grouped list (spec 025): Aparência, Modo jogo, Notificações e alarmes, Dados. */
 @Composable
-private fun SettingsPage(content: @Composable () -> Unit) {
+private fun SettingsDestination(
+    vm: AppViewModels, app: AppState, appearance: AppearanceUiState, appearanceActions: AppearanceActions,
+    navigate: (ShellDestination) -> Unit,
+) {
+    val notifications = notificationSettingsActions(vm.reminders, app.requestPermission)
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+        SettingsSectionHeader(stringResource(R.string.appearance))
+        ThemeSetting(appearance, appearanceActions.select, appearanceActions.retry)
+        SettingsSectionHeader(stringResource(R.string.game_mode_setting))
+        GameModeSetting(app.gameMode, vm.gameMode::request, vm.gameMode::confirmOff)
+        if (app.showsGame) EarningsSettingRow(app.financial) { navigate(ShellDestination.EARNINGS) }
+        SettingsSectionHeader(stringResource(R.string.settings_notifications))
+        NotificationSettings(app.reminders, notifications)
+        TimerAlarmSetting(appearance.timerAlarm, appearanceActions.setTimerAlarm)
+        NotificationSystemSettings(app.reminders, notifications)
+        SettingsSectionHeader(stringResource(R.string.settings_data))
+        SettingsLinkRow(stringResource(R.string.habit_excluded), ShellDestination.EXCLUDED_HABITS.icon,
+            onClick = { navigate(ShellDestination.EXCLUDED_HABITS) })
+    }
+}
+
+@Composable
+private fun SettingsSubPage(content: @Composable () -> Unit) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) { content() }
 }

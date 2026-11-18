@@ -1,8 +1,6 @@
 ﻿package com.ethos.app.features.settings
 
-import androidx.compose.material3.Switch
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.toggleable
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,10 +9,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -26,99 +22,112 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ethos.app.R
 import com.ethos.app.core.preferences.AppearanceMode
+import com.ethos.app.core.ui.components.SettingsLinkRow
+import com.ethos.app.core.ui.components.SettingsSwitchRow
 import com.ethos.app.core.ui.theme.EthosTheme
 
+/** Callbacks of the Activity-level appearance ViewModel, which also owns the timer alarm preference. */
+class AppearanceActions(
+    val select: (AppearanceMode) -> Unit,
+    val retry: () -> Unit,
+    val setTimerAlarm: (Boolean) -> Unit,
+)
+
+/** "Tema" row (spec 025): shows the current choice and opens the three options in a dialog. */
 @Composable
-fun SettingsContent(state: AppearanceUiState, onSelect: (AppearanceMode) -> Unit, onRetry: () -> Unit) {
-    Text(stringResource(R.string.appearance), style = MaterialTheme.typography.headlineSmall)
-    Text(stringResource(R.string.appearance_hint), style = MaterialTheme.typography.bodyMedium)
-    Column(Modifier.selectableGroup()) {
-        AppearanceMode.entries.forEach { mode ->
-            val title = when (mode) {
-                AppearanceMode.SYSTEM -> R.string.theme_system
-                AppearanceMode.LIGHT -> R.string.theme_light
-                AppearanceMode.DARK -> R.string.theme_dark
-            }
-            Row(
-                Modifier.fillMaxWidth().sizeIn(minHeight = 56.dp).selectable(
-                    selected = state.mode == mode,
-                    enabled = !state.loading && !state.saving && state.error != AppearanceError.READ,
-                    role = Role.RadioButton,
-                    onClick = { onSelect(mode) },
-                ).padding(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                RadioButton(selected = state.mode == mode, onClick = null)
-                Text(stringResource(title))
-            }
-        }
+fun ThemeSetting(state: AppearanceUiState, onSelect: (AppearanceMode) -> Unit, onRetry: () -> Unit) {
+    var choosing by rememberSaveable { mutableStateOf(false) }
+    val value = when {
+        state.loading -> R.string.loading_preference
+        state.saving -> R.string.saving_preference
+        else -> themeLabel(state.mode)
     }
-    if (state.loading || state.saving) {
-        Text(stringResource(if (state.loading) R.string.loading_preference else R.string.saving_preference))
-    }
-    state.error?.let { error ->
-        Card(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
-            Column(Modifier.padding(16.dp)) {
-                Text(stringResource(if (error == AppearanceError.READ) R.string.read_error else R.string.write_error))
-                TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
-            }
-        }
+    SettingsLinkRow(stringResource(R.string.theme_setting), R.drawable.ic_contrast, onClick = { choosing = true },
+        supporting = stringResource(value), enabled = state.canChoose, trailingIcon = null)
+    state.error?.let { error -> AppearanceErrorCard(error, onRetry) }
+    if (choosing) {
+        ThemeDialog(state.mode, onSelect = { choosing = false; onSelect(it) }, onDismiss = { choosing = false })
     }
 }
 
-@Preview
-@Composable
-private fun SettingsPreview() {
-    EthosTheme { Column { SettingsContent(AppearanceUiState(loading = false), {}, {}) } }
+@StringRes
+private fun themeLabel(mode: AppearanceMode): Int = when (mode) {
+    AppearanceMode.SYSTEM -> R.string.theme_system
+    AppearanceMode.LIGHT -> R.string.theme_light
+    AppearanceMode.DARK -> R.string.theme_dark
 }
 
-@Preview
 @Composable
-private fun SettingsFailurePreview() {
-    EthosTheme(darkTheme = true) {
-        Column { SettingsContent(AppearanceUiState(loading = false, error = AppearanceError.WRITE), {}, {}) }
+private fun ThemeDialog(selected: AppearanceMode, onSelect: (AppearanceMode) -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.theme_setting)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.appearance_hint), style = MaterialTheme.typography.bodyMedium)
+                Column(Modifier.selectableGroup()) {
+                    AppearanceMode.entries.forEach { mode -> ThemeOption(mode, mode == selected) { onSelect(mode) } }
+                }
+            }
+        },
+        confirmButton = { TextButton(onDismiss) { Text(stringResource(R.string.picker_cancel)) } },
+    )
+}
+
+@Composable
+private fun ThemeOption(mode: AppearanceMode, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().sizeIn(minHeight = 56.dp)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Text(stringResource(themeLabel(mode)))
+    }
+}
+
+@Composable
+private fun AppearanceErrorCard(error: AppearanceError, onRetry: () -> Unit) {
+    Card(Modifier.fillMaxWidth().padding(horizontal = 16.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
+        Column(Modifier.padding(16.dp)) {
+            Text(stringResource(if (error == AppearanceError.READ) R.string.read_error else R.string.write_error))
+            TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+        }
     }
 }
 
 /** Global switch for the timer alarm (spec 016): rings when a timed task or habit finishes. */
 @Composable
 fun TimerAlarmSetting(enabled: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().sizeIn(minHeight = 56.dp)
-        .toggleable(enabled, role = Role.Switch, onValueChange = onChange),
-        verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.timer_alarm_setting), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.timer_alarm_setting_hint), style = MaterialTheme.typography.bodySmall)
-        }
-        Switch(enabled, onCheckedChange = null)
-    }
+    SettingsSwitchRow(stringResource(R.string.timer_alarm_setting), R.drawable.ic_alarm, enabled, onChange,
+        supporting = stringResource(R.string.timer_alarm_setting_hint))
 }
 
-/** Row that opens a settings sub-page (coin history, excluded habits); the whole row is the touch target. */
+@Preview
 @Composable
-fun SettingsLink(@StringRes title: Int, @DrawableRes icon: Int, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().sizeIn(minHeight = 56.dp).clickable(role = Role.Button, onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        Icon(painterResource(icon), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-        Text(stringResource(title), Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
-        Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun ThemeSettingPreview() {
+    EthosTheme {
+        Column {
+            ThemeSetting(AppearanceUiState(mode = AppearanceMode.DARK, loading = false), {}, {})
+            TimerAlarmSetting(enabled = true) {}
+        }
     }
 }
 
 @Preview
 @Composable
-private fun SettingsLinkPreview() {
-    EthosTheme { SettingsLink(R.string.habit_excluded, R.drawable.ic_self_improvement) {} }
+private fun ThemeSettingFailurePreview() {
+    EthosTheme(darkTheme = true) {
+        Column { ThemeSetting(AppearanceUiState(loading = false, error = AppearanceError.WRITE), {}, {}) }
+    }
 }

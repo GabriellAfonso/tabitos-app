@@ -1,6 +1,8 @@
 package com.ethos.app.features.shell
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ShellModelsTest {
@@ -13,5 +15,11 @@ class ShellModelsTest {
 
     @Test fun settingsSubPagesReturnToSettings() {
         assertEquals(ShellDestination.SETTINGS, ShellDestination.EXCLUDED_HABITS.parent)
+        assertEquals(ShellDestination.SETTINGS, ShellDestination.EARNINGS.parent)
+    }
+
+    @Test fun earningsPageExistsOnlyWithGameMode() {
+        assertTrue(ShellDestination.EARNINGS.isGameOnly)
+        assertFalse(ShellDestination.EXCLUDED_HABITS.isGameOnly)
     }
 }

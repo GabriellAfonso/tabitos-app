@@ -1,21 +1,15 @@
 package com.ethos.app.features.settings
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -28,6 +22,7 @@ import com.ethos.app.core.timers.domain.TimerKind
 import com.ethos.app.core.timers.domain.TimerRepository
 import com.ethos.app.core.timers.domain.TimerSnapshot
 import com.ethos.app.core.timers.domain.TimerState
+import com.ethos.app.core.ui.components.SettingsSwitchRow
 import com.ethos.app.core.ui.theme.EthosTheme
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -100,22 +95,16 @@ private fun TimerSnapshot.hasRunningReward(): Boolean =
 
 @Composable
 fun GameModeSetting(state: GameModeUiState, onRequest: (Boolean) -> Unit, onConfirmOff: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().sizeIn(minHeight = 56.dp)
-        .toggleable(state.enabled, enabled = state.canSwitch, role = Role.Switch, onValueChange = onRequest),
-        verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.game_mode_setting), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.game_mode_setting_hint), style = MaterialTheme.typography.bodySmall)
-        }
-        Switch(state.enabled, onCheckedChange = null, enabled = state.canSwitch)
-    }
+    SettingsSwitchRow(stringResource(R.string.game_mode_setting), R.drawable.ic_sports_esports, state.enabled,
+        onRequest, supporting = stringResource(R.string.game_mode_setting_hint), enabled = state.canSwitch)
     val notice = when {
         state.rewardTimerRunning -> R.string.game_mode_reward_timer_running
         state.error -> R.string.game_mode_error
         else -> null
     }
     if (notice != null) {
-        Text(stringResource(notice), Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        Text(stringResource(notice),
+            Modifier.padding(horizontal = 16.dp).semantics { liveRegion = LiveRegionMode.Polite },
             color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
     }
     if (state.confirmingOff) AlertDialog(

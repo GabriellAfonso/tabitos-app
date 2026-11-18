@@ -1,10 +1,9 @@
 package com.ethos.app.features.reminders
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
-import android.content.Intent
 import android.os.Build
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -12,15 +11,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.net.toUri
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -28,8 +24,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.ethos.app.core.ui.components.ScrollableTimeField
 import com.ethos.app.R
 import com.ethos.app.core.reminders.domain.*
-import com.ethos.app.core.reminders.platform.ReminderPlatform
-import com.ethos.app.core.ui.theme.EthosTheme
 import java.time.LocalTime
 
 /**
@@ -45,60 +39,13 @@ fun rememberNotificationPermissionRequest(refresh: () -> Unit): () -> Unit {
         lifecycle.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) { refresh() }
     }
     return {
-        if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED)
-            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        if (context.needsNotificationPermission()) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
     }
 }
 
-@Composable
-fun ReminderSettingsContent(state: ReminderUiState, vm: ReminderViewModel, requestPermission: () -> Unit) {
-    ReminderSettingsPanel(state, { vm.summary(it, requestPermission) }, vm::retry)
-    val context = LocalContext.current
-    fun open(intent: Intent) {
-        try { context.startActivity(intent) } catch (_: android.content.ActivityNotFoundException) {
-            context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                "package:${context.packageName}".toUri()))
-        }
-    }
-    TextButton({ requestPermission() }) { Text(stringResource(R.string.reminder_allow)) }
-    listOf(ReminderPlatform.REMINDERS to R.string.reminder_channel_settings,
-        ReminderPlatform.SUMMARIES to R.string.reminder_summary_channel).forEach { (channel, label) ->
-        TextButton({
-            if (Build.VERSION.SDK_INT >= 26) open(Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
-                .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName).putExtra(Settings.EXTRA_CHANNEL_ID, channel))
-            else open(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                "package:${context.packageName}".toUri()))
-        }) { Text(stringResource(label)) }
-    }
-    if (Build.VERSION.SDK_INT >= 31 && !state.capability.exact) {
-        TextButton({ open(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-            "package:${context.packageName}".toUri())) }) {
-            Text(stringResource(R.string.reminder_precision_access)) }
-    }
-}
-
-@Composable
-fun ReminderSettingsPanel(state: ReminderUiState, summary: (String?) -> Unit, retry: () -> Unit) {
-    var time by rememberSaveable { mutableStateOf("") }
-    LaunchedEffect(state.snapshot.settings.summaryMinute) {
-        state.snapshot.settings.summaryMinute?.let { time = LocalTime.of(it / 60, it % 60).toString() }
-    }
-    Text(stringResource(R.string.reminders), style = MaterialTheme.typography.headlineSmall)
-    Text(stringResource(if (state.capability.reminders) R.string.reminder_allowed else R.string.reminder_blocked))
-    Text(stringResource(if (state.capability.summaries) R.string.reminder_summary_allowed
-        else R.string.reminder_summary_blocked))
-    Text(stringResource(if (state.capability.exact) R.string.reminder_exact else R.string.reminder_approximate))
-    ReminderErrors(state, retry)
-    Text(stringResource(R.string.reminder_daily), style = MaterialTheme.typography.titleMedium)
-    Text(stringResource(if (state.snapshot.settings.summaryMinute == null) R.string.reminder_daily_off
-        else R.string.reminder_daily_on))
-    ScrollableTimeField(R.string.reminder_time, time, !state.busy) { time = it }
-    Button({ summary(time) }, enabled = !state.busy && !state.loading) {
-        Text(stringResource(R.string.reminder_save_summary)) }
-    if (state.snapshot.settings.summaryMinute != null) TextButton({ summary(null) }, enabled = !state.busy) {
-        Text(stringResource(R.string.reminder_disable_summary)) }
-}
+/** Android 13+ asks for notifications at runtime; older versions grant them at install. */
+internal fun Context.needsNotificationPermission(): Boolean = Build.VERSION.SDK_INT >= 33 &&
+    checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
 
 @Composable
 fun ReminderDialogs(state: ReminderUiState, vm: ReminderViewModel, requestPermission: () -> Unit) {
@@ -211,7 +158,7 @@ private fun ReminderScope(future: Boolean, change: (Boolean) -> Unit) {
 }
 
 @Composable
-private fun ReminderErrors(state: ReminderUiState, retry: () -> Unit) {
+internal fun ReminderErrors(state: ReminderUiState, retry: () -> Unit) {
     if (state.loading) Text(stringResource(R.string.reminder_loading))
     if (state.error) {
         Text(stringResource(R.string.reminder_storage_error), color = MaterialTheme.colorScheme.error)
@@ -224,10 +171,4 @@ private fun ReminderErrors(state: ReminderUiState, retry: () -> Unit) {
 private fun ReminderInput(label: Int, value: String, enabled: Boolean, change: (String) -> Unit) {
     OutlinedTextField(value, change, Modifier.fillMaxWidth(), enabled = enabled,
         label = { Text(stringResource(label)) }, singleLine = true)
-}
-
-@Preview
-@Composable
-private fun ReminderSettingsPreview() {
-    EthosTheme { Column { ReminderSettingsPanel(ReminderUiState(loading = false), {}, {}) } }
 }

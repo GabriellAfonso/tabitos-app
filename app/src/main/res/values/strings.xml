@@ -32,7 +32,6 @@
     <string name="read_error">Não deu para ler o tema salvo. Usando o do sistema.</string>
     <string name="write_error">Não foi possível salvar a aparência. A seleção anterior foi mantida.</string>
     <string name="retry">Tentar novamente</string>
-    <string name="earnings">Como funcionam ganhos e penalidades</string>
     <string name="inbox">Caixa de entrada</string>
     <string name="new_task">Nova tarefa</string>
     <string name="edit_task">Editar tarefa</string>
@@ -350,20 +349,6 @@
         <item quantity="one">%1$d lembrete ainda relevante. Abra o Ethos para consultar.</item>
         <item quantity="other">%1$d lembretes ainda relevantes. Abra o Ethos para consultar.</item>
     </plurals>
-    <string name="reminder_allowed">Notificações de lembretes permitidas.</string>
-    <string name="reminder_blocked">Notificações de lembretes bloqueadas. Os itens continuam disponíveis no app.</string>
-    <string name="reminder_summary_allowed">Notificações de resumos permitidas.</string>
-    <string name="reminder_summary_blocked">Notificações de resumos bloqueadas.</string>
-    <string name="reminder_exact">Horário preciso permitido. Restrições do dispositivo ainda podem atrasar avisos.</string>
-    <string name="reminder_approximate">Horário aproximado. Permita alarmes precisos para avisos na hora exata.</string>
-    <string name="reminder_allow">Permitir notificações</string>
-    <string name="reminder_channel_settings">Configurações do canal Lembretes</string>
-    <string name="reminder_summary_channel">Configurações do canal Resumos</string>
-    <string name="reminder_precision_access">Permitir alarmes precisos</string>
-    <string name="reminder_daily_off">Desativado. Escolha um horário para ativar.</string>
-    <string name="reminder_daily_on">Ativado no horário escolhido.</string>
-    <string name="reminder_save_summary">Salvar horário e ativar resumo</string>
-    <string name="reminder_disable_summary">Desativar resumo</string>
     <string name="reminder_time">Horário</string>
     <string name="reminder_date">Data (AAAA-MM-DD)</string>
     <string name="reminder_gone">Este lembrete não existe mais ou o item já foi resolvido.</string>
@@ -808,4 +793,24 @@
     <string name="delete_habit_erase_history">Apagar também o histórico deste hábito</string>
     <string name="habit_erase_completely">Apagar por completo</string>
     <string name="habit_erase_confirm">O hábito, seus registros e seu histórico serão apagados. Moedas, XP e nível não mudam. Não é possível desfazer.</string>
+    <!-- Settings as a grouped list (spec 025) -->
+    <string name="settings_notifications">Notificações e alarmes</string>
+    <string name="settings_data">Dados</string>
+    <string name="theme_setting">Tema</string>
+    <string name="earnings_setting">Ganhos e penalidades</string>
+    <string name="earnings_price">%1$s %2$d ◈</string>
+    <string name="notifications_blocked">Notificações bloqueadas</string>
+    <string name="notifications_blocked_all">Lembretes e resumos não aparecem. Os itens continuam no app.</string>
+    <string name="notifications_blocked_reminders">Lembretes não aparecem. Os itens continuam no app.</string>
+    <string name="notifications_blocked_summaries">Resumos não aparecem.</string>
+    <string name="notifications_allow">Permitir</string>
+    <string name="summary_on">Todo dia às %1$s</string>
+    <string name="summary_off">Desligado</string>
+    <string name="summary_time">Horário do resumo</string>
+    <string name="exact_setting">Horário preciso</string>
+    <string name="exact_off">Aproximado. Toque para permitir avisos na hora exata.</string>
+    <string name="channels_setting">Sons e vibração no Android</string>
+    <string name="channels_setting_hint">Lembretes e resumos</string>
+    <string name="channels_dialog_title">Sons e vibração</string>
+    <string name="channels_dialog_hint">Abre os ajustes do Android para o tipo de aviso escolhido.</string>
 </resources>

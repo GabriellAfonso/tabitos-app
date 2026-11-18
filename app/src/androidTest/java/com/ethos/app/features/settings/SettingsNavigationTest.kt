@@ -18,4 +18,13 @@ class SettingsNavigationTest {
             .performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.appearance)).assertExists()
     }
+
+    @Test fun earningsOpenFromSettingsAndBackReturns() {
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.open_settings)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.earnings_setting)).performScrollTo().performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.finance_edit_table)).performScrollTo()
+            .assertIsDisplayed()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.settings_data)).performScrollTo().assertIsDisplayed()
+    }
 }

@@ -48,10 +48,27 @@ fun ScrollableTimeField(
         }
     }
     if (!open) return
-    var hour by rememberSaveable { mutableIntStateOf(time?.hour ?: 9) }
-    var minute by rememberSaveable { mutableIntStateOf(time?.minute ?: 0) }
+    val remove: (() -> Unit)? = if (optional && value.isNotBlank()) {
+        { onChange(""); open = false }
+    } else null
+    TimePickerDialog(title, time, enabled, onConfirm = { onChange(it.toString()); open = false },
+        onDismiss = { open = false }, onRemove = remove)
+}
+
+/** Hour and minute wheels in a dialog, shared by the time field and settings rows that show the time as text. */
+@Composable
+fun TimePickerDialog(
+    title: String,
+    initial: LocalTime?,
+    enabled: Boolean,
+    onConfirm: (LocalTime) -> Unit,
+    onDismiss: () -> Unit,
+    onRemove: (() -> Unit)? = null,
+) {
+    var hour by rememberSaveable { mutableIntStateOf(initial?.hour ?: DEFAULT_HOUR) }
+    var minute by rememberSaveable { mutableIntStateOf(initial?.minute ?: 0) }
     AlertDialog(
-        onDismissRequest = { open = false },
+        onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
@@ -60,21 +77,21 @@ fun ScrollableTimeField(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                onChange(LocalTime.of(hour, minute).toString())
-                open = false
-            }, enabled = enabled) { Text(stringResource(R.string.picker_ok)) }
+            TextButton(onClick = { onConfirm(LocalTime.of(hour, minute)) }, enabled = enabled) {
+                Text(stringResource(R.string.picker_ok))
+            }
         },
         dismissButton = {
-            if (optional && value.isNotBlank()) {
-                TextButton(onClick = { onChange(""); open = false }, enabled = enabled) {
-                    Text(stringResource(R.string.remove_time))
-                }
+            if (onRemove != null) {
+                TextButton(onClick = onRemove, enabled = enabled) { Text(stringResource(R.string.remove_time)) }
             }
-            TextButton(onClick = { open = false }) { Text(stringResource(R.string.picker_cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.picker_cancel)) }
         },
     )
 }
+
+/** Starting point of the wheels when nothing was chosen yet. */
+private const val DEFAULT_HOUR = 9
 
 @Composable
 private fun TimeWheel(value: Int, maximum: Int, label: String, onChange: (Int) -> Unit) {

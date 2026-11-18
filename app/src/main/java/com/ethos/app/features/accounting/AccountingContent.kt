@@ -18,6 +18,8 @@ import com.ethos.app.core.ui.accounting.*
 import com.ethos.app.core.accounting.domain.*
 import com.ethos.app.core.ui.components.CoinAmount
 import com.ethos.app.core.ui.components.Eyebrow
+import com.ethos.app.core.ui.components.SettingsLinkRow
+import com.ethos.app.core.ui.theme.EthosTheme
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 
@@ -85,7 +87,6 @@ fun WalletTiles(state: AccountingUiState, rewards: () -> Unit, retry: () -> Unit
 @Composable
 fun AccountingSettings(state: AccountingUiState, edit: () -> Unit, change: (List<String>?) -> Unit,
     save: () -> Unit, retry: () -> Unit) {
-    Text(stringResource(R.string.earnings), style = MaterialTheme.typography.titleLarge)
     AccountingStatus(state, retry)
     if (!state.loading && !state.error) AccountingExplanation(state.snapshot.prices)
     if (!state.loading && !state.error && state.draft == null) {
@@ -111,6 +112,28 @@ fun AccountingSettings(state: AccountingUiState, edit: () -> Unit, change: (List
         TextButton(save, enabled = !state.saving && !state.loading) { Text(stringResource(R.string.save)) }
         TextButton({ change(null) }, enabled = !state.saving) { Text(stringResource(R.string.cancel)) }
     }
+}
+
+/** Settings row with the current gains per difficulty; opens the Ganhos e penalidades page (spec 025). */
+@Composable
+fun EarningsSettingRow(state: AccountingUiState, onClick: () -> Unit) {
+    val summary = when {
+        state.loading -> stringResource(R.string.finance_loading)
+        state.error -> stringResource(R.string.finance_error)
+        else -> state.snapshot.prices.map { price ->
+            stringResource(R.string.earnings_price, stringResource(difficultyLabel(price)), price.coins)
+        }.joinToString(EARNINGS_SEPARATOR)
+    }
+    SettingsLinkRow(stringResource(R.string.earnings_setting), R.drawable.ic_toll, onClick, supporting = summary,
+        warning = state.error)
+}
+
+private const val EARNINGS_SEPARATOR = " · "
+
+@Preview
+@Composable
+private fun EarningsSettingRowPreview() {
+    EthosTheme { EarningsSettingRow(AccountingUiState(loading = false)) {} }
 }
 
 @Preview
