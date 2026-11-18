@@ -3,6 +3,8 @@ package com.ethos.app.features.reminders
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ethos.app.core.startup.DeferredSource
+import com.ethos.app.core.startup.StartupSequence
 import com.ethos.app.core.reminders.domain.*
 import com.ethos.app.core.reminders.platform.*
 import com.ethos.app.core.tasks.domain.*
@@ -34,6 +36,7 @@ data class ReminderUiState(
 class ReminderViewModel @Inject constructor(
     private val repository: ReminderRepository, private val coordinator: ReminderCoordinator,
     private val tasks: TaskRepository, private val habits: HabitRepository, private val saved: SavedStateHandle,
+    private val startup: StartupSequence = StartupSequence.released(),
 ) : ViewModel() {
     private val mutable = MutableStateFlow(ReminderUiState(draft = saved["reminderDraft"],
         kind = saved.get<String>("reminderKind")?.let(ReminderKind::valueOf), targetId = saved["reminderTarget"],
@@ -42,7 +45,10 @@ class ReminderViewModel @Inject constructor(
     private var sources = ReminderSources(TaskSnapshot(), HabitSnapshot())
     private var observer: Job? = null
     init {
-        observe()
+        // Hoje loads first; reminders start in their preload turn, when Configurações opens or when an editor
+        // needs them (spec 027).
+        if (saved.get<String>("reminderKind") != null) startup.request(setOf(DeferredSource.REMINDERS))
+        viewModelScope.launch { startup.awaitTurn(DeferredSource.REMINDERS); observe() }
         viewModelScope.launch { coordinator.failure.collect { failed ->
             if (failed) mutable.update { it.copy(error = true) }
         } }
@@ -51,10 +57,14 @@ class ReminderViewModel @Inject constructor(
         observer?.cancel()
         observer = viewModelScope.launch {
             combine(repository.observe(), tasks.observe(), habits.observe()) { r, t, h -> Triple(r, t, h) }
-                .catch { mutable.update { it.copy(loading = false, error = true) } }
+                .catch {
+                    mutable.update { it.copy(loading = false, error = true) }
+                    startup.markLoaded(DeferredSource.REMINDERS)
+                }
                 .collect { (r, t, h) ->
                     sources = ReminderSources(t, h)
                     mutable.update { derive(it.copy(snapshot = r, loading = false)) }
+                    startup.markLoaded(DeferredSource.REMINDERS)
                 }
         }
     }
@@ -70,6 +80,7 @@ class ReminderViewModel @Inject constructor(
                 it.kind == s.kind && it.sourceId == s.targetId && it.enabled })
     }
     fun open(kind: ReminderKind, id: String) {
+        startup.request(setOf(DeferredSource.REMINDERS))
         saved["reminderKind"] = kind.name
         saved["reminderTarget"] = id
         mutable.update { derive(it.copy(kind = kind, targetId = id, scopeFuture = false, inputError = false)) }

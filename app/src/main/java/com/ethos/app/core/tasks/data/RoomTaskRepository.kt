@@ -32,9 +32,10 @@ class RoomTaskRepository(
         database.withTransaction {
             val accounting = AccountingStore(database, clock)
             accounting.initialize()
-            val before = read()
+            val stored = readRows()
+            val before = stored.snapshot()
             val after = TaskRules.apply(before, action, clock.today(), clock.nowMillis())
-            if (before != after) write(after)
+            if (before != after) write(TaskWrites.between(stored, after))
             removeErased(before, after)
             if (action is TaskAction.Postpone || action is TaskAction.UndoPostpone) moveReminders(before, after, action)
             if (action is TaskAction.Resolve || action is TaskAction.Undo || action is TaskAction.SetCompleted) {
@@ -81,30 +82,23 @@ class RoomTaskRepository(
             .forEach { dao.definition(it.entity()) }
     }
 
-    private suspend fun read(): TaskSnapshot {
+    private suspend fun read(): TaskSnapshot = readRows().snapshot()
+
+    private suspend fun readRows(): TaskRows {
         val dao = database.tasks()
-        val checks = dao.checks().groupBy { it.ownerId }
-        return TaskSnapshot(dao.lists().map { it.domain() },
-            dao.definitions().map { it.domain(checks["template:${it.id}"].orEmpty()) },
-            dao.occurrences().map { it.domain(checks[it.id].orEmpty()) }, dao.history().map { it.domain() })
+        return TaskRows(dao.lists(), dao.definitions(), dao.occurrences(), dao.checks(), dao.history())
     }
 
-    private suspend fun write(s: TaskSnapshot) {
+    /** Writes only what changed (spec 027); unchanged rows are left alone, so their observers are not woken. */
+    private suspend fun write(w: TaskWrites) {
         val dao = database.tasks()
-        dao.lists(s.lists.map { it.entity() })
-        dao.definitions(s.definitions.map { it.entity() })
-        dao.occurrences(s.occurrences.map { it.entity() })
-        s.definitions.forEach { d ->
-            val owner = "template:${d.id}"
+        if (w.lists.isNotEmpty()) dao.lists(w.lists)
+        if (w.definitions.isNotEmpty()) dao.definitions(w.definitions)
+        if (w.occurrences.isNotEmpty()) dao.occurrences(w.occurrences)
+        w.checklists.forEach { (owner, rows) ->
             dao.clearChecks(owner)
-            dao.checks(d.fields.checklist.mapIndexed { i, label ->
-                ChecklistEntity("$owner:$i", owner, i, label, false)
-            })
+            dao.checks(rows)
         }
-        s.occurrences.forEach { o ->
-            dao.clearChecks(o.id)
-            dao.checks(o.checks.mapIndexed { i, c -> ChecklistEntity("${o.id}:$i", o.id, i, c.label, c.checked) })
-        }
-        dao.history(s.history.map { it.entity() })
+        if (w.history.isNotEmpty()) dao.history(w.history)
     }
 }

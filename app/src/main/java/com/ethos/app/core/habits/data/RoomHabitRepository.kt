@@ -7,6 +7,7 @@ import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.history.data.HistoryErasure
 import com.ethos.app.core.preferences.GameModeSource
 import com.ethos.app.core.tasks.data.TaskDatabase
+import com.ethos.app.core.tasks.data.changedRows
 import com.ethos.app.core.tasks.domain.TaskClock
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -45,14 +46,15 @@ class RoomHabitRepository(
             val before = read()
             val s = HabitRules.apply(before, action, clock.today(), clock.nowMillis(), lists)
             val dao = database.habits()
-            dao.habits(s.habits.map { HabitEntity(it) })
+            // Only changed rows are written (spec 027): the closing that runs on every open then wakes no observer.
+            dao.habits(changedRows(before.habits, s.habits) { it.id }.map { HabitEntity(it) })
             dao.removeReplacedRules(s.rules.map { it.id })
-            dao.rules(s.rules.map { HabitRuleEntity(it) })
-            dao.intervals(s.intervals.map { HabitIntervalEntity(it) })
-            dao.overrides(s.overrides.map { HabitOverrideEntity(it) })
-            dao.records(s.records.map { HabitRecordEntity(it) })
-            dao.reviews(s.reviews.map { HabitReviewEntity(it) })
-            dao.audits(s.audits.map { HabitAuditEntity(it) })
+            dao.rules(changedRows(before.rules, s.rules) { it.id }.map { HabitRuleEntity(it) })
+            dao.intervals(changedRows(before.intervals, s.intervals) { it.id }.map { HabitIntervalEntity(it) })
+            dao.overrides(changedRows(before.overrides, s.overrides) { it.key }.map { HabitOverrideEntity(it) })
+            dao.records(changedRows(before.records, s.records) { it.id }.map { HabitRecordEntity(it) })
+            dao.reviews(changedRows(before.reviews, s.reviews) { it.key }.map { HabitReviewEntity(it) })
+            dao.audits(changedRows(before.audits, s.audits) { it.id }.map { HabitAuditEntity(it) })
             if (action == HabitAction.Settle) {
                 // Automatic closings (avoid/limit successes) reach the ledger without any user action.
                 val owners = s.habits.map { "habit:${it.id}" }.toSet()

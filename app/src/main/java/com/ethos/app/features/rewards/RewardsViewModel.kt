@@ -3,6 +3,8 @@ package com.ethos.app.features.rewards
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ethos.app.core.startup.DeferredSource
+import com.ethos.app.core.startup.StartupSequence
 import com.ethos.app.core.rewards.domain.*
 import com.ethos.app.core.timers.domain.TimerRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,6 +37,7 @@ data class RewardsUiState(
 class RewardsViewModel @Inject constructor(
     private val repository: RewardRepository, private val saved: SavedStateHandle,
     private val timers: TimerRepository? = null,
+    private val startup: StartupSequence = StartupSequence.released(),
 ) : ViewModel() {
     private val mutable = MutableStateFlow(RewardsUiState(
         draft = saved.get<ArrayList<String>>("rewardDraft")?.let { if (it.size == 7) it + "" else it },
@@ -43,7 +46,8 @@ class RewardsViewModel @Inject constructor(
     private var observer: Job? = null
     private var failed: (() -> Unit)? = null
     private var readFailed = false
-    init { observe() }
+    /** Hoje loads first; rewards start in their preload turn or when their page opens (spec 027). */
+    init { viewModelScope.launch { startup.awaitTurn(DeferredSource.REWARDS); observe() } }
 
     private fun observe() {
         observer?.cancel()
@@ -57,11 +61,13 @@ class RewardsViewModel @Inject constructor(
                     }
                     mutable.update { it.copy(snapshot = snapshot, cards = cards, loading = false,
                         error = failed != null) }
+                    startup.markLoaded(DeferredSource.REWARDS)
                 }
             } catch (e: CancellationException) { throw e
             } catch (_: Exception) {
                 readFailed = true
                 mutable.update { it.copy(loading = false, error = true) }
+                startup.markLoaded(DeferredSource.REWARDS)
             }
         }
     }

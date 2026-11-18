@@ -1,6 +1,7 @@
 package com.ethos.app
 import com.ethos.app.core.tasks.domain.TaskAction
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ethos.app.core.preferences.AppearanceMode
 import com.ethos.app.core.reminders.domain.ReminderKind
+import com.ethos.app.core.startup.DeferredSource
 import com.ethos.app.core.timers.domain.TimerKind
 import com.ethos.app.core.timers.domain.TimerRules
 import com.ethos.app.core.timers.domain.TimerState
@@ -78,6 +80,7 @@ import com.ethos.app.features.settings.TimerAlarmSetting
 import com.ethos.app.features.shell.CreateActions
 import com.ethos.app.features.shell.EthosShell
 import com.ethos.app.features.shell.ShellDestination
+import com.ethos.app.features.shell.StartupViewModel
 import com.ethos.app.features.statistics.StatisticsItem
 import com.ethos.app.features.statistics.StatisticsNavigation
 import com.ethos.app.features.statistics.StatisticsScreen
@@ -118,6 +121,9 @@ class AppRequests {
     var timer by mutableStateOf<Pair<TimerKind, String>?>(null)
     /** Page asked for by a popup link, such as "Ver histórico" (spec 024); cleared once the shell navigates. */
     var destination by mutableStateOf<ShellDestination?>(null)
+
+    /** A notification is being handled; it must never wait for the preload queue (spec 027). */
+    val handlingNotification: Boolean get() = reminder != null || timerSession != null || timer != null
 }
 
 /** Activity-scoped ViewModels: they are shared by several destinations, dialogs and notifications. */
@@ -126,7 +132,7 @@ private class AppViewModels(
     val tasks: TasksViewModel, val habits: HabitsViewModel, val accounting: AccountingViewModel,
     val rewards: RewardsViewModel, val reminders: ReminderViewModel, val timers: TimerViewModel,
     val trackers: TrackerViewModel, val calendar: CalendarViewModel, val gameMode: GameModeViewModel,
-    val statistics: StatisticsViewModel,
+    val statistics: StatisticsViewModel, val startup: StartupViewModel,
 )
 
 /** One frame of collected state, so page functions receive values instead of collecting again. */
@@ -139,12 +145,13 @@ private class AppState(
     val showsGame: Boolean = gameMode.enabled
     /** Revisão counts tasks only: habits never become pending (spec 014). */
     val pendingReviews: Int = tasks.snapshot.activeOccurrences.count { it.needsReview(tasks.today) }
+    val todayReady: Boolean = TodaySources(tasks, habits, timers, trackers, financial, gameMode).isReady()
 }
 
 @Composable
 private fun appViewModels() = AppViewModels(
     viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(),
-    viewModel(),
+    viewModel(), viewModel(),
 )
 
 /** Composition root of the app; [onDarkTheme] lets the Activity style the system bars. */
@@ -183,6 +190,7 @@ fun EthosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
         )
         val app = AppState(tasks, habits, financial, reminders, timers, trackers, requestPermission, timerCards,
             gameMode)
+        StartupOrder(vm.startup, app.todayReady, requests.handlingNotification)
         NotificationRouting(requests, vm, app)
         LaunchedEffect(tasks.snapshot.activeLists) {
             vm.habits.listIds(tasks.snapshot.activeLists.map { it.id }.toSet())
@@ -257,6 +265,7 @@ private fun AppShell(
         requested = requests.destination,
         onRequestHandled = { requests.destination = null },
     ) { destination, navigate ->
+        LaunchedEffect(destination) { vm.startup.request(destination.deferredSources()) }
         when (destination) {
             ShellDestination.TODAY -> TaskDestination(vm, app, TaskPage.TODAY, navigate)
             ShellDestination.TASKS -> TaskDestination(vm, app, TaskPage.LIST, navigate)
@@ -284,6 +293,10 @@ private fun AppShell(
 private fun TaskDestination(
     vm: AppViewModels, app: AppState, page: TaskPage, navigate: (ShellDestination) -> Unit,
 ) {
+    if (page == TaskPage.TODAY && !app.todayReady) {
+        TodayLoading()
+        return
+    }
     val tasks = app.tasks
     var filter by rememberSaveable { mutableStateOf(ContentFilter.ALL) }
     val habitPage = when (page) {
@@ -313,6 +326,25 @@ private fun TaskDestination(
                 TaskPage.REVIEW, TaskPage.LIST -> Unit
             }
         }
+    }
+}
+
+/** Hoje appears complete, so no card shows a missing price or a wrong timer state while sources load. */
+@Composable
+private fun TodayLoading() {
+    Text(stringResource(R.string.loading_tasks), Modifier.padding(20.dp))
+}
+
+/**
+ * Hoje's sources load first; deferred sources start after Hoje is shown, or at once while a notification is
+ * handled. "Fully drawn" is logged with the time from launch to Hoje's content, never with any content (spec 027).
+ */
+@Composable
+private fun StartupOrder(startup: StartupViewModel, todayReady: Boolean, handlingNotification: Boolean) {
+    ReportDrawnWhen { todayReady }
+    LaunchedEffect(todayReady) { if (todayReady) startup.todayShown() }
+    LaunchedEffect(handlingNotification) {
+        if (handlingNotification) startup.request(DeferredSource.entries.toSet())
     }
 }
 

@@ -4,6 +4,7 @@ import com.ethos.app.core.ui.components.RED_ITEM_COLOR
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ethos.app.core.startup.StartupSequence
 import com.ethos.app.core.habits.domain.*
 import com.ethos.app.core.tasks.domain.TaskClock
 import com.ethos.app.core.accounting.domain.AccountingRepository
@@ -62,6 +63,7 @@ class HabitsViewModel @Inject constructor(
     private val accounting: AccountingRepository? = null,
     private val timers: TimerRepository? = null,
     private val gameMode: GameModeSource? = null,
+    private val startup: StartupSequence = StartupSequence.released(),
 ) : ViewModel() {
     /** Goal to store once the habit itself is saved; null minutes removes it (normal variant). */
     private var pendingGoal: Pair<String, Int?>? = null
@@ -111,10 +113,15 @@ class HabitsViewModel @Inject constructor(
         .filter { it.rule.unit == HabitUnit.DAY }.groupBy { it.habitId }
         .mapValues { (_, days) -> days.associate { it.start to HabitRules.standing(it, today) } }
     private var settled = false
-    /** Lets periods that closed by themselves reach the ledger (avoid/limit successes, spec 014). */
+    /**
+     * Lets periods that closed by themselves reach the ledger (avoid/limit successes, spec 014). Waits for Hoje's
+     * first content so its write never delays Hoje's reads on a cold open (spec 027).
+     */
     private fun settle() {
         viewModelScope.launch {
-            try { repository.execute(HabitAction.Settle)
+            try {
+                startup.awaitTodayShown()
+                repository.execute(HabitAction.Settle)
             } catch (e: CancellationException) { throw e
             } catch (_: Exception) { settled = false }
         }

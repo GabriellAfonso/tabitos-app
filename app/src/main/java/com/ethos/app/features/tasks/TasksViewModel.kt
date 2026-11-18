@@ -3,6 +3,7 @@ package com.ethos.app.features.tasks
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ethos.app.core.startup.StartupSequence
 import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.accounting.domain.AccountingRepository
 import com.ethos.app.core.accounting.domain.FinancialPreview
@@ -71,6 +72,7 @@ class TasksViewModel @Inject constructor(
     private val timers: TimerRepository? = null,
     private val gameMode: GameModeSource? = null,
     private val reminders: ReminderRepository? = null,
+    private val startup: StartupSequence = StartupSequence.released(),
 ) : ViewModel() {
     private val mutable = MutableStateFlow(TasksUiState(today = clock.today(), draft = saved["taskDraft"]))
     /** Goal to store once the task itself is saved; null minutes removes it (normal variant). */
@@ -140,13 +142,16 @@ class TasksViewModel @Inject constructor(
     }
     /**
      * Regenerating recurrences is routine background work, so it neither shows progress nor blocks user actions;
-     * Room transactions already serialize it with concurrent writes.
+     * Room transactions already serialize it with concurrent writes. It waits for Hoje's first content so its
+     * write never delays Hoje's reads on a cold open (spec 027).
      */
     fun refresh() {
         mutable.update { it.copy(today = clock.today()) }
         if (backgroundRefresh?.isActive == true || mutable.value.storageError) return
         backgroundRefresh = viewModelScope.launch {
-            try { repository.execute(TaskAction.Refresh)
+            try {
+                startup.awaitTodayShown()
+                repository.execute(TaskAction.Refresh)
             } catch (e: CancellationException) { throw e
             } catch (_: Exception) {
                 mutable.update { it.copy(storageError = true) }

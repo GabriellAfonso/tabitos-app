@@ -3,6 +3,8 @@ package com.ethos.app.features.calendar
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ethos.app.core.startup.DeferredSource
+import com.ethos.app.core.startup.StartupSequence
 import com.ethos.app.core.habits.domain.HabitRepository
 import com.ethos.app.core.tasks.domain.TaskClock
 import com.ethos.app.core.tasks.domain.TaskRepository
@@ -25,6 +27,7 @@ data class CalendarUiState(
 class CalendarViewModel @Inject constructor(
     private val tasks: TaskRepository, private val habits: HabitRepository, private val trackers: TrackerRepository,
     private val clock: TaskClock, private val saved: SavedStateHandle,
+    private val startup: StartupSequence = StartupSequence.released(),
 ) : ViewModel() {
     private val mutable = MutableStateFlow(CalendarUiState(today = clock.today(),
         view = saved.get<String>("calendarView")?.let(CalendarView::valueOf) ?: CalendarView.MONTH,
@@ -33,7 +36,8 @@ class CalendarViewModel @Inject constructor(
     val state: StateFlow<CalendarUiState> = mutable.asStateFlow()
     private var observer: Job? = null
 
-    init { observe() }
+    /** Hoje loads first; the calendar starts in its preload turn or when its page opens (spec 027). */
+    init { viewModelScope.launch { startup.awaitTurn(DeferredSource.CALENDAR); observe() } }
 
     private fun derive(s: CalendarUiState) = s.copy(
         cells = CalendarModel.cells(s.sources, s.filters, s.view, s.anchor, s.today),
@@ -43,9 +47,13 @@ class CalendarViewModel @Inject constructor(
         observer?.cancel()
         observer = viewModelScope.launch {
             combine(tasks.observe(), habits.observe(), trackers.observe()) { t, h, r -> CalendarSources(t, h, r) }
-                .catch { mutable.update { it.copy(loading = false, error = true) } }
+                .catch {
+                    mutable.update { it.copy(loading = false, error = true) }
+                    startup.markLoaded(DeferredSource.CALENDAR)
+                }
                 .collect { sources ->
                     mutable.update { derive(it.copy(sources = sources, loading = false, error = false)) }
+                    startup.markLoaded(DeferredSource.CALENDAR)
                 }
         }
     }
