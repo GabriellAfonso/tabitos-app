@@ -10,6 +10,9 @@
 task detail popup"), decided in a design conversation on 2026-11-16 with prototypes
 `prototypes/detalhes-tarefa/index.html` (version "1 · Mínimo") and `prototypes/adiar-tarefa/index.html`.
 
+**Atualização de 2026-11-18**: a [spec 032](../032-reschedule-task/spec.md) amplia a ação dos detalhes para
+Remarcar, com Hoje, Amanhã, calendário e histórico de antecipações.
+
 ## Current state (verified 2026-11-16)
 
 - Tapping a task card (Hoje, list pages, Revisar pendências, Calendário) opens the task detail popup. It is one

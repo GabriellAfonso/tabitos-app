@@ -64,6 +64,7 @@ import com.ethos.app.R
 import com.ethos.app.core.tasks.domain.DeadlineKind
 import com.ethos.app.core.tasks.domain.RepeatKind
 import com.ethos.app.core.tasks.domain.RepeatRule
+import com.ethos.app.core.tasks.domain.TaskAction
 import com.ethos.app.core.tasks.domain.TaskFields
 import com.ethos.app.core.tasks.domain.TaskList
 import com.ethos.app.core.tasks.domain.TaskOccurrence
@@ -91,7 +92,7 @@ data class TaskDetailActions(
     val check: (index: Int, checked: Boolean) -> Unit,
     val openReminders: () -> Unit,
     val openTimer: () -> Unit,
-    val postpone: (LocalDate) -> Unit,
+    val reschedule: (LocalDate) -> Unit,
     /** Opens Estatísticas filtered by the task series (spec 024); null hides the link. */
     val history: (() -> Unit)? = null,
 )
@@ -106,8 +107,8 @@ fun TaskDetail(
     error: @Composable () -> Unit, actions: TaskDetailActions,
 ) {
     val o = model.occurrence
-    var postponing by rememberSaveable(o.id) { mutableStateOf(false) }
-    var pickingPostponeDate by rememberSaveable(o.id) { mutableStateOf(false) }
+    var rescheduling by rememberSaveable(o.id) { mutableStateOf(false) }
+    var pickingRescheduleDate by rememberSaveable(o.id) { mutableStateOf(false) }
     var pickingCompletionDate by rememberSaveable(o.id) { mutableStateOf(false) }
     var choosingList by rememberSaveable(o.id) { mutableStateOf(false) }
     AlertDialog(onDismissRequest = { if (!busy) actions.close() }, confirmButton = {},
@@ -121,20 +122,22 @@ fun TaskDetail(
                 TaskSummaryLine(model, today, busy, actions.openTimer)
                 if (o.fields.description.isNotEmpty()) ExpandableDescription(o.fields.description)
                 if (o.checks.isNotEmpty()) TaskChecklist(o, busy || !model.isOpen, actions.check)
-                if (model.isOpen) TaskMainButtons(model.canPostpone, busy, actions.complete,
-                    onOtherDay = { pickingCompletionDate = true }, onPostpone = { postponing = true })
+                if (model.isOpen) TaskMainButtons(model.dates != null, busy, actions.complete,
+                    onOtherDay = { pickingCompletionDate = true }, onReschedule = { rescheduling = true })
                 else ResolvedStrip(o, today, busy, actions.undoResult)
                 TaskActionIcons(model.isOpen, busy, TaskIconActions(actions.notDone, actions.edit,
                     actions.openReminders, { choosingList = true }, actions.delete))
                 actions.history?.let { DetailHistoryLink(!busy, it) }
             }
         })
-    if (postponing) PostponeSheet(model, today, busy,
-        onTomorrow = { postponing = false; actions.postpone(today.plusDays(1)) },
-        onPick = { postponing = false; pickingPostponeDate = true }, onDismiss = { postponing = false })
-    if (pickingPostponeDate) EthosDatePickerDialog(initial = today.plusDays(1), min = today,
-        excluded = o.fields.date, confirmLabel = R.string.task_postpone,
-        onConfirm = { pickingPostponeDate = false; actions.postpone(it) }, onDismiss = { pickingPostponeDate = false })
+    val dates = model.dates
+    if (rescheduling && dates != null) RescheduleSheet(model, today, busy, dates,
+        onDate = { rescheduling = false; actions.reschedule(it) },
+        onPick = { rescheduling = false; pickingRescheduleDate = true }, onDismiss = { rescheduling = false })
+    if (pickingRescheduleDate && dates != null) EthosDatePickerDialog(initial = dates.initial, min = today,
+        excluded = o.fields.date, confirmLabel = R.string.task_reschedule,
+        onConfirm = { pickingRescheduleDate = false; actions.reschedule(it) },
+        onDismiss = { pickingRescheduleDate = false })
     if (pickingCompletionDate) EthosDatePickerDialog(initial = today, min = model.created, max = today,
         confirmLabel = R.string.task_complete,
         onConfirm = { pickingCompletionDate = false; actions.completeOn(it) },
@@ -196,10 +199,10 @@ private fun TaskChecklist(o: TaskOccurrence, disabled: Boolean, check: (Int, Boo
     }
 }
 
-/** "Concluir" with its "▾" for another day, and "Adiar" when the task has a specific day. */
+/** "Concluir" with its "▾" for another day, and "Remarcar" when the task has a specific day. */
 @Composable
 private fun TaskMainButtons(
-    canPostpone: Boolean, busy: Boolean, onComplete: () -> Unit, onOtherDay: () -> Unit, onPostpone: () -> Unit,
+    canReschedule: Boolean, busy: Boolean, onComplete: () -> Unit, onOtherDay: () -> Unit, onReschedule: () -> Unit,
 ) {
     var menu by rememberSaveable { mutableStateOf(false) }
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -224,10 +227,11 @@ private fun TaskMainButtons(
                 }
             }
         }
-        if (canPostpone) FilledTonalButton(onPostpone, Modifier.weight(1f), enabled = !busy) {
+        if (canReschedule) FilledTonalButton(onReschedule, Modifier.weight(1f), enabled = !busy,
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)) {
             Icon(painterResource(R.drawable.ic_today), null, Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
-            Text(stringResource(R.string.task_postpone), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(R.string.task_reschedule))
         }
     }
 }
@@ -265,51 +269,55 @@ private fun TaskActionIcons(open: Boolean, busy: Boolean, actions: TaskIconActio
     }
 }
 
-/** "Amanhã" or "Escolher data", with the notes that explain what postponing does (spec 021). */
+/** Date shortcuts and calendar for one occurrence, with its deadline and series context. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun PostponeSheet(
-    model: TaskDetailModel, today: LocalDate, busy: Boolean, onTomorrow: () -> Unit, onPick: () -> Unit,
-    onDismiss: () -> Unit,
+private fun RescheduleSheet(
+    model: TaskDetailModel, today: LocalDate, busy: Boolean, dates: RescheduleDates,
+    onDate: (LocalDate) -> Unit, onPick: () -> Unit, onDismiss: () -> Unit,
 ) {
     val o = model.occurrence
     val due = o.fields.date ?: return
     val time = o.fields.minute?.let(EthosDates::time)
-    val tomorrow = today.plusDays(1)
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        Column(Modifier.padding(bottom = 24.dp)) {
-            Text(stringResource(R.string.task_postpone_title, o.fields.title), Modifier.padding(horizontal = 24.dp),
+    ModalBottomSheet(onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+            Text(stringResource(R.string.task_reschedule_title, o.fields.title), Modifier.padding(horizontal = 24.dp),
                 style = MaterialTheme.typography.titleMedium)
             val current = EthosDates.short(due, today).label()
-            Text(if (time == null) stringResource(R.string.task_postpone_current, current)
-                else stringResource(R.string.task_postpone_current_time, current, time),
+            Text(if (time == null) stringResource(R.string.task_reschedule_current, current)
+                else stringResource(R.string.task_reschedule_current_time, current, time),
                 Modifier.padding(horizontal = 24.dp, vertical = 4.dp), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            val tomorrowText = listOfNotNull(EthosDates.shortWithWeekday(tomorrow, today), time).joinToString(" · ")
-            PostponeOption(R.drawable.ic_today, R.string.task_postpone_tomorrow, tomorrowText,
-                enabled = !busy && tomorrow != due, onClick = onTomorrow)
-            PostponeOption(R.drawable.ic_calendar_month, R.string.task_postpone_pick,
-                stringResource(R.string.task_postpone_pick_hint), enabled = !busy, onClick = onPick)
-            if (model.repeat != null) PostponeNote(model.nextInSeries?.let {
-                stringResource(R.string.task_postpone_series, EthosDates.shortWithWeekday(it, today))
-            } ?: stringResource(R.string.task_postpone_series_unknown), MaterialTheme.colorScheme.surfaceContainerHighest)
-            if (model.isOverdue) PostponeNote(stringResource(R.string.task_postpone_overdue,
+            dates.shortcuts.forEach { day ->
+                val label = if (day == today) R.string.today else R.string.tomorrow
+                val subtitle = listOfNotNull(EthosDates.shortWithWeekday(day, today), time).joinToString(" · ")
+                RescheduleOption(R.drawable.ic_today, label, subtitle, enabled = !busy, onClick = { onDate(day) })
+            }
+            RescheduleOption(R.drawable.ic_calendar_month, R.string.task_reschedule_pick,
+                stringResource(R.string.task_reschedule_pick_hint), enabled = !busy, onClick = onPick)
+            if (model.repeat != null) RescheduleNote(model.nextInSeries?.let {
+                stringResource(R.string.task_reschedule_series, EthosDates.shortWithWeekday(it, today))
+            } ?: stringResource(R.string.task_reschedule_series_unknown),
+                MaterialTheme.colorScheme.surfaceContainerHighest)
+            if (model.isOverdue) RescheduleNote(stringResource(R.string.task_reschedule_overdue,
                 EthosDates.short(due, today).label().lowercase()), MaterialTheme.colorScheme.errorContainer)
         }
     }
 }
 
 @Composable
-private fun PostponeOption(@DrawableRes icon: Int, @StringRes title: Int, subtitle: String, enabled: Boolean,
+private fun RescheduleOption(@DrawableRes icon: Int, @StringRes title: Int, subtitle: String, enabled: Boolean,
                            onClick: () -> Unit) {
     ListItem(headlineContent = { Text(stringResource(title)) }, supportingContent = { Text(subtitle) },
         leadingContent = { Icon(painterResource(icon), null) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.clickable(enabled = enabled, role = Role.Button, onClick = onClick).padding(horizontal = 8.dp))
+        modifier = Modifier.heightIn(min = 48.dp).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = 8.dp))
 }
 
 @Composable
-private fun PostponeNote(text: String, container: Color) {
+private fun RescheduleNote(text: String, container: Color) {
     Surface(color = container, shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 4.dp)) {
         Text(text, Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall)
@@ -349,7 +357,7 @@ private fun ListChoiceRow(@DrawableRes icon: Int, tint: Color?, name: String, se
  * The saved change can be undone until the system-adjusted accessibility timeout expires.
  */
 @Composable
-fun PostponedSnackbar(feedback: PostponeFeedback, today: LocalDate, undo: () -> Unit, dismiss: () -> Unit) {
+fun RescheduledSnackbar(feedback: TaskAction.Reschedule, today: LocalDate, undo: () -> Unit, dismiss: () -> Unit) {
     val accessibility = LocalAccessibilityManager.current
     val timeout = accessibility?.calculateRecommendedTimeoutMillis(UNDO_FEEDBACK_MILLIS,
         containsIcons = false, containsText = true, containsControls = true) ?: UNDO_FEEDBACK_MILLIS
@@ -362,8 +370,11 @@ fun PostponedSnackbar(feedback: PostponeFeedback, today: LocalDate, undo: () -> 
         action = { TextButton(undo) { Text(stringResource(R.string.undo)) } },
         dismissAction = { TextButton(dismiss) { Text(stringResource(R.string.close)) } },
     ) {
-        Text(if (feedback.to == today.plusDays(1)) stringResource(R.string.task_postponed_tomorrow)
-            else stringResource(R.string.task_postponed_to, EthosDates.shortWithWeekday(feedback.to, today)))
+        Text(when (feedback.to) {
+            today -> stringResource(R.string.task_rescheduled_today)
+            today.plusDays(1) -> stringResource(R.string.task_rescheduled_tomorrow)
+            else -> stringResource(R.string.task_rescheduled_to, EthosDates.shortWithWeekday(feedback.to, today))
+        })
     }
 }
 
@@ -379,7 +390,7 @@ private fun TaskDetailPreview() {
         today, today, today)
     val list = TaskList("w", "Trabalho", icon = 1)
     EthosTheme {
-        TaskDetail(TaskDetailModel(o, isOpen = true, isOverdue = false, canPostpone = true,
+        TaskDetail(TaskDetailModel(o, isOpen = true, isOverdue = false, dates = rescheduleDates(today, today),
             repeat = RepeatRule(RepeatKind.FIXED_INTERVAL, today, interval = 2), reminderCount = 2,
             timerMinutes = 45, list = list, nextInSeries = today.plusDays(2), created = today),
             listOf(list), today, busy = false, error = {},

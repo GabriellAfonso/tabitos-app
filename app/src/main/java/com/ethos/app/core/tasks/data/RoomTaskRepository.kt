@@ -37,7 +37,9 @@ class RoomTaskRepository(
             val after = TaskRules.apply(before, action, clock.today(), clock.nowMillis())
             if (before != after) write(TaskWrites.between(stored, after))
             removeErased(before, after)
-            if (action is TaskAction.Postpone || action is TaskAction.UndoPostpone) moveReminders(before, after, action)
+            if (action is TaskAction.Reschedule || action is TaskAction.UndoReschedule) {
+                moveReminders(before, after, action)
+            }
             if (action is TaskAction.Resolve || action is TaskAction.Undo || action is TaskAction.SetCompleted) {
                 val id = when (action) {
                     is TaskAction.Resolve -> action.id
@@ -65,11 +67,11 @@ class RoomTaskRepository(
         HistoryErasure(database).taskTraces(occurrences, definitions)
     }
 
-    /** Fixed-date reminders move with a postponed task, in the same transaction (spec 021). */
+    /** Fixed-date reminders move with a rescheduled task, in the same transaction (spec 021). */
     private suspend fun moveReminders(before: TaskSnapshot, after: TaskSnapshot, action: TaskAction) {
         val id = when (action) {
-            is TaskAction.Postpone -> action.id
-            is TaskAction.UndoPostpone -> action.id
+            is TaskAction.Reschedule -> action.id
+            is TaskAction.UndoReschedule -> action.id
             else -> return
         }
         val old = before.occurrences.first { it.id == id }
@@ -78,7 +80,7 @@ class RoomTaskRepository(
         if (days == 0L) return
         val recurring = after.definitions.first { it.id == old.taskId }.rule.kind != RepeatKind.NONE
         val dao = database.reminders()
-        ReminderRules.postponeChosen(dao.definitions().map { it.domain() }, old, days, recurring)
+        ReminderRules.rescheduleChosen(dao.definitions().map { it.domain() }, old, days, recurring)
             .forEach { dao.definition(it.entity()) }
     }
 

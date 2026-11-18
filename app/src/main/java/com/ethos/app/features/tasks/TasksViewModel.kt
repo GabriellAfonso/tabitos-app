@@ -57,8 +57,8 @@ data class TasksUiState(
     val gameMode: Boolean = true,
     /** Reminder rules, only to count the reminders shown in the task details. */
     val reminders: List<ReminderDefinition> = emptyList(),
-    /** Task just postponed, offered for "Desfazer" (spec 021). */
-    val postponed: PostponeFeedback? = null,
+    /** Last committed date change offered for undo. */
+    val rescheduled: TaskAction.Reschedule? = null,
 ) {
     fun isTimed(o: TaskOccurrence): Boolean = o.taskId in durations
 }
@@ -84,7 +84,6 @@ class TasksViewModel @Inject constructor(
     private var retryConfirmed: Boolean = false
     private var completionAction: TaskAction.Resolve? = null
     private var financialAction: TaskAction? = null
-    private var pendingPostpone: PostponeFeedback? = null
 
     fun confirmFinancial(confirm: Boolean) {
         val action = financialAction
@@ -278,17 +277,15 @@ class TasksViewModel @Inject constructor(
         complete(o, true)
     }
     /** Moves only this occurrence to [to]; the details close and "Desfazer" is offered (spec 021). */
-    fun postpone(o: TaskOccurrence, to: LocalDate) {
+    fun reschedule(o: TaskOccurrence, to: LocalDate) {
         val from = o.fields.date ?: return
-        pendingPostpone = PostponeFeedback(o.id, from, to)
-        execute(TaskAction.Postpone(o.id, to))
+        execute(TaskAction.Reschedule(o.id, from, to))
     }
-    fun undoPostpone() {
-        val feedback = state.value.postponed ?: return
-        mutable.update { it.copy(postponed = null) }
-        execute(TaskAction.UndoPostpone(feedback.occurrenceId, feedback.from))
+    fun undoReschedule() {
+        val feedback = state.value.rescheduled ?: return
+        execute(TaskAction.UndoReschedule(feedback.id, from = feedback.to, to = feedback.from))
     }
-    fun dismissPostponed() { mutable.update { it.copy(postponed = null) } }
+    fun dismissRescheduled() { mutable.update { it.copy(rescheduled = null) } }
     fun quickCheck(id: String) {
         val s = state.value
         if (s.busy || s.loading || s.storageError) return
@@ -357,6 +354,14 @@ class TasksViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 repository.execute(action)
+                // The observer supplies the new snapshot. Once the transaction commits, a read failure must
+                // never offer to repeat this date change or lose its undo.
+                if (action is TaskAction.Reschedule || action is TaskAction.UndoReschedule) {
+                    mutable.update { it.copy(busy = false, storageError = readFailed,
+                        detailId = if (action is TaskAction.Reschedule) null else it.detailId,
+                        rescheduled = action as? TaskAction.Reschedule) }
+                    return@launch
+                }
                 if (action is TaskAction.Create || action is TaskAction.Edit) {
                     pendingGoal?.let { (key, minutes) -> timers?.saveGoal(key, minutes) }
                     pendingGoal = null
@@ -374,9 +379,7 @@ class TasksViewModel @Inject constructor(
                     deleteListId = null, deleteTaskId = null,
                     selectedListId = if (action is TaskAction.DeleteList && action.id == it.selectedListId)
                         null else it.selectedListId,
-                    detailId = if (action is TaskAction.Delete || action is TaskAction.Postpone) null else it.detailId,
-                    postponed = if (action is TaskAction.Postpone) pendingPostpone else it.postponed) }
-                if (action is TaskAction.Postpone) pendingPostpone = null
+                    detailId = if (action is TaskAction.Delete) null else it.detailId) }
             } catch (e: CancellationException) { throw e
             } catch (e: TaskRuleException) {
                 mutable.update { it.copy(busy = false, error = e.problem) }

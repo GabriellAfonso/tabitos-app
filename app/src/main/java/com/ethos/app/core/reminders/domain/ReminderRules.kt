@@ -29,12 +29,12 @@ object ReminderRules {
             .firstOrNull()?.takeIf { it.enabled } }
 
     /**
-     * Fixed-date reminders of [o] moved by [days] when its deadline is postponed (spec 021): same time of day,
+     * Fixed-date reminders of [o] moved by [days] when its deadline is rescheduled (spec 021): same time of day,
      * date shifted. Relative reminders already follow the deadline and weekday ones are not tied to a date.
-     * A series rule follows a non-recurring task by itself (its planned date moves), but a postponed occurrence
+     * A series rule follows a non-recurring task by itself (its planned date moves), but a rescheduled occurrence
      * of a recurring task keeps its planned date, so it gets its own occurrence-scoped copy.
      */
-    fun postponeChosen(
+    fun rescheduleChosen(
         defs: List<ReminderDefinition>, o: TaskOccurrence, days: Long, recurring: Boolean,
     ): List<ReminderDefinition> = effective(defs, o).filter { it.mode == ReminderMode.CHOSEN }.mapNotNull { d ->
         when {
@@ -71,9 +71,15 @@ object ReminderRules {
         s: ReminderSources, defs: List<ReminderDefinition>, today: LocalDate, zone: ZoneId,
     ): List<ReminderDelivery> {
         val rows = mutableListOf<ReminderDelivery>()
+        // A newly advanced alarm may already be in the past. Compare with the move, so an alarm
+        // that was still in the future then remains eligible for normal recovery after downtime.
+        val advancedAt = s.tasks.history.asSequence().filter { it.kind == AuditKind.ADVANCED }
+            .groupingBy { it.occurrenceId }.fold(Long.MIN_VALUE) { latest, audit -> maxOf(latest, audit.recordedAt) }
         fun add(d: ReminderDefinition, target: String, period: String, date: LocalDate,
                 anchor: LocalDate?, at: Long) {
             if (at < d.createdAt) return
+            if (d.kind == ReminderKind.TASK && d.mode != ReminderMode.WEEKDAYS &&
+                at < (advancedAt[target] ?: Long.MIN_VALUE)) return
             rows += ReminderDelivery("${d.groupId}|$target|$date", d.groupId, d.kind, target,
                 period, date, anchor, at)
         }

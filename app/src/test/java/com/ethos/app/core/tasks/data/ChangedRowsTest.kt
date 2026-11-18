@@ -98,7 +98,7 @@ class ChangedRowsTest {
             TaskAction.Check(a, 1, true),
             TaskAction.Resolve(b, true, day),
             TaskAction.SetCompleted(r, true, day),
-            TaskAction.Postpone(r, day.plusDays(1)),
+            TaskAction.Reschedule(r, day, day.plusDays(1)),
             TaskAction.Order(listOf(b, a)),
             TaskAction.Move(b, null),
             TaskAction.Delete(a, ChangeScope.ONLY_THIS),

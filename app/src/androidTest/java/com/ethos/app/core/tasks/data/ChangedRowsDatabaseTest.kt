@@ -11,6 +11,10 @@ import com.ethos.app.core.habits.domain.HabitRules
 import com.ethos.app.core.habits.domain.HabitType
 import com.ethos.app.core.habits.domain.HabitUnit
 import com.ethos.app.core.preferences.FixedGameMode
+import com.ethos.app.core.reminders.data.entity
+import com.ethos.app.core.reminders.domain.ReminderDefinition
+import com.ethos.app.core.reminders.domain.ReminderKind
+import com.ethos.app.core.tasks.domain.AuditKind
 import com.ethos.app.core.tasks.domain.ChangeScope
 import com.ethos.app.core.tasks.domain.DeadlineKind
 import com.ethos.app.core.tasks.domain.RepeatKind
@@ -55,7 +59,7 @@ class ChangedRowsDatabaseTest {
             TaskAction.Check("a:1", 1, true),
             TaskAction.Edit("a:1", TaskFields(title = "Relatório final", checklist = listOf("Dados")),
                 RepeatRule(start = day), ChangeScope.ONLY_THIS),
-            TaskAction.Postpone("r:1", day.plusDays(1)),
+            TaskAction.Reschedule("r:1", day, day.plusDays(1)),
             TaskAction.Resolve("a:1", true, day),
             TaskAction.Delete("r:1", ChangeScope.THIS_AND_FUTURE, eraseHistory = true),
         )
@@ -65,6 +69,26 @@ class ChangedRowsDatabaseTest {
             repo.execute(action)
             assertEquals(expected, repo.observe().first())
         }
+    }
+
+    @Test fun rescheduleAndUndoPersistAuditsAndReminderDates() = runBlocking {
+        val repo = RoomTaskRepository(db, clock, FixedGameMode(on = true))
+        val later = day.plusDays(2)
+        repo.execute(TaskAction.Create("t", TaskFields(title = "Ler", deadline = DeadlineKind.DAY, date = later),
+            RepeatRule(start = later)))
+        val reminder = ReminderDefinition("r", kind = ReminderKind.TASK, sourceId = "t", occurrenceId = "t:1",
+            chosenDate = later, minute = 540)
+        db.reminders().definition(reminder.entity())
+        suspend fun checkStored(expected: LocalDate, kind: AuditKind) {
+            val snapshot = repo.observe().first()
+            assertEquals(expected, snapshot.occurrences.single().dueDate)
+            assertEquals(expected, snapshot.history.single { it.kind == kind }.actualDate)
+            assertEquals(reminder.copy(chosenDate = expected), db.reminders().definitions().single().domain())
+        }
+        repo.execute(TaskAction.Reschedule("t:1", later, day))
+        checkStored(day, AuditKind.ADVANCED)
+        repo.execute(TaskAction.UndoReschedule("t:1", day, later))
+        checkStored(later, AuditKind.ADVANCE_UNDONE)
     }
 
     @Test fun refreshWithoutChangesWakesNoTaskObserver() = runBlocking {

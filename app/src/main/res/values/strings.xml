@@ -808,22 +808,22 @@
     <string name="task_status_options">Opções de conclusão</string>
     <string name="task_mark_done">Feito</string>
     <string name="task_mark_not_done">Não será feito</string>
-    <!-- Task details and postpone (spec 021) -->
+    <!-- Task details and rescheduling -->
     <string name="task_complete">Concluir</string>
     <string name="task_complete_options">Outras formas de concluir</string>
     <string name="task_complete_other_day">Concluí em outro dia…</string>
-    <string name="task_postpone">Adiar</string>
-    <string name="task_postpone_title">Adiar “%1$s”</string>
-    <string name="task_postpone_current">Prazo atual: %1$s</string>
-    <string name="task_postpone_current_time">Prazo atual: %1$s · %2$s · o horário se mantém</string>
-    <string name="task_postpone_tomorrow">Amanhã</string>
-    <string name="task_postpone_pick">Escolher data</string>
-    <string name="task_postpone_pick_hint">Abre o calendário</string>
-    <string name="task_postpone_series">Só esta vez. A série continua: próxima em %1$s.</string>
-    <string name="task_postpone_series_unknown">Só esta vez. As próximas continuam nas datas delas.</string>
-    <string name="task_postpone_overdue">O prazo de %1$s fica registrado como perdido, sem penalidade.</string>
-    <string name="task_postponed_tomorrow">Adiada para amanhã</string>
-    <string name="task_postponed_to">Adiada para %1$s</string>
+    <string name="task_reschedule">Remarcar</string>
+    <string name="task_reschedule_title">Remarcar “%1$s”</string>
+    <string name="task_reschedule_current">Prazo atual: %1$s</string>
+    <string name="task_reschedule_current_time">Prazo atual: %1$s · %2$s · o horário se mantém</string>
+    <string name="task_reschedule_pick">Escolher data</string>
+    <string name="task_reschedule_pick_hint">Abre o calendário</string>
+    <string name="task_reschedule_series">Só esta vez. A série continua: próxima em %1$s.</string>
+    <string name="task_reschedule_series_unknown">Só esta vez. As próximas continuam nas datas delas.</string>
+    <string name="task_reschedule_overdue">O prazo de %1$s fica registrado como perdido, sem penalidade.</string>
+    <string name="task_rescheduled_today">Remarcada para hoje</string>
+    <string name="task_rescheduled_tomorrow">Remarcada para amanhã</string>
+    <string name="task_rescheduled_to">Remarcada para %1$s</string>
     <string name="task_overdue_suffix">%1$s · vencida</string>
     <string name="task_description_more">Ver tudo</string>
     <string name="task_done_status">Concluída · %1$s</string>
@@ -894,6 +894,8 @@
     <string name="statistics_item_task_completed_on">Concluída · feita em %1$s</string>
     <string name="statistics_item_task_not_done">Não será feita</string>
     <string name="statistics_item_task_missed">Prazo perdido: %1$s</string>
+    <string name="statistics_item_task_advanced">Antecipada de %1$s para %2$s</string>
+    <string name="statistics_item_task_advance_undone">Antecipação desfeita: voltou para %1$s</string>
     <string name="statistics_item_task_postponed">Adiada de %1$s para %2$s</string>
     <string name="statistics_item_task_postpone_undone">Adiamento desfeito: voltou para %1$s</string>
     <string name="statistics_item_task_undone">Resultado desfeito</string>

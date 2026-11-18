@@ -20,11 +20,13 @@ import kotlin.math.abs
 
 enum class HistoryKind {
     TASK_COMPLETED, TASK_NOT_DONE, TASK_MISSED, TASK_POSTPONED, TASK_POSTPONE_UNDONE, TASK_UNDONE,
+    TASK_ADVANCED, TASK_ADVANCE_UNDONE,
     HABIT_DONE, HABIT_OCCURRENCE, HABIT_DAY_OK, HABIT_DAY_OVER, TIMER, COINS,
 }
 
 private val taskKinds = setOf(HistoryKind.TASK_COMPLETED, HistoryKind.TASK_NOT_DONE, HistoryKind.TASK_MISSED,
-    HistoryKind.TASK_POSTPONED, HistoryKind.TASK_POSTPONE_UNDONE, HistoryKind.TASK_UNDONE)
+    HistoryKind.TASK_POSTPONED, HistoryKind.TASK_POSTPONE_UNDONE, HistoryKind.TASK_UNDONE,
+    HistoryKind.TASK_ADVANCED, HistoryKind.TASK_ADVANCE_UNDONE)
 /** Results of avoid/limit habits; practice habits only produce [HistoryKind.HABIT_DONE]. */
 private val badHabitKinds = setOf(HistoryKind.HABIT_OCCURRENCE, HistoryKind.HABIT_DAY_OK, HistoryKind.HABIT_DAY_OVER)
 
@@ -129,6 +131,8 @@ private val shownTaskKinds = mapOf(
     AuditKind.COMPLETED to HistoryKind.TASK_COMPLETED,
     AuditKind.NOT_DONE to HistoryKind.TASK_NOT_DONE,
     AuditKind.MISSED_DEADLINE to HistoryKind.TASK_MISSED,
+    AuditKind.ADVANCED to HistoryKind.TASK_ADVANCED,
+    AuditKind.ADVANCE_UNDONE to HistoryKind.TASK_ADVANCE_UNDONE,
     AuditKind.POSTPONED to HistoryKind.TASK_POSTPONED,
     AuditKind.POSTPONE_UNDONE to HistoryKind.TASK_POSTPONE_UNDONE,
     AuditKind.UNDONE to HistoryKind.TASK_UNDONE,
@@ -140,22 +144,29 @@ private fun taskItems(tasks: TaskSnapshot, matcher: LedgerMatcher, zone: ZoneId)
         val kind = shownTaskKinds[audit.kind] ?: return@mapNotNull null
         val occurrence = occurrences[audit.occurrenceId] ?: return@mapNotNull null
         val subject = HistorySubject.Task(occurrence.id, occurrence.taskId, occurrence.status != TaskStatus.DELETED)
-        HistoryItem("audit:${audit.id}", audit.recordedAt, localDay(audit.recordedAt, zone), kind, subject,
+        val item = HistoryItem("audit:${audit.id}", audit.recordedAt, localDay(audit.recordedAt, zone), kind, subject,
             occurrence.fields.title, from = audit.from(), to = audit.to(),
-            adjustment = kind == HistoryKind.TASK_POSTPONE_UNDONE,
-        ).withCoins(matcher.claim(listOf("task:${occurrence.id}:done", "task:${occurrence.id}:failed"),
-            audit.recordedAt))
+            adjustment = kind == HistoryKind.TASK_POSTPONE_UNDONE || kind == HistoryKind.TASK_ADVANCE_UNDONE,
+        )
+        when (audit.kind) {
+            AuditKind.COMPLETED, AuditKind.NOT_DONE, AuditKind.UNDONE ->
+                item.withCoins(matcher.claim(listOf("task:${occurrence.id}:done", "task:${occurrence.id}:failed"),
+                    audit.recordedAt))
+            else -> item
+        }
     }
 }
 
 private fun TaskAudit.from(): LocalDate? = when (kind) {
     AuditKind.COMPLETED -> actualDate
-    AuditKind.MISSED_DEADLINE, AuditKind.POSTPONED -> originalDeadline
+    AuditKind.MISSED_DEADLINE, AuditKind.POSTPONED, AuditKind.ADVANCED -> originalDeadline
     else -> null
 }
 
-private fun TaskAudit.to(): LocalDate? =
-    if (kind == AuditKind.POSTPONED || kind == AuditKind.POSTPONE_UNDONE) actualDate else null
+private fun TaskAudit.to(): LocalDate? = when (kind) {
+    AuditKind.POSTPONED, AuditKind.POSTPONE_UNDONE, AuditKind.ADVANCED, AuditKind.ADVANCE_UNDONE -> actualDate
+    else -> null
+}
 
 private fun habitItems(
     habits: HabitSnapshot, matcher: LedgerMatcher, today: LocalDate, zone: ZoneId,

@@ -189,14 +189,17 @@ object TaskRules {
                 }
                 is TaskAction.Undo -> undo(action.id)
                 is TaskAction.Edit -> edit(action)
-                is TaskAction.Postpone -> {
-                    val o = postponable(action.id)
-                    if (action.to < today || action.to == o.fields.date) fail(TaskProblem.INVALID_DATE)
-                    moveDate(o, action.to, AuditKind.POSTPONED)
+                is TaskAction.Reschedule -> {
+                    val o = reschedulable(action.id, action.from)
+                    if (action.to < today || action.to == action.from) fail(TaskProblem.INVALID_DATE)
+                    val kind = if (action.to < action.from) AuditKind.ADVANCED else AuditKind.POSTPONED
+                    moveDate(o, action.to, kind)
                 }
-                is TaskAction.UndoPostpone -> {
-                    val o = postponable(action.id)
-                    if (action.to != o.fields.date) moveDate(o, action.to, AuditKind.POSTPONE_UNDONE)
+                is TaskAction.UndoReschedule -> {
+                    val o = reschedulable(action.id, action.from)
+                    if (action.to == action.from) fail(TaskProblem.INVALID_DATE)
+                    val kind = if (action.to > action.from) AuditKind.ADVANCE_UNDONE else AuditKind.POSTPONE_UNDONE
+                    moveDate(o, action.to, kind)
                 }
                 is TaskAction.Delete -> {
                     delete(action)
@@ -315,14 +318,15 @@ object TaskRules {
                     o.plannedDate else replacement.plannedDate))
             audit(o, auditKind, actual = if (auditKind == AuditKind.EDITED) null else fields.date)
         }
-        fun postponable(id: String): TaskOccurrence {
+        fun reschedulable(id: String, expected: LocalDate): TaskOccurrence {
             val o = occurrence(id)
             if (o.status != TaskStatus.OPEN) fail(TaskProblem.NOT_OPEN)
-            requireInput(o.canPostpone)
+            requireInput(o.canReschedule)
+            if (o.fields.date != expected) fail(TaskProblem.INVALID_DATE)
             return o
         }
         /**
-         * Postponing is an "only this occurrence" date edit: an overdue date records the missed deadline,
+         * Rescheduling is an "only this occurrence" date edit: an overdue date records the missed deadline,
          * recurring series keep their own dates and history stays append-only.
          */
         fun moveDate(o: TaskOccurrence, to: LocalDate, auditKind: AuditKind) {

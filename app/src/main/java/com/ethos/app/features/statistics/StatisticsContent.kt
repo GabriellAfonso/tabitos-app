@@ -508,6 +508,9 @@ private fun detailLine(item: HistoryItem, today: LocalDate, zone: ZoneId): Strin
             else stringResource(R.string.statistics_item_task_completed)
         HistoryKind.TASK_NOT_DONE -> stringResource(R.string.statistics_item_task_not_done)
         HistoryKind.TASK_MISSED -> stringResource(R.string.statistics_item_task_missed, date(item.from))
+        HistoryKind.TASK_ADVANCED -> stringResource(R.string.statistics_item_task_advanced, date(item.from),
+            date(item.to))
+        HistoryKind.TASK_ADVANCE_UNDONE -> stringResource(R.string.statistics_item_task_advance_undone, date(item.to))
         HistoryKind.TASK_POSTPONED -> stringResource(R.string.statistics_item_task_postponed, date(item.from),
             date(item.to))
         HistoryKind.TASK_POSTPONE_UNDONE -> stringResource(R.string.statistics_item_task_postpone_undone,

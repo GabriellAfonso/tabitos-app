@@ -55,6 +55,22 @@ class StatisticsHistoryTest {
         assertEquals(today.plusDays(2), postponed.to)
     }
 
+    @Test fun advanceAndItsCorrectionAreTaskHistoryAndDoNotCountAsPostponed() {
+        val later = today.plusDays(2)
+        val tasks = TaskSnapshot(occurrences = listOf(occurrence("o:1")), history = listOf(
+            audit("advance", AuditKind.ADVANCED, actual = today, original = later),
+            audit("undo", AuditKind.ADVANCE_UNDONE, at = moment + 1, actual = later, original = today),
+        ))
+        val (undo, advance) = items(tasks, filter = HistoryFilter.TASKS)
+        assertEquals(HistoryKind.TASK_ADVANCED, advance.kind)
+        assertEquals(later, advance.from)
+        assertEquals(today, advance.to)
+        assertEquals(HistoryKind.TASK_ADVANCE_UNDONE, undo.kind)
+        assertEquals(later, undo.to)
+        assertTrue(undo.adjustment)
+        assertEquals(0, taskSummary(tasks, week, BucketUnit.DAY, today, zone).postponed)
+    }
+
     @Test fun undoOfPostponeIsADiscreetAdjustment() {
         val tasks = TaskSnapshot(occurrences = listOf(occurrence("o:1")),
             history = listOf(audit("1", AuditKind.POSTPONE_UNDONE, actual = today)))
@@ -63,9 +79,14 @@ class StatisticsHistoryTest {
 
     @Test fun ledgerEntriesAttachToTheResultTheyPaid() {
         val tasks = TaskSnapshot(occurrences = listOf(occurrence("o:1")),
-            history = listOf(audit("1", AuditKind.COMPLETED, actual = today)))
+            history = listOf(
+                audit("a", AuditKind.ADVANCED, at = moment - 1, actual = today, original = today.plusDays(1)),
+                audit("1", AuditKind.COMPLETED, actual = today),
+            ))
         val entries = listOf(ledger(1, "task:o:1:done", "GAIN", 10, at = moment + 40))
-        val item = items(tasks, entries).single()
+        val shown = items(tasks, entries)
+        assertNull(shown.single { it.kind == HistoryKind.TASK_ADVANCED }.coins)
+        val item = shown.single { it.kind == HistoryKind.TASK_COMPLETED }
         assertEquals(10L, item.coins)
         assertEquals(20L, item.xp)
     }

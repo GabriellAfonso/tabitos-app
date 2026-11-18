@@ -15,7 +15,7 @@ data class TaskDetailModel(
     val occurrence: TaskOccurrence,
     val isOpen: Boolean,
     val isOverdue: Boolean,
-    val canPostpone: Boolean,
+    val dates: RescheduleDates?,
     /** Repetition of the series, or null when the task does not repeat. */
     val repeat: RepeatRule?,
     val reminderCount: Int,
@@ -23,14 +23,19 @@ data class TaskDetailModel(
     val timerMinutes: Int?,
     /** Destination list, or null for the inbox. */
     val list: TaskList?,
-    /** Date of the following occurrence of the series, shown when postponing only this one. */
+    /** Date of the following occurrence of the series, shown when rescheduling only this one. */
     val nextInSeries: LocalDate?,
     /** Earliest date accepted as "Concluí em outro dia". */
     val created: LocalDate,
 )
 
-/** Moment the user postponed a task, kept so "Desfazer" can put it back on [from]. */
-data class PostponeFeedback(val occurrenceId: String, val from: LocalDate, val to: LocalDate)
+data class RescheduleDates(val shortcuts: List<LocalDate>, val initial: LocalDate)
+
+fun rescheduleDates(today: LocalDate, deadline: LocalDate): RescheduleDates {
+    val tomorrow = today.plusDays(1)
+    val shortcuts = listOf(today, tomorrow).filter { it != deadline }
+    return RescheduleDates(shortcuts, initial = if (deadline == tomorrow) today else tomorrow)
+}
 
 fun taskDetailModel(
     snapshot: TaskSnapshot, o: TaskOccurrence, today: LocalDate, reminders: List<ReminderDefinition>,
@@ -42,7 +47,7 @@ fun taskDetailModel(
         occurrence = o,
         isOpen = o.status == TaskStatus.OPEN,
         isOverdue = o.needsReview(today),
-        canPostpone = o.canPostpone,
+        dates = o.fields.date?.takeIf { o.canReschedule }?.let { rescheduleDates(today, it) },
         repeat = repeat,
         reminderCount = ReminderRules.effective(reminders, o).size,
         timerMinutes = durations[o.taskId],

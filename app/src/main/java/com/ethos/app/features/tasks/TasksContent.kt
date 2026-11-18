@@ -321,7 +321,7 @@ fun TaskDialogs(state: TasksUiState, viewModel: TasksViewModel, openHistory: ((S
                 check = { index, checked -> viewModel.action(TaskAction.Check(detail.id, index, checked)) },
                 openReminders = { openReminders(ReminderKind.TASK, detail.id) },
                 openTimer = { openTimer(TimerKind.TASK, detail.id) },
-                postpone = { viewModel.postpone(detail, it) },
+                reschedule = { viewModel.reschedule(detail, it) },
                 history = openHistory?.let { open -> { open(detail.taskId) } },
             ))
     }

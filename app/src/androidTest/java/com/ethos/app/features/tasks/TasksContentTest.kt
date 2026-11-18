@@ -2,11 +2,15 @@ package com.ethos.app.features.tasks
 
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import com.ethos.app.core.ui.components.FilterRow
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.SavedStateHandle
@@ -15,6 +19,7 @@ import com.ethos.app.core.ui.components.ContentFilter
 import com.ethos.app.features.shell.TodayCreateButton
 import com.ethos.app.features.shell.CreateActions
 import com.ethos.app.core.tasks.domain.*
+import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.theme.EthosTheme
 import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,6 +72,29 @@ class TasksContentTest {
         compose.onNodeWithText("Desfazer").performScrollTo().performClick()
         compose.waitUntil(15_000) { repo.saved.value.occurrences.single().status == TaskStatus.OPEN }
         assertEquals(1, repo.saved.value.history.count { it.kind == AuditKind.UNDONE })
+    }
+
+    @Test fun rescheduleShortcutsExposeTheDateAndRemainReachableAtDoubleFontScale() {
+        val deadline = day.plusDays(4)
+        val repo = FakeRepository(clock)
+        val create = TaskAction.Create("task", TaskFields(title = "Relatório", deadline = DeadlineKind.DAY,
+            date = deadline, minute = 10 * 60), RepeatRule(start = deadline))
+        repo.saved.value = TaskRules.apply(TaskSnapshot(), create, day, clock.nowMillis())
+        compose.setContent {
+            val vm = remember { TasksViewModel(repo, clock, SavedStateHandle()).apply { detail("task:1") } }
+            CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale = 2f)) {
+                EthosTheme { TasksScreen(vm) { } }
+            }
+        }
+        compose.onNodeWithText("Remarcar").performScrollTo().performClick()
+        for ((label, date) in listOf("Hoje" to day, "Amanhã" to day.plusDays(1))) {
+            val subtitle = EthosDates.shortWithWeekday(date, day) + " · 10:00"
+            compose.onNode(hasText(label) and hasText(subtitle) and hasClickAction())
+                .performScrollTo().assertIsDisplayed().assertHeightIsAtLeast(48.dp)
+        }
+        compose.onNodeWithText("Escolher data").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Hoje").performScrollTo().performClick()
+        compose.waitUntil(15_000) { repo.saved.value.occurrences.single().dueDate == day }
     }
 
     @Test fun weeklySectionIsSeparateAndHabitsFilterDoesNotShowTasks() {

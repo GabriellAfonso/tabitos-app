@@ -27,6 +27,32 @@ class TasksViewModelTest {
     @Before fun setup() { Dispatchers.setMain(dispatcher) }
     @After fun teardown() { Dispatchers.resetMain() }
 
+    @Test fun rescheduleClosesDetailsAndOffersUndoOnlyAfterTheWriteSucceeds() = runTest(dispatcher) {
+        val repo = FakeRepository(clock)
+        val later = clock.today().plusDays(4)
+        repo.execute(TaskAction.Create("a", TaskFields(title = "Ler", deadline = DeadlineKind.DAY, date = later),
+            RepeatRule(start = later)))
+        val vm = TasksViewModel(repo, clock, SavedStateHandle())
+        advanceUntilIdle()
+        val occurrence = repo.snapshot.value.occurrences.single()
+        vm.detail(occurrence.id)
+        repo.failWrite = true
+        vm.reschedule(occurrence, clock.today())
+        advanceUntilIdle()
+        assertEquals(occurrence.id, vm.state.value.detailId)
+        assertNull(vm.state.value.rescheduled)
+        repo.failWrite = false
+        repo.failRead = true // A second snapshot read would fail even though the transaction committed.
+        vm.retry()
+        advanceUntilIdle()
+        assertNull(vm.state.value.detailId)
+        assertEquals(TaskAction.Reschedule(occurrence.id, later, clock.today()), vm.state.value.rescheduled)
+        vm.undoReschedule()
+        advanceUntilIdle()
+        assertEquals(later, repo.snapshot.value.occurrences.single().dueDate)
+        assertNull(vm.state.value.rescheduled)
+    }
+
     @Test fun closingUnchangedDraftClosesAndChangedDraftAsksFirst() = runTest(dispatcher) {
         val vm = TasksViewModel(FakeRepository(clock), clock, SavedStateHandle())
         advanceUntilIdle()

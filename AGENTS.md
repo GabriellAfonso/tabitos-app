@@ -254,6 +254,8 @@ Spec031: Estatísticas com histórico grande — PreparedStatistics (StatisticsC
 de dado/dia/modo jogo; período/filtro/item/"Ver mais" só derivam. Checkpoint do cronômetro ignorado (forStatistics).
 HabitRules.periods indexa registros/intervalos (era quadrático); streak/successRate aceitam períodos prontos.
 5 anos fictícios (StatisticsDataset): abrir 3,0 s→0,27 s, trocar 2,0 s→3 ms (JVM). Sem mudança de schema. 274 JVM.
+Spec032: Remarcar nos detalhes oferece Hoje/Amanhã/calendário e preserva o horário. Antecipações e seus
+desfazeres aparecem no Histórico; Adiadas conta POSTPONED. Plano: specs/032-reschedule-task/plan.md.
 <!-- SPECKIT END -->
 Spec025: Configurações em lista agrupada (Aparência/Modo jogo/Notificações e alarmes/Dados), linhas em
 core/ui/components/SettingsRows.kt; Tema abre diálogo; Ganhos e penalidades é sub-página (EARNINGS, só modo jogo).

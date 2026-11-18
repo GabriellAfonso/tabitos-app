@@ -85,7 +85,7 @@ import com.ethos.app.features.statistics.StatisticsNavigation
 import com.ethos.app.features.statistics.StatisticsScreen
 import com.ethos.app.features.statistics.StatisticsViewModel
 import com.ethos.app.features.tasks.DrawerListCallbacks
-import com.ethos.app.features.tasks.PostponedSnackbar
+import com.ethos.app.features.tasks.RescheduledSnackbar
 import com.ethos.app.features.tasks.TaskDialogs
 import com.ethos.app.features.tasks.TaskDrawer
 import com.ethos.app.features.tasks.TaskPage
@@ -252,9 +252,9 @@ private fun AppShell(
             ))
         },
         snackbar = {
-            tasks.postponed?.let {
-                PostponedSnackbar(it, tasks.today, undo = vm.tasks::undoPostpone,
-                    dismiss = vm.tasks::dismissPostponed)
+            tasks.rescheduled?.let {
+                RescheduledSnackbar(it, tasks.today, undo = vm.tasks::undoReschedule,
+                    dismiss = vm.tasks::dismissRescheduled)
             }
         },
         requested = requests.destination,
