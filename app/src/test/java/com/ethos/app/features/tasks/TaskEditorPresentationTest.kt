@@ -39,15 +39,46 @@ class TaskEditorPresentationTest {
         assertEquals(0b100, toggleWeekday(0b101, 0))
     }
 
-    @Test fun advancedOptionsOnlyForNonDefaultFields() {
+    @Test fun sheetVisibilityFollowsVariantAndRepetition() {
         val draft = TaskDraft("d")
-        assertFalse(hasAdvancedOptions(draft))
-        assertTrue(hasAdvancedOptions(draft.copy(fields = TaskFields(description = "x"))))
-        assertTrue(hasAdvancedOptions(draft.copy(fields = TaskFields(checklist = listOf("a")))))
-        assertTrue(hasAdvancedOptions(draft.copy(fields = TaskFields(difficulty = 2))))
-        assertTrue(hasAdvancedOptions(draft.copy(rule = RepeatRule(kind = RepeatKind.DAILY))))
-        assertTrue(hasAdvancedOptions(draft.copy(ending = 2)))
-        assertFalse(hasAdvancedOptions(draft.copy(fields = TaskFields(checklist = listOf(" ")))))
+        assertTrue(draft.showsChecklistRow)
+        assertFalse(draft.showsDurationChip)
+        assertFalse(draft.showsEndingRow)
+        val timed = draft.copy(timed = true, fields = TaskFields(checklist = listOf("a")))
+        assertFalse(timed.showsChecklistRow)
+        assertTrue(timed.showsDurationChip)
+        assertTrue(timed.showsTimedChecklistWarning)
+        assertFalse(draft.copy(timed = true).showsTimedChecklistWarning)
+        val recurring = draft.copy(rule = RepeatRule(kind = RepeatKind.DAILY))
+        assertTrue(recurring.showsEndingRow)
+        assertTrue(recurring.editsStartDate)
+        assertFalse(recurring.copy(editing = true).editsStartDate)
+        assertEquals(DeadlineKind.entries, deadlineKindsFor(draft))
+        assertFalse(DeadlineKind.NONE in deadlineKindsFor(recurring))
+    }
+
+    @Test fun deadlineChoiceKeepsDateAndTimeRules() {
+        val draft = TaskDraft("d", dateText = "", timeText = "09:00")
+        val day = withDeadline(draft, DeadlineKind.DAY, today)
+        assertEquals(today.toString(), day.dateText)
+        assertEquals("09:00", day.timeText)
+        assertEquals("", withDeadline(day, DeadlineKind.WEEK, today).timeText)
+        val none = withDeadline(day, DeadlineKind.NONE, today)
+        assertEquals("", none.dateText)
+        assertEquals(DeadlineKind.NONE, none.fields.deadline)
+    }
+
+    @Test fun repeatChoiceMovesTheChosenDayBetweenDateAndStart() {
+        val friday = today.plusDays(3)
+        val single = TaskDraft("d", dateText = friday.toString(), startText = today.toString())
+        assertEquals(friday.toString(), withRepeatChoiceDates(single, RepeatChoice.DAILY).startText)
+        assertEquals(1 shl 4, ruleForRepeatChoice(single, RepeatChoice.WEEKLY, today).weekdays) // Friday
+        val recurring = TaskDraft("d", rule = RepeatRule(kind = RepeatKind.DAILY, start = friday),
+            startText = friday.toString())
+        assertEquals(friday.toString(), withRepeatChoiceDates(recurring, RepeatChoice.NONE).dateText)
+        assertEquals(recurring, withRepeatChoiceDates(recurring.copy(), RepeatChoice.WEEKLY))
+        val editing = single.copy(editing = true)
+        assertEquals(editing, withRepeatChoiceDates(editing, RepeatChoice.DAILY))
     }
 
     @Test fun reviewConfirmationOnlyForOverdueDateChange() {

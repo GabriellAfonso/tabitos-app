@@ -1,64 +1,65 @@
 package com.ethos.app.features.tasks
 
-import com.ethos.app.core.ui.accounting.FinancialConfirmation
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ethos.app.R
-import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.ui.semantics.toggleableState
-import androidx.compose.ui.state.ToggleableState
-import kotlinx.coroutines.delay
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.style.TextDecoration
+import com.ethos.app.core.icons.AppIconTables
+import com.ethos.app.core.reminders.domain.ReminderKind
+import com.ethos.app.core.tasks.domain.*
+import com.ethos.app.core.timers.domain.TimerKind
+import com.ethos.app.core.ui.accounting.FinancialConfirmation
+import com.ethos.app.core.ui.components.CHECK_ANIMATION_MILLIS
+import com.ethos.app.core.ui.components.CheckboxRow
+import com.ethos.app.core.ui.components.ColorPicker
 import com.ethos.app.core.ui.components.ContentFilter
-import com.ethos.app.core.ui.timers.TimerChip
-import com.ethos.app.core.ui.timers.TimerChipButton
+import com.ethos.app.core.ui.components.IconPicker
 import com.ethos.app.core.ui.components.LazyReorderState
+import com.ethos.app.core.ui.components.RoundCheck
+import com.ethos.app.core.ui.components.itemColors
 import com.ethos.app.core.ui.components.lazyReorderGestures
 import com.ethos.app.core.ui.components.moved
 import com.ethos.app.core.ui.components.reorderActions
 import com.ethos.app.core.ui.components.reorderableItem
-import com.ethos.app.core.ui.components.CHECK_ANIMATION_MILLIS
-import com.ethos.app.core.ui.components.RoundCheck
 import com.ethos.app.core.ui.format.EthosDates
 import com.ethos.app.core.ui.format.label
-import com.ethos.app.core.ui.components.CheckboxRow
-import com.ethos.app.core.ui.components.ColorPicker
-import com.ethos.app.core.ui.components.IconPicker
-import com.ethos.app.core.ui.components.itemColors
-import com.ethos.app.core.tasks.domain.*
 import com.ethos.app.core.ui.reminders.LocalOpenReminders
 import com.ethos.app.core.ui.timers.LocalOpenTimer
-import com.ethos.app.core.timers.domain.TimerKind
-import com.ethos.app.core.reminders.domain.ReminderKind
+import com.ethos.app.core.ui.timers.TimerChip
+import com.ethos.app.core.ui.timers.TimerChipButton
 import java.time.LocalDate
+import kotlinx.coroutines.delay
 
 enum class TaskPage { LIST, TODAY, REVIEW }
 
@@ -134,7 +135,7 @@ fun TasksContent(
                 val selectedList = state.snapshot.activeLists.firstOrNull { it.id == state.selectedListId }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     selectedList?.let {
-                        Icon(painterResource(listIcons[it.icon].icon), contentDescription = null,
+                        Icon(painterResource(it.iconDrawable), contentDescription = null,
                             tint = itemColors[it.color])
                     }
                     Text(selectedList?.name ?: stringResource(R.string.inbox),
@@ -366,8 +367,8 @@ private fun ListEditor(
             error()
             Input(R.string.list_name, list.name, !busy) { change(list.copy(name = it)) }
             ColorPicker(list.color, !busy) { change(list.copy(color = it)) }
-            IconPicker(R.string.icon_label, listIcons, list.icon, !busy, tint = itemColors[list.color]) {
-                change(list.copy(icon = it)) }
+            IconPicker(R.string.icon_label, listPrincipalIcons, AppIconTables.list[list.icon], !busy,
+                tint = itemColors[list.color]) { change(list.copy(icon = AppIconTables.list.indexOf(it))) }
         } }, confirmButton = { TextButton(save, enabled = !busy) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(close, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
 }

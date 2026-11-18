@@ -39,10 +39,54 @@ fun ruleForChoice(rule: RepeatRule, choice: RepeatChoice, start: LocalDate): Rep
     }
 }
 
-/** "Mais opções" starts expanded when any advanced field differs from the new-task defaults. */
-fun hasAdvancedOptions(draft: TaskDraft): Boolean = draft.fields.description.isNotBlank() ||
-    draft.fields.checklist.any { it.isNotBlank() } || draft.fields.difficulty != 1 ||
-    draft.fields.importance != 1 || draft.rule.kind != RepeatKind.NONE || draft.ending != 0
+/** Choice sheet opened from a chip or row of the task editor sheet (spec 029). */
+enum class TaskEditorSheet { WHEN, REPEAT, ENDING, LIST, DURATION, DESCRIPTION, CHECKLIST, IMPORTANCE, DIFFICULTY }
+
+/** Values of [TaskDraft.ending], as already read and written by the ViewModel. */
+const val ENDING_NEVER = 0
+const val ENDING_UNTIL_DATE = 1
+const val ENDING_AFTER_COUNT = 2
+
+val TaskDraft.isRecurring: Boolean get() = rule.kind != RepeatKind.NONE
+
+/** A timed task has a duration and no checklist (spec 016). */
+val TaskDraft.showsDurationChip: Boolean get() = timed
+val TaskDraft.showsChecklistRow: Boolean get() = !timed
+val TaskDraft.showsTimedChecklistWarning: Boolean get() = timed && fields.checklist.isNotEmpty()
+val TaskDraft.showsEndingRow: Boolean get() = isRecurring
+
+/** A new recurring task is anchored by its start date; editing moves this occurrence's date. */
+val TaskDraft.editsStartDate: Boolean get() = isRecurring && !editing
+
+/** A recurring task always has a date, so "Sem data" is offered only for single tasks. */
+fun deadlineKindsFor(draft: TaskDraft): List<DeadlineKind> =
+    DeadlineKind.entries.filter { !draft.isRecurring || it != DeadlineKind.NONE }
+
+/** Draft after choosing a deadline kind: no date clears date and time; only a specific day keeps a time. */
+fun withDeadline(draft: TaskDraft, kind: DeadlineKind, today: LocalDate): TaskDraft =
+    if (kind == DeadlineKind.NONE) draft.copy(fields = draft.fields.copy(deadline = kind), dateText = "", timeText = "")
+    else draft.copy(fields = draft.fields.copy(deadline = kind), dateText = draft.dateText.ifBlank { today.toString() },
+        timeText = if (kind == DeadlineKind.DAY) draft.timeText else "")
+
+/** A new task keeps the day already picked when it becomes (or stops being) recurring. */
+fun withRepeatChoiceDates(draft: TaskDraft, next: RepeatChoice): TaskDraft {
+    val current = repeatChoiceOf(draft.rule.kind)
+    if (draft.editing || (current == RepeatChoice.NONE) == (next == RepeatChoice.NONE)) return draft
+    return if (next == RepeatChoice.NONE) draft.copy(dateText = draft.startText)
+        else draft.copy(startText = draft.dateText.ifBlank { draft.startText })
+}
+
+/** Rule after choosing [next]; a task that was not recurring anchors the new rule on its chosen day. */
+fun ruleForRepeatChoice(draft: TaskDraft, next: RepeatChoice, today: LocalDate): RepeatRule {
+    val start = repeatStart(draft, today)
+    val anchor = if (draft.isRecurring) start else parseIsoDate(draft.dateText) ?: start
+    return ruleForChoice(draft.rule, next, anchor)
+}
+
+/** First day of the series; also the earliest final date the ending can have. */
+fun repeatStart(draft: TaskDraft, today: LocalDate): LocalDate = parseIsoDate(draft.startText) ?: today
+
+private fun parseIsoDate(text: String): LocalDate? = runCatching { LocalDate.parse(text) }.getOrNull()
 
 /** Mirrors TaskRules.edit: confirmation is required only for an overdue occurrence whose date changes. */
 fun needsReviewConfirmation(draft: TaskDraft, occurrence: TaskOccurrence?, today: LocalDate): Boolean {

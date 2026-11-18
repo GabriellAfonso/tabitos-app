@@ -39,9 +39,8 @@ class HabitsContentTest {
             }
         }
         compose.onNodeWithText("Novo hábito").performClick()
-        compose.onNodeWithText("Nome do hábito").performTextInput("Ler páginas")
-        compose.onNodeWithText("Prévia do progresso recalculado").performClick()
-        compose.onNodeWithText("Salvar").performClick()
+        compose.onNodeWithTag("editor-name").performTextInput("Ler páginas")
+        compose.onNodeWithTag("editor-save").performClick()
         compose.waitUntil(15_000) { repo.snapshot.value.habits.size == 1 }
         compose.onNodeWithText("Ler páginas").performScrollTo().performClick()
         compose.onNodeWithText("Feito").performScrollTo().performClick()

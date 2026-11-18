@@ -1,14 +1,14 @@
 package com.ethos.app.features.habits
 
-import com.ethos.app.core.preferences.FixedGameMode
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.SavedStateHandle
 import com.ethos.app.core.habits.domain.*
-import androidx.compose.ui.graphics.Color
-import com.ethos.app.R
+import com.ethos.app.core.icons.AppIcon
+import com.ethos.app.core.icons.AppIconTables
+import com.ethos.app.core.preferences.FixedGameMode
 import com.ethos.app.core.tasks.domain.TaskClock
 import com.ethos.app.core.tasks.domain.TaskList
 import com.ethos.app.core.ui.components.itemColors
-import com.ethos.app.features.tasks.listIcons
 import java.io.IOException
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -138,19 +138,17 @@ class HabitsViewModelTest {
         advanceUntilIdle()
         vm.newHabit(null, breaking = true)
         val d = vm.state.value.draft!!
-        assertEquals(R.drawable.ic_block, habitIcons[d.habit.icon].icon)
+        assertEquals(AppIcon.BLOCK, AppIconTables.habit[d.habit.icon])
         assertEquals(Color(0xFFB3261E), itemColors[d.habit.color])
-        vm.draft(d.copy(habit = d.habit.copy(name = "Rede social", icon = habitIcons.lastIndex)))
+        vm.draft(d.copy(habit = d.habit.copy(name = "Rede social", icon = AppIconTables.habit.lastIndex)))
         vm.preview()
         vm.save()
         advanceUntilIdle()
-        assertEquals(habitIcons.lastIndex, repo.snapshot.value.habits.single().icon)
+        assertEquals(AppIconTables.habit.lastIndex, repo.snapshot.value.habits.single().icon)
     }
-    @Test fun editorChoicesMatchTheIndicesTheRulesAccept() {
+    @Test fun editorColorsMatchTheIndicesTheRulesAccept() {
         assertEquals(Habit.COLOR_COUNT, itemColors.size)
-        assertEquals(Habit.ICON_COUNT, habitIcons.size)
         assertEquals(TaskList.COLOR_COUNT, itemColors.size)
-        assertEquals(TaskList.ICON_COUNT, listIcons.size)
     }
     @Test fun readFailureIsNotSuccessfulEmptyAndManualImportanceRestores() = runTest(dispatcher) {
         val repo = FakeRepository().apply { failRead = true }

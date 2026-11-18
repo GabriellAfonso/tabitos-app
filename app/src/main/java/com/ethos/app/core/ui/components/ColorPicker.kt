@@ -27,7 +27,8 @@ import com.ethos.app.core.ui.theme.EthosTheme
 // Index is the persisted color of lists and habits; append new colors, never reorder.
 val itemColors = listOf(Color(0xFF54745C), Color(0xFF426B96), Color(0xFF79568E),
     Color(0xFFA45B25), Color(0xFFA04D68), Color(0xFF657078), Color(0xFFB3261E))
-private val colorNames = listOf(R.string.color_sage, R.string.color_blue, R.string.color_purple,
+/** Spoken names of [itemColors], same order. */
+val itemColorNames = listOf(R.string.color_sage, R.string.color_blue, R.string.color_purple,
     R.string.color_orange, R.string.color_rose, R.string.color_gray, R.string.color_red)
 
 /** Position of red in [itemColors]; bad habits start with it so the card reads as "stop". */
@@ -39,7 +40,7 @@ fun ColorPicker(selected: Int, enabled: Boolean = true, onSelect: (Int) -> Unit)
     Text(stringResource(R.string.color_label), style = MaterialTheme.typography.labelLarge)
     FlowRow(Modifier.selectableGroup(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         itemColors.forEachIndexed { index, color ->
-            val name = stringResource(colorNames[index])
+            val name = stringResource(itemColorNames[index])
             Box(Modifier.size(48.dp).clip(CircleShape)
                 .selectable(selected == index, enabled = enabled, role = Role.RadioButton,
                     onClick = { onSelect(index) })

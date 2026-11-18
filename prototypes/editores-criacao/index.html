@@ -1,0 +1,586 @@
+<title>Editores de criação</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block">
+<style>
+/* Layout: cabeçalho com controles (tela, criar/editar, tema, modo jogo, tipo no editor) · 4 celulares (Como está + A1 aprovada, A2, A3) · ficha de cada variação · decidido e em discussão. */
+:root{
+  --paper:#f5f4f7; --sheet:#ffffff; --ink:#1e1a23; --muted:#625b6b; --line:#e3dee8;
+  --plum:#6e4a8e; --plum-soft:#efe6f6; --amber:#93601a; --amber-soft:#fbf0e0; --ok:#2f6b47; --ok-soft:#e3f1e8;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif; --body:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; --ok:#9fd0ab; --ok-soft:#1e2c23; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; --ok:#9fd0ab; --ok-soft:#1e2c23; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--body);margin:0}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.wrap{max-width:1680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 8px}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+h1{font:800 clamp(30px,4.4vw,46px)/1.05 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+h2{font:700 22px/1.2 var(--display);margin:0 0 6px}
+h3{font:700 16px/1.3 var(--display);margin:0}
+.lede{max-width:78ch;color:var(--muted);margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.ctl{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;min-width:0}
+.ctl>span{font-size:12.5px;color:var(--muted);font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--paper);padding:5px 11px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:var(--sheet);font-weight:600}
+main{padding-block:22px 60px;display:grid;gap:34px}
+.phones{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:26px;align-items:start}
+.col{display:grid;gap:12px;min-width:0}
+.col-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--plum-soft);color:var(--plum);font-weight:600;white-space:nowrap}
+.badge.now{background:var(--amber-soft);color:var(--amber)}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0}
+.card ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.card h5{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+.card h5:first-child{margin-top:0}
+.keep{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px}
+
+/* CELULAR — tokens Ameixa (core/ui/theme/EthosTheme.kt) */
+.phone{--p:#6E4A8E;--onp:#fff;--pc:#F1E7F8;--onpc:#2E1A40;--sc:#F1E7F8;--t:#93601A;--tc:#FBF0E0;--ont:#3A2400;--bg:#FBF8FC;--on:#231D29;--onv:#655C6E;--low:#fff;--cont:#F3EEF6;--high:#F1E9F5;--ol:#8F8498;--olv:#E6DEEB;--err:#B3261E;--errc:#F9DEDC;--onerrc:#410E0B;--kb:#E9E4EE;--key:#fff;
+  width:100%;max-width:380px;height:760px;margin:0 auto;border:8px solid #26212b;border-radius:44px;background:var(--bg);color:var(--on);position:relative;overflow:hidden;display:flex;flex-direction:column;font:14px/1.4 Roboto,system-ui,sans-serif;box-shadow:0 18px 40px rgba(30,20,40,.18)}
+.phone.dark{--p:#D7B8F2;--onp:#3B1F55;--pc:#44325A;--onpc:#F1E2FC;--sc:#3A2D47;--t:#E8BE7A;--tc:#352A1F;--ont:#FFDDB0;--bg:#171419;--on:#ECE4F0;--onv:#B1A6B8;--low:#211C25;--cont:#1F1A23;--high:#2A2430;--ol:#82788A;--olv:#372F3D;--err:#F2B8B5;--errc:#8C1D18;--onerrc:#F9DEDC;--kb:#221D26;--key:#3A3340}
+.phone *{box-sizing:border-box}
+.phone button{color:inherit;background:none;border:0;padding:0}
+.ms{font-family:"Material Symbols Rounded";font-weight:normal;font-style:normal;font-size:20px;line-height:1;letter-spacing:normal;text-transform:none;display:inline-block;white-space:nowrap;direction:ltr;-webkit-font-smoothing:antialiased;font-feature-settings:"liga";vertical-align:middle;overflow:hidden;width:1em;flex:none}
+.p-status{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;font-weight:600}
+.p-screen{flex:1;position:relative;display:flex;flex-direction:column;min-height:0}
+.p-scroll{flex:1;overflow-y:auto;min-height:0}
+.p-nav{height:18px;flex:none;display:grid;place-items:center}
+.p-nav i{width:110px;height:4px;border-radius:2px;background:var(--on);opacity:.45}
+.bar{display:flex;align-items:center;gap:4px;padding:4px 8px;flex:none;min-height:56px}
+.bar .tt{flex:1;min-width:0;font-size:20px;font-weight:700;padding:0 6px}
+.ib{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ib:hover{background:var(--cont)}
+.tbtn{color:var(--p)!important;font-weight:500;font-size:14px;padding:10px 12px!important;border-radius:20px}
+.tbtn:hover{background:var(--cont)!important}
+.fbtn{border-radius:20px!important;background:var(--p)!important;color:var(--onp)!important;padding:10px 20px!important;font-weight:500;font-size:14px}
+.hr{height:1px;background:var(--olv);flex:none}
+.fld{border:1px solid var(--ol);border-radius:4px;padding:18px 14px 9px;position:relative;font-size:15px;display:flex;align-items:center;gap:8px}
+.fld small{position:absolute;top:5px;left:14px;font-size:11px;color:var(--onv)}
+.fld input{border:0;background:none;outline:0;flex:1;min-width:0;padding:0;font-size:15px}
+.fld .ms{color:var(--onv);margin-left:auto}
+.lab{font-size:14px;font-weight:500}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips.wrap{flex-wrap:wrap;gap:6px}
+.chips.col{flex-direction:column;align-items:flex-start;gap:6px}
+.chip{border:1px solid var(--ol)!important;border-radius:8px!important;padding:0 14px!important;min-height:36px;font-size:13.5px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;flex:none}
+.chip.on{background:var(--sc)!important;border-color:var(--sc)!important;color:var(--onpc)!important}
+.chip.on::before{content:"check";font-family:"Material Symbols Rounded";font-size:17px;margin-left:-4px}
+.phone.dark .chip.on{color:var(--on)!important}
+.stepper{display:flex;align-items:center;gap:10px;font-size:14px}
+.stepper b{min-width:28px;text-align:center;font-size:18px;font-weight:500;font-variant-numeric:tabular-nums}
+.stepper .ib{width:40px;height:40px;border:1px solid var(--olv)!important;border-radius:12px}
+.dots{display:flex;flex-wrap:wrap;gap:2px}
+.dot{width:44px;height:44px;border-radius:50%!important;display:grid!important;place-items:center;border:2px solid transparent!important}
+.dot.on{border-color:var(--p)!important}
+.dot i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff;font-style:normal}
+.icons{display:flex;flex-wrap:wrap;gap:2px}
+.icn{width:44px;height:44px;border-radius:12px!important;display:grid!important;place-items:center}
+.icn.on{background:var(--sc)!important;outline:2px solid var(--p);outline-offset:-2px}
+.estimate{display:flex;gap:8px;align-items:center;background:var(--tc);color:var(--ont);border-radius:12px;padding:8px 12px;font-size:13px}
+.estimate b{color:var(--t);font-weight:600}
+.now-body{padding:16px 20px 24px;display:flex;flex-direction:column;gap:12px}
+.now-hab{padding:20px 20px 4px;font-size:24px}
+.now-foot{display:flex;gap:4px;padding:8px 14px 6px;flex:none}
+.check-row{display:flex;align-items:center;gap:6px}
+.check-row .fld{flex:1;padding-block:14px 8px}
+.switch{display:flex;border:1px solid var(--ol);border-radius:20px;overflow:hidden;flex:none}
+.switch button{flex:1;padding:8px 4px!important;font-size:13px;font-weight:500;display:flex;gap:4px;justify-content:center;align-items:center;border-right:1px solid var(--ol)!important}
+.switch button:last-child{border-right:0!important}
+.switch button.on{background:var(--sc)!important;color:var(--onpc)!important}
+.phone.dark .switch button.on{color:var(--on)!important}
+.switch .ms{font-size:17px}
+/* fundo Hoje */
+.today{position:absolute;inset:0;padding:6px 16px;display:flex;flex-direction:column;gap:8px}
+.today .h{display:flex;align-items:center;gap:8px;font-size:22px;font-weight:700;padding:4px 0 6px}
+.tcard{border:1px solid var(--olv);background:var(--low);border-radius:17px;padding:11px 12px;display:flex;gap:10px;align-items:center}
+.tcard .tt{font-size:14px;font-weight:600}
+.tcard .sub{font-size:11.5px;color:var(--onv)}
+.cb{width:22px;height:22px;border-radius:50%;border:2px solid var(--ol);flex:none}
+.tile{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:#fff;flex:none}
+.qbtn{margin-left:auto;border:1px solid var(--olv)!important;border-radius:10px!important;background:var(--sc)!important;color:var(--p)!important;padding:7px 12px!important;font-size:13px;font-weight:500;white-space:nowrap}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:3}
+/* folha rápida */
+.a-stack{position:absolute;left:0;right:0;bottom:0;z-index:4;display:flex;flex-direction:column;max-height:100%}
+.a-stack.full{top:0}
+.sheet{background:var(--high);border-radius:28px 28px 0 0;padding:8px 16px 10px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.a-stack.full .sheet{flex:1;border-radius:0;padding-top:4px}
+.sheet-scroll{display:flex;flex-direction:column;gap:10px;overflow-y:auto;min-height:0;flex:1}
+.grab{width:32px;height:4px;border-radius:2px;background:var(--ol);opacity:.6;margin:2px auto 4px;flex:none}
+.a-head{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--onv);flex:none}
+.a-head span{flex:1}
+.a-head .ib{width:36px;height:36px}
+.a-title{display:flex;align-items:center;gap:10px}
+.a-title input{flex:1;min-width:0;border:0;background:none;outline:0;font-size:19px;padding:4px 0}
+.a-desc{font-size:13.5px;color:var(--onv);padding-left:2px;text-align:left}
+.qchips{display:flex;flex-wrap:wrap;gap:6px}
+.qchip{border:1px solid var(--olv)!important;background:var(--low)!important;border-radius:8px!important;padding:6px 10px!important;font-size:13px;display:inline-flex;gap:5px;align-items:center;max-width:100%;text-align:left}
+.qchip .ms{font-size:17px;color:var(--p)}
+.qchip.ghost{background:none!important;color:var(--onv)!important;border-style:dashed!important}
+.qchip.bad .ms{color:var(--err)}
+.qchip.big{padding:8px 12px!important;font-size:13.5px}
+.a-scope{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--onv)}
+.a-foot{display:flex;align-items:center;gap:4px;flex:none}
+.a-foot .send{margin-left:auto;width:44px;height:44px;border-radius:50%!important;background:var(--p)!important;color:var(--onp)!important;display:grid!important;place-items:center}
+.a-foot .save{margin-left:auto}
+.kb{background:var(--kb);padding:8px 4px 6px;display:grid;gap:7px;flex:none}
+.kb div{display:flex;gap:4px;justify-content:center}
+.kb span{background:var(--key);border-radius:5px;height:36px;flex:1;max-width:32px;display:grid;place-items:center;font-size:15px;box-shadow:0 1px 0 rgba(0,0,0,.18)}
+.kb span.w{max-width:none;flex:5}
+.kb span.m{max-width:48px;flex:1.5;font-size:12px}
+.grp{font-size:12.5px;font-weight:600;color:var(--p);padding:6px 4px 0}
+.rows{background:var(--low);border:1px solid var(--olv);border-radius:18px;overflow:hidden;flex:none}
+.phone.dark .rows{background:var(--cont)}
+.row{display:flex!important;align-items:center;gap:14px;width:100%;text-align:left;padding:10px 12px 10px 14px!important;min-height:54px;border-top:1px solid var(--olv)!important}
+.row:first-child{border-top:0!important}
+.row:hover{background:var(--cont)!important}
+.row>.ms{color:var(--onv)}
+.row .rl{flex:1;min-width:0;font-size:15px}
+.row .rv{font-size:13.5px;color:var(--onv);text-align:right;max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row .chev{color:var(--onv);font-size:18px;margin-left:-8px}
+.new{font-size:10px;font-weight:600;letter-spacing:.04em;background:var(--tc);color:var(--t);border-radius:6px;padding:1px 5px;margin-left:6px;vertical-align:2px}
+.swatch{width:20px;height:20px;border-radius:6px;display:inline-grid;place-items:center;color:#fff;vertical-align:-5px;margin-right:2px;flex:none}
+.swatch .ms{font-size:14px;color:#fff!important}
+/* folha de escolha */
+.pick-scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:8;display:flex;align-items:flex-end}
+.pick{background:var(--high);border-radius:28px 28px 0 0;width:100%;max-height:86%;overflow-y:auto;padding:8px 8px 14px}
+.pick h6{font-size:18px;font-weight:500;margin:4px 16px 8px}
+.pick .opt{display:flex!important;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 16px!important;min-height:52px;border-radius:14px!important;font-size:15px}
+.pick .opt:hover{background:var(--cont)!important}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--onv);flex:none;display:grid;place-items:center}
+.radio.on{border-color:var(--p)}
+.radio.on::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--p)}
+.pick .note{font-size:12.5px;color:var(--onv);padding:4px 16px 0}
+.pick .sec{font-size:13px;font-weight:500;color:var(--onv);padding:12px 16px 6px}
+.pick .wrapx{padding:0 12px}
+.pick .sum{margin:2px 16px 4px;padding:10px 12px;border-radius:12px;background:var(--sc);font-size:14px}
+.pick-cl{display:flex;align-items:center;gap:6px;padding:4px 12px}
+.pick-cl .fld{flex:1;padding:12px 12px}
+.pick-actions{display:flex;justify-content:flex-end;padding:8px 12px 0}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Protótipo · editores de criação · rodada 2</div>
+  <h1>Folha rápida: criar e editar</h1>
+  <p class="lede">A folha rápida (A) foi a escolhida. Esta rodada mantém essa direção e testa duas variações para os pontos fracos dela: como editar um item e como encaixar as regras de prazo e de hábito. Use “Situação” para ver criação e edição. Toque nos chips e valores; a mudança aparece em todos os celulares.</p>
+  <div class="controls">
+    <div class="ctl"><span>Tela</span><div class="seg" id="ctl-type">
+      <button data-v="task">Tarefa</button><button data-v="habit">Bom hábito</button><button data-v="bad">Mau hábito</button></div></div>
+    <div class="ctl"><span>Situação</span><div class="seg" id="ctl-edit">
+      <button data-v="off">Criando</button><button data-v="on">Editando</button></div></div>
+    <div class="ctl"><span>Tema dos celulares</span><div class="seg" id="ctl-theme">
+      <button data-v="light">Claro</button><button data-v="dark">Escuro</button><button data-v="page">Igual à página</button></div></div>
+    <div class="ctl"><span>Modo jogo</span><div class="seg" id="ctl-game">
+      <button data-v="on">Ligado</button><button data-v="off">Desligado</button></div></div>
+    <div class="ctl"><span>Trocar o tipo na folha (só criando)</span><div class="seg" id="ctl-switch">
+      <button data-v="off">Não, só pelo “+”</button><button data-v="on">Sim, no topo</button></div></div>
+  </div>
+</header>
+
+<main>
+  <section class="phones">
+    <div class="col">
+      <div class="col-head"><h2>Como está</h2><span class="badge now">app atual</span></div>
+      <p class="hint">TaskEditor.kt e HabitEditor.kt, em tela cheia, para criar e para editar.</p>
+      <div class="phone" data-ph="now"></div>
+    </div>
+
+    <div class="col">
+      <div class="col-head"><h2>A1 · Folha compacta</h2><span class="badge ok">aprovada na rodada 1</span></div>
+      <p class="hint">Igual à rodada 1. Ao editar, abre a mesma folha já preenchida, sem teclado.</p>
+      <div class="phone" data-ph="a1"></div>
+      <div class="card">
+        <h5>Ao editar</h5>
+        <ul><li>Cabeçalho “Editar tarefa/hábito” com ✕; Salvar vira botão com texto.</li><li>Escopo “Só esta / Esta e as próximas” (tarefa recorrente) ou “Vale a partir de” (meta de hábito) aparece logo acima de Salvar.</li></ul>
+        <h5>Vantagens</h5><ul><li>Um layout só para criar e editar.</li></ul>
+        <h5>Impacto previsto</h5><ul><li>Com checklist longa e descrição, “Mais” fica alto e a folha passa a rolar por dentro.</li></ul>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-head"><h2>A2 · Folha que cresce</h2><span class="badge">variação</span></div>
+      <p class="hint">Mesmos chips. “Mais” puxa a folha até a tela inteira e lista o resto em linhas rótulo → valor. Editar já abre assim.</p>
+      <div class="phone" data-ph="a2"></div>
+      <div class="card">
+        <h5>Mudanças em relação a A1</h5>
+        <ul><li>“Mais” fecha o teclado e expande a folha; as opções extras viram linhas com o valor à direita.</li><li>Editar abre direto expandida, com todos os campos visíveis.</li></ul>
+        <h5>Vantagens</h5><ul><li>A criação continua curta e a edição vê tudo sem rolar chips.</li><li>Linhas leem bem no TalkBack (rótulo e valor).</li></ul>
+        <h5>Impacto previsto</h5><ul><li>Dois estados da mesma folha para testar (compacta e expandida), mas um único componente.</li></ul>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="col-head"><h2>A3 · Chips de regra</h2><span class="badge">variação</span></div>
+      <p class="hint">Menos chips: “Quando” (tarefa) ou “Meta” (hábito) resume a regra e abre uma folha que junta todos os ajustes dela.</p>
+      <div class="phone" data-ph="a3"></div>
+      <div class="card">
+        <h5>Mudanças em relação a A1</h5>
+        <ul><li>Tarefa: prazo, data, horário e repetição numa folha “Quando”.</li><li>Hábito: frequência, dias, vezes e minutos numa folha “Meta”, com o resumo no topo.</li><li>Mau hábito: Evitar/Limitar, quantidade e período na mesma folha.</li></ul>
+        <h5>Vantagens</h5><ul><li>A linha de chips fica curta e sempre do mesmo tamanho.</li><li>A regra é ajustada num lugar só, vendo o resumo mudar.</li></ul>
+        <h5>Impacto previsto</h5><ul><li>Trocar só o horário exige abrir a folha inteira de “Quando”.</li><li>Pode ser combinada com A2 para a edição.</li></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="keep">
+    <div class="card">
+      <h3>Decidido</h3>
+      <ul>
+        <li>Rodada 1: direção A · Folha rápida, por cima de Hoje, com foco no nome e chips com o valor atual.</li>
+        <li>Regras inalteradas: repetição em 5 opções sobre os 8 RepeatKind, frequências de hábito, cronômetro sem checklist, datas só por seletor.</li>
+        <li>Modo jogo desligado esconde Dificuldade e a estimativa; mau hábito começa em Vermelho com o ícone de proibido.</li>
+        <li>Sem mudança de schema.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Em discussão nesta rodada</h3>
+      <ul>
+        <li>Edição: A1 (folha compacta), A2 (folha que cresce) ou continuar com a tela atual.</li>
+        <li>Regras: chips separados (A1/A2) ou chip único “Quando”/“Meta” (A3).</li>
+        <li>Lembrete na folha (marcado <b>NOVO</b>) ou só no pop-up de detalhes.</li>
+        <li>Trocar o tipo no topo da folha ou só pelo “+”.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+const COLORS=[['#54745C','Sálvia'],['#426B96','Azul'],['#79568E','Roxo'],['#A45B25','Laranja'],['#A04D68','Rosa'],['#657078','Cinza'],['#B3261E','Vermelho']];
+const ICONS=['eco','menu_book','home','work','favorite','star','block','local_bar','smoking_rooms','app_blocking','fastfood','cookie','casino','sports_esports','shopping_cart','bedtime'];
+const LISTS=['Caixa de entrada','Casa','Trabalho','Estudos'];
+const TYPES={task:['Tarefa','task_alt','Nova tarefa','Editar tarefa'],habit:['Hábito','eco','Novo hábito','Editar hábito'],bad:['Mau hábito','block','Quebrar hábito','Editar hábito']};
+
+const S={type:'task',theme:'page',game:true,switcher:false,edit:false,pick:null,nowMore:false,more:{a1:false,a2:false,a3:false},
+  task:{title:'Pagar conta de luz',deadline:'Dia específico',date:'Amanhã',time:'09:00',repeat:'Todo mês',reminder:'Sem lembrete',
+    list:'Casa',importance:'Média',difficulty:'Média',timed:'Normal',minutes:'25 min',checklist:['Conferir valor','Pagar pelo app do banco'],desc:'Nenhuma',scope:'Só esta'},
+  habit:{title:'Ler',freq:'Semanal',days:'Seg a sex',target:'3 vezes',timed:'Com cronômetro',minutes:'20 min',reminder:'21:00',
+    color:2,icon:'menu_book',list:'Estudos',importance:'Média',difficulty:'Fácil',desc:'Nenhuma',effect:'Próximo período'},
+  bad:{title:'Redes sociais à noite',mode:'Limitar',max:'1 vez',period:'dia',reminder:'Sem lembrete',
+    color:6,icon:'app_blocking',list:'Caixa de entrada',importance:'Alta',difficulty:'Média',desc:'Nenhuma',effect:'Próximo período'}};
+
+const timedOn=d=>d.timed==='Com cronômetro';
+const F={
+ task:[
+  {k:'deadline',l:'Prazo',i:'event',rule:1,q:1,o:['Sem data','Dia específico','Até domingo','Até sexta']},
+  {k:'date',l:'Data',i:'calendar_today',rule:1,q:1,o:['Hoje','Amanhã','Sex, 21 nov','Escolher no calendário'],show:d=>d.deadline==='Dia específico'},
+  {k:'time',l:'Horário',i:'schedule',rule:1,q:1,o:['Sem horário','09:00','14:00','20:00','Escolher hora'],show:d=>d.deadline==='Dia específico'},
+  {k:'repeat',l:'Repetição',i:'repeat',rule:1,q:1,o:['Não repete','Todo dia','Toda semana','Todo mês','A cada X dias']},
+  {k:'list',l:'Lista',i:'format_list_bulleted',q:1,o:LISTS.concat('+ Nova lista')},
+  {k:'timed',l:'Tipo',i:'timer',q:1,o:['Normal','Com cronômetro']},
+  {k:'minutes',l:'Duração',i:'hourglass_empty',q:1,o:['15 min','25 min','45 min','60 min'],show:timedOn},
+  {k:'reminder',l:'Lembrete',i:'notifications',novo:1,o:['Sem lembrete','Na hora','15 min antes','1 h antes'],show:d=>d.deadline!=='Sem data'},
+  {k:'checklist',l:'Checklist',i:'checklist',special:'checklist',show:d=>!timedOn(d)},
+  {k:'desc',l:'Descrição',i:'notes',o:['Nenhuma','Guardar o comprovante na pasta de contas']},
+  {k:'importance',l:'Importância',i:'flag',o:['Baixa','Média','Alta']},
+  {k:'difficulty',l:'Dificuldade',i:'bolt',game:1,o:['Fácil','Média','Difícil']},
+ ],
+ habit:[
+  {k:'freq',l:'Frequência',i:'event_repeat',rule:1,q:1,o:d=>timedOn(d)?['Diário','Dias escolhidos','Semanal']:['Diário','Dias escolhidos','Semanal','Mensal']},
+  {k:'days',l:'Dias',i:'date_range',rule:1,q:1,o:['Seg a sex','Seg, qua e sex','Sáb e dom'],show:d=>d.freq==='Dias escolhidos'},
+  {k:'target',l:d=>d.freq==='Mensal'?'Vezes por mês':'Vezes por semana',i:'pin',rule:1,q:1,o:['1 vez','2 vezes','3 vezes','5 vezes'],show:d=>d.freq==='Semanal'||d.freq==='Mensal'},
+  {k:'timed',l:'Tipo',i:'timer',rule:1,q:1,o:['Normal','Com cronômetro']},
+  {k:'minutes',l:'Minutos por vez',i:'hourglass_empty',rule:1,q:1,o:['10 min','20 min','30 min','45 min'],show:timedOn},
+  {k:'look',l:'Cor e ícone',i:'palette',q:1,special:'look'},
+  {k:'reminder',l:'Lembrete',i:'notifications',novo:1,o:['Sem lembrete','08:00','12:30','21:00']},
+  {k:'list',l:'Lista',i:'format_list_bulleted',o:LISTS},
+  {k:'desc',l:'Descrição',i:'notes',o:['Nenhuma','10 páginas antes de dormir']},
+  {k:'importance',l:'Importância',i:'flag',o:['Baixa','Média','Alta']},
+  {k:'difficulty',l:'Dificuldade',i:'bolt',game:1,o:['Fácil','Média','Difícil']},
+ ],
+ bad:[
+  {k:'mode',l:'Objetivo',i:'block',rule:1,q:1,o:['Evitar','Limitar']},
+  {k:'max',l:'No máximo',i:'pin',rule:1,q:1,o:['1 vez','2 vezes','3 vezes','5 vezes'],show:d=>d.mode==='Limitar'},
+  {k:'period',l:'Por',i:'date_range',rule:1,q:1,o:['dia','semana','mês'],show:d=>d.mode==='Limitar'},
+  {k:'look',l:'Cor e ícone',i:'palette',q:1,special:'look'},
+  {k:'reminder',l:'Lembrete',i:'notifications',novo:1,o:['Sem lembrete','20:00','22:00']},
+  {k:'list',l:'Lista',i:'format_list_bulleted',o:LISTS},
+  {k:'desc',l:'Descrição',i:'notes',o:['Nenhuma','Celular fora do quarto depois das 22h']},
+  {k:'importance',l:'Importância',i:'flag',o:['Baixa','Média','Alta']},
+  {k:'difficulty',l:'Dificuldade',i:'bolt',game:1,o:['Fácil','Média','Difícil']},
+ ]};
+
+const D=()=>S[S.type];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const I=(n,extra='')=>`<span class="ms" aria-hidden="true"${extra}>${n}</span>`;
+const visible=(f,d)=>(!f.game||S.game)&&(!f.show||f.show(d));
+const label=(f,d)=>typeof f.l==='function'?f.l(d):f.l;
+const opts=(f,d)=>typeof f.o==='function'?f.o(d):f.o;
+function value(f,d){
+  if(f.special==='checklist')return d.checklist.length?`${d.checklist.length} itens`:'Nenhum';
+  if(f.special==='look')return COLORS[d.color][1];
+  return d[f.k];
+}
+function whenText(d){
+  if(d.deadline==='Sem data')return 'Sem data';
+  if(d.deadline==='Até domingo')return 'Até dom, 22 nov';
+  if(d.deadline==='Até sexta')return 'Até sex, 20 nov';
+  return d.date+(d.time!=='Sem horário'?' '+d.time:'');
+}
+function habitText(d){
+  const base={Diário:'Todo dia','Dias escolhidos':d.days,Semanal:`${d.target} por semana`,Mensal:`${d.target} por mês`}[d.freq];
+  return base+(timedOn(d)?` · ${d.minutes}`:'');
+}
+const badText=d=>d.mode==='Evitar'?'Evitar por completo':`No máximo ${d.max} por ${d.period}`;
+const ruleText=d=>S.type==='task'?whenText(d)+(d.repeat!=='Não repete'?' · '+d.repeat:''):S.type==='habit'?habitText(d):badText(d);
+function estimate(d){
+  const base={Fácil:5,Média:10,Difícil:20}[d.difficulty]+{Baixa:0,Média:2,Alta:5}[d.importance];
+  return `<div class="estimate">${I('paid')}<span>Ao concluir: <b>+${base} ◈</b> · <b>+${base*2} XP</b> <span style="opacity:.7">(valores fictícios)</span></span></div>`;
+}
+const tile=d=>`<span class="tile" style="background:${COLORS[d.color][0]}">${I(d.icon)}</span>`;
+const swatch=d=>`<span class="swatch" style="background:${COLORS[d.color][0]}">${I(d.icon)}</span>`;
+const status=`<div class="p-status"><span>9:41</span><span>${I('signal_cellular_alt','style="font-size:14px"')} ${I('battery_5_bar','style="font-size:14px"')} 87%</span></div>`;
+const nav=`<div class="p-nav"><i></i></div>`;
+const chip=(k,v,cur)=>`<button class="chip ${v===cur?'on':''}" data-set="${k}|${esc(v)}">${esc(v)}</button>`;
+const chipRow=(k,list,cur,cls='')=>`<div class="chips ${cls}">${list.map(v=>chip(k,v,cur)).join('')}</div>`;
+function switcher(){
+  if(!S.switcher||S.edit)return '';
+  return `<div class="switch" role="radiogroup" aria-label="Tipo do item">${Object.entries(TYPES).map(([k,v])=>
+    `<button role="radio" aria-checked="${S.type===k}" class="${S.type===k?'on':''}" data-type="${k}">${I(v[1])}${v[0]}</button>`).join('')}</div>`;
+}
+
+/* ---------- Como está ---------- */
+function nowTask(d){
+  let h=`<div class="bar"><button class="tbtn">Cancelar</button><div class="tt">${S.edit?'Editar tarefa':'Nova tarefa'}</div><button class="fbtn">Salvar</button></div><div class="hr"></div>
+  <div class="p-scroll"><div class="now-body">
+  <div class="fld"><small>Título</small><input data-bind="title" value="${esc(d.title)}" aria-label="Título"></div>
+  <div class="lab">Tipo</div>${chipRow('timed',['Normal','Com cronômetro'],d.timed)}`;
+  if(timedOn(d))h+=`<div class="stepper"><button class="ib">${I('remove')}</button><b>${parseInt(d.minutes)}</b><button class="ib">${I('add')}</button> minutos</div>`;
+  h+=`<div class="lab">Prazo</div><div class="chips">${['Sem data','Dia específico','Até domingo','Até sexta'].map(v=>
+    `<button class="chip ${v===d.deadline?'on':''}" data-set="deadline|${v}">${v}${v==='Até domingo'?' · 16–22 nov':v==='Até sexta'?' · 16–20 nov':''}</button>`).join('')}</div>`;
+  if(d.deadline!=='Sem data')h+=`<div class="fld"><small>Data</small>${d.deadline==='Dia específico'?d.date:'Ter, 17 nov'}${I('calendar_today')}</div>`;
+  if(d.deadline==='Dia específico')h+=`<div class="fld"><small>Horário (opcional)</small>${d.time==='Sem horário'?'':d.time}${I('schedule')}</div>`;
+  h+=`<div class="lab">Lista</div>${chipRow('list',LISTS.concat('+ Nova lista'),d.list)}
+  <button class="tbtn" style="align-self:flex-start" data-act="nowMore">${S.nowMore?'Menos opções':'Mais opções'} ${I(S.nowMore?'keyboard_arrow_up':'keyboard_arrow_down')}</button>`;
+  if(S.nowMore){
+    h+=`<div class="fld"><small>Descrição (opcional)</small>${d.desc==='Nenhuma'?'':esc(d.desc)}</div>`;
+    if(!timedOn(d))h+=`<div class="lab">Checklist</div>`+d.checklist.map((c,i)=>`<div class="check-row">${I('drag_indicator')}<div class="fld"><small>Item ${i+1}</small>${esc(c)}</div><button class="ib">${I('close')}</button></div>`).join('')+`<button class="tbtn" style="align-self:flex-start">${I('add')} Adicionar item</button>`;
+    if(S.game)h+=`<div class="lab">Dificuldade</div>${chipRow('difficulty',['Fácil','Média','Difícil'],d.difficulty)}`;
+    h+=`<div class="lab">Importância</div>${chipRow('importance',['Baixa','Média','Alta'],d.importance)}`;
+    if(S.game)h+=estimate(d);
+    h+=`<div class="lab">Repetição</div>${chipRow('repeat',['Não repete','Todo dia','Toda semana','Todo mês','A cada X dias'],d.repeat)}`;
+  }
+  if(S.edit&&d.repeat!=='Não repete')h+=`<div class="lab">Alterar</div>${chipRow('scope',['Só esta','Esta e as próximas'],d.scope)}`;
+  return h+`</div></div>`;
+}
+function nowHabit(type,d){
+  let h=`<div class="now-hab">${S.edit?'Editar hábito':'Novo hábito'}</div><div class="p-scroll"><div class="now-body" style="gap:10px">`;
+  if(S.game)h+=estimate(d);
+  h+=`<div class="fld"><small>Nome do hábito</small><input data-bind="title" value="${esc(d.title)}" aria-label="Nome do hábito"></div>
+  <div class="fld"><small>Descrição (opcional)</small>${d.desc==='Nenhuma'?'':esc(d.desc)}</div>`;
+  if(type==='habit'){
+    h+=`<div class="lab">Tipo</div>${chipRow('timed',['Normal','Com cronômetro'],d.timed,'wrap')}
+    <div class="lab">Frequência</div>${chipRow('freq',opts(F.habit[0],d),d.freq,'wrap')}`;
+    if(d.freq==='Dias escolhidos')h+=`<div class="lab">Dias da semana</div><div class="chips wrap">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map((x,i)=>`<button class="chip ${i<5?'on':''}">${x}</button>`).join('')}</div>`;
+    if(d.freq==='Semanal'||d.freq==='Mensal')h+=`<div class="stepper"><button class="ib">${I('remove')}</button><b>${parseInt(d.target)}</b><button class="ib">${I('add')}</button> ${d.freq==='Semanal'?'vezes por semana':'vezes por mês'}</div>`;
+    if(timedOn(d))h+=`<div class="stepper"><button class="ib">${I('remove')}</button><b>${parseInt(d.minutes)}</b><button class="ib">${I('add')}</button> minutos por dia</div>`;
+  }else{
+    h+=`<div class="lab">Tipo de hábito</div>${chipRow('mode',['Evitar','Limitar'],d.mode,'wrap')}`;
+    if(d.mode==='Limitar')h+=`<div class="lab">Período</div>${chipRow('period',['dia','semana','mês'],d.period,'wrap')}
+      <div class="stepper">No máximo <button class="ib">${I('remove')}</button><b>${parseInt(d.max)}</b><button class="ib">${I('add')}</button> por ${d.period}</div>`;
+  }
+  if(S.edit)h+=`<div class="lab">A mudança da meta vale para</div>${chipRow('effect',['Período atual','Próximo período'],d.effect,'wrap')}`;
+  if(S.game)h+=`<div class="lab">Dificuldade</div>${chipRow('difficulty',['Fácil','Média','Difícil'],d.difficulty,'wrap')}`;
+  h+=`<div class="lab">Importância</div>${chipRow('importance',['Baixa','Média','Alta'],d.importance,'wrap')}
+  <div class="lab">Cor</div><div class="dots">${COLORS.map((c,i)=>`<button class="dot ${i===d.color?'on':''}" data-color="${i}" aria-label="${c[1]}"><i style="background:${c[0]}">${i===d.color?I('check'):''}</i></button>`).join('')}</div>
+  <div class="lab">Ícone</div><div class="icons">${ICONS.map(n=>`<button class="icn ${n===d.icon?'on':''}" data-icon="${n}" style="color:${COLORS[d.color][0]}">${I(n)}</button>`).join('')}</div>
+  <div style="font-size:14px">Lista</div>${chipRow('list',LISTS,d.list,'col')}`;
+  return h+`</div></div><div class="now-foot"><button class="tbtn">Cancelar</button><button class="fbtn">Salvar</button></div>`;
+}
+
+/* ---------- folha rápida (A1, A2, A3) ---------- */
+function quickChip(f,d){
+  let v=value(f,d);
+  if(S.type==='task'&&f.k==='deadline'&&d.deadline==='Dia específico')return '';
+  if(S.type==='task'&&f.k==='time')return '';
+  if(S.type==='task'&&f.k==='date')v=whenText(d);
+  if(f.k==='timed'&&!timedOn(d))return `<button class="qchip ghost" data-set="timed|Com cronômetro">${I('timer')}Cronômetro</button>`;
+  if(f.k==='timed')return `<button class="qchip" data-set="timed|Normal" aria-label="Remover cronômetro">${I('timer')}Com cronômetro ${I('close','style="font-size:15px;color:var(--onv)"')}</button>`;
+  if(f.special==='look')return `<button class="qchip" data-pick="look">${swatch(d)}${v}</button>`;
+  if(f.k==='period')v='por '+v;
+  if(f.k==='max')v='no máx. '+v;
+  if(f.k==='target')v+=d.freq==='Mensal'?' por mês':' por semana';
+  const pk=S.type==='task'&&f.k==='date'?'deadline':f.k;
+  return `<button class="qchip ${S.type==='bad'&&f.k==='mode'?'bad':''}" data-pick="${pk}">${I(f.i)}${esc(v)}</button>`;
+}
+function ruleChip(d){
+  const k=S.type==='task'?'when':'goal';
+  const icon=S.type==='task'?(d.repeat!=='Não repete'?'event_repeat':'event'):S.type==='habit'?(timedOn(d)?'timer':'event_repeat'):'block';
+  return `<button class="qchip big ${S.type==='bad'?'bad':''}" data-pick="${k}">${I(icon)}${esc(ruleText(d))}${I('expand_more','style="font-size:17px;color:var(--onv)"')}</button>`;
+}
+function scopeBlock(d){
+  if(!S.edit)return '';
+  if(S.type==='task')return d.repeat==='Não repete'?'':`<div class="a-scope">Alterar${chipRow('scope',['Só esta','Esta e as próximas'],d.scope,'wrap')}</div>`;
+  return `<div class="a-scope">A mudança da meta vale para${chipRow('effect',['Período atual','Próximo período'],d.effect,'wrap')}</div>`;
+}
+function optA(ph,d){
+  const fs=F[S.type].filter(f=>visible(f,d));
+  const expanded=ph==='a2'&&(S.more.a2||S.edit);
+  const open=S.more[ph]||expanded;
+  let quick=fs.filter(f=>f.q), extra=fs.filter(f=>!f.q);
+  let chips;
+  if(ph==='a3'){
+    const rest=quick.filter(f=>!f.rule||(S.type==='task'&&f.k==='timed'));
+    chips=ruleChip(d)+rest.map(f=>quickChip(f,d)).join('');
+  }else chips=quick.map(f=>quickChip(f,d)).join('');
+  if(!expanded)chips+=`<button class="qchip ghost" data-act="more" aria-expanded="${open}">${I(open?'expand_less':'more_horiz')}${open?'Menos':'Mais'}</button>`;
+  const extraHtml=!open?'':expanded
+    ?`<div class="grp">Mais opções</div><div class="rows">${extra.map(f=>`<button class="row" data-pick="${f.k}">${I(f.i)}<span class="rl">${label(f,d)}${f.novo?'<span class="new">NOVO</span>':''}</span><span class="rv">${esc(value(f,d))}</span>${I('chevron_right','class="chev"')}</button>`).join('')}</div>`
+    :`<div class="qchips">${extra.map(f=>`<button class="qchip" data-pick="${f.k}">${I(f.i)}${label(f,d)}: ${esc(value(f,d))}${f.novo?'<span class="new">NOVO</span>':''}</button>`).join('')}</div>`;
+  const keyboard=!S.edit&&!expanded;
+  const bg=`<div class="today"><div class="h">${I('menu')} Hoje</div>
+    <div class="tcard"><span class="cb"></span><div><div class="tt">Levar o carro na revisão</div><div class="sub">Hoje 10:00 · Casa</div></div></div>
+    <div class="tcard"><span class="tile" style="background:${COLORS[0][0]}">${I('eco')}</span><div><div class="tt">Caminhar</div><div class="sub">Todo dia · 4 dias seguidos</div></div><button class="qbtn">Feito</button></div>
+    <div class="tcard"><span class="cb"></span><div><div class="tt">Responder e-mail da escola</div><div class="sub">Até sex, 20 nov · Caixa de entrada</div></div></div></div>`;
+  const kb=`<div class="kb" aria-hidden="true"><div>${'qwertyuiop'.split('').map(c=>`<span>${c}</span>`).join('')}</div><div>${'asdfghjklç'.split('').map(c=>`<span>${c}</span>`).join('')}</div><div><span class="m">⇧</span>${'zxcvbnm'.split('').map(c=>`<span>${c}</span>`).join('')}<span class="m">⌫</span></div><div><span class="m">?123</span><span class="m">,</span><span class="w"></span><span class="m">.</span><span class="m">↵</span></div></div>`;
+  const head=S.edit||expanded?`<div class="a-head"><button class="ib" aria-label="Fechar" data-act="collapse">${I(expanded&&!S.edit?'expand_more':'close')}</button><span>${S.edit?TYPES[S.type][3]:TYPES[S.type][2]}</span></div>`:'';
+  const foot=S.edit||expanded
+    ?`<div class="a-foot"><button class="fbtn save">Salvar</button></div>`
+    :`<div class="a-foot">${ph==='a2'?'':`<button class="ib" aria-label="Abrir em tela cheia">${I('open_in_full')}</button>`}<button class="send" aria-label="Salvar">${I('arrow_upward')}</button></div>`;
+  return `<div class="p-screen">${bg}<div class="scrim"></div><div class="a-stack ${expanded?'full':''}"><div class="sheet">${expanded?'':'<div class="grab"></div>'}${head}${switcher()}
+    <div class="sheet-scroll">
+    <div class="a-title">${S.type==='task'?'<span class="cb"></span>':`<button data-pick="look" aria-label="Cor e ícone">${tile(d)}</button>`}
+      <input data-bind="title" value="${esc(d.title)}" aria-label="Nome" placeholder="${S.type==='task'?'O que precisa fazer?':'Nome do hábito'}"></div>
+    ${expanded?'':`<button class="a-desc" data-pick="desc">${d.desc==='Nenhuma'?'Descrição':esc(d.desc)}</button>`}
+    <div class="qchips">${chips}</div>
+    ${extraHtml}
+    ${S.game&&open?estimate(d):''}
+    ${scopeBlock(d)}
+    </div>${foot}
+  </div>${keyboard?kb:''}</div>${pickHtml(ph,d)}</div>`;
+}
+
+/* ---------- folha de escolha ---------- */
+function stepperRow(k,d,suffix){
+  return `<div class="wrapx stepper" style="padding:0 16px"><button class="ib" data-step="${k}|-1" aria-label="Menos">${I('remove')}</button><b>${parseInt(d[k])}</b><button class="ib" data-step="${k}|1" aria-label="Mais">${I('add')}</button>${suffix}</div>`;
+}
+function rulePick(d){
+  const title=S.type==='task'?'Quando':'Meta';
+  let h=`<div class="grab"></div><h6>${title}</h6><div class="sum">${esc(ruleText(d))}</div>`;
+  const sec=(t,body)=>`<div class="sec">${t}</div><div class="wrapx">${body}</div>`;
+  if(S.type==='task'){
+    h+=sec('Prazo',chipRow('deadline',['Sem data','Dia específico','Até domingo','Até sexta'],d.deadline,'wrap'));
+    if(d.deadline==='Dia específico'){
+      h+=sec('Data',chipRow('date',['Hoje','Amanhã','Sex, 21 nov'],d.date,'wrap')+`<button class="tbtn" style="margin-top:4px">${I('calendar_month')} Escolher no calendário</button>`);
+      h+=sec('Horário',chipRow('time',['Sem horário','09:00','14:00','20:00'],d.time,'wrap')+`<button class="tbtn" style="margin-top:4px">${I('schedule')} Escolher hora</button>`);
+    }
+    h+=sec('Repetição',chipRow('repeat',['Não repete','Todo dia','Toda semana','Todo mês','A cada X dias'],d.repeat,'wrap'));
+  }else if(S.type==='habit'){
+    h+=sec('Tipo',chipRow('timed',['Normal','Com cronômetro'],d.timed,'wrap'));
+    h+=sec('Frequência',chipRow('freq',opts(F.habit[0],d),d.freq,'wrap'));
+    if(d.freq==='Dias escolhidos')h+=sec('Dias',`<div class="chips wrap">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map((x,i)=>`<button class="chip ${dayOn(d,i)?'on':''}">${x}</button>`).join('')}</div>`);
+    if(d.freq==='Semanal'||d.freq==='Mensal')h+=`<div class="sec">${d.freq==='Semanal'?'Vezes por semana':'Vezes por mês'}</div>`+stepperRow('target',d,'');
+    if(timedOn(d))h+=`<div class="sec">Minutos por vez</div>`+stepperRow('minutes',d,'minutos');
+  }else{
+    h+=sec('Objetivo',chipRow('mode',['Evitar','Limitar'],d.mode,'wrap'));
+    if(d.mode==='Limitar'){
+      h+=`<div class="sec">No máximo</div>`+stepperRow('max',d,'');
+      h+=sec('Por',chipRow('period',['dia','semana','mês'],d.period,'wrap'));
+    }
+  }
+  return h;
+}
+function dayOn(d,i){return {'Seg a sex':i<5,'Seg, qua e sex':i===0||i===2||i===4,'Sáb e dom':i>4}[d.days];}
+function pickHtml(ph,d){
+  if(!S.pick||S.pick.ph!==ph)return '';
+  let inner, name;
+  if(S.pick.k==='when'||S.pick.k==='goal'){inner=rulePick(d);name=S.pick.k==='when'?'Quando':'Meta';}
+  else{
+    const f=F[S.type].find(x=>x.k===S.pick.k); if(!f)return '';
+    name=label(f,d);
+    inner=`<div class="grab"></div><h6>${name}</h6>`;
+    if(f.special==='checklist'){
+      inner+=d.checklist.map((c,i)=>`<div class="pick-cl">${I('drag_indicator')}<div class="fld"><input data-cl="${i}" value="${esc(c)}" aria-label="Item ${i+1}"></div><button class="ib" data-clrm="${i}" aria-label="Remover ${esc(c)}">${I('close')}</button></div>`).join('')
+        +`<button class="opt" data-act="cladd">${I('add')}Adicionar item</button><div class="note">Segure e arraste para reordenar; no TalkBack, use as ações do item.</div>`;
+    }else if(f.special==='look'){
+      inner+=`<div class="sec">Cor</div><div class="wrapx dots">${COLORS.map((c,i)=>`<button class="dot ${i===d.color?'on':''}" data-color="${i}" aria-label="${c[1]}"><i style="background:${c[0]}">${i===d.color?I('check'):''}</i></button>`).join('')}</div>
+        <div class="sec">Ícone</div><div class="wrapx icons">${ICONS.map(n=>`<button class="icn ${n===d.icon?'on':''}" data-icon="${n}" style="color:${COLORS[d.color][0]}">${I(n)}</button>`).join('')}</div>`;
+    }else{
+      inner+=opts(f,d).map(o=>`<button class="opt" data-opt="${esc(o)}"><span class="radio ${o===d[f.k]?'on':''}"></span>${esc(o)}</button>`).join('');
+      if(f.k==='timed'&&S.type==='task')inner+=`<div class="note">Com cronômetro a tarefa não tem checklist.</div>`;
+      if(f.k==='date'||f.k==='time')inner+=`<div class="note">“Escolher” abre o seletor de data/hora atual (sem digitar).</div>`;
+      if(f.novo)inner+=`<div class="note">Hoje o lembrete só é configurado pelo pop-up de detalhes.</div>`;
+    }
+  }
+  inner+=`<div class="pick-actions"><button class="tbtn" data-act="close">Pronto</button></div>`;
+  return `<div class="pick-scrim" data-act="close"><div class="pick" role="dialog" aria-label="${esc(name)}">${inner}</div></div>`;
+}
+
+/* ---------- montagem ---------- */
+function isDark(){
+  if(S.theme==='dark')return true; if(S.theme==='light')return false;
+  const t=document.documentElement.dataset.theme; if(t)return t==='dark';
+  return matchMedia('(prefers-color-scheme: dark)').matches;
+}
+function render(except){
+  const d=D();
+  document.querySelectorAll('.phone').forEach(p=>{
+    const ph=p.dataset.ph; p.classList.toggle('dark',isDark());
+    if(ph===except)return;
+    const sc=p.querySelector('.p-scroll,.sheet-scroll'); const top=sc?sc.scrollTop:0;
+    const pk=p.querySelector('.pick'); const ptop=pk?pk.scrollTop:0;
+    const body=ph==='now'?`<div class="p-screen">${S.type==='task'?nowTask(d):nowHabit(S.type,d)}</div>`:optA(ph,d);
+    p.innerHTML=status+body+nav;
+    const ns=p.querySelector('.p-scroll,.sheet-scroll'); if(ns)ns.scrollTop=top;
+    const np=p.querySelector('.pick'); if(np)np.scrollTop=ptop;
+  });
+  for(const [id,val] of [['ctl-type',S.type],['ctl-edit',S.edit?'on':'off'],['ctl-theme',S.theme],['ctl-game',S.game?'on':'off'],['ctl-switch',S.switcher?'on':'off']])
+    document.querySelectorAll(`#${id} button`).forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===val));
+}
+function setField(k,v){
+  const d=D(); d[k]=v;
+  if(k==='timed'&&S.type==='habit'&&timedOn(d)&&d.freq==='Mensal')d.freq='Semanal';
+  if(k==='list'&&v==='+ Nova lista')d.list='Casa';
+}
+const STEPS={target:['1 vez','2 vezes','3 vezes','4 vezes','5 vezes','6 vezes','7 vezes'],max:['0 vezes','1 vez','2 vezes','3 vezes','4 vezes','5 vezes'],
+  minutes:['5 min','10 min','15 min','20 min','25 min','30 min','45 min','60 min']};
+document.addEventListener('click',e=>{
+  const c=e.target.closest('.controls .seg button');
+  if(c){const id=c.parentElement.id,v=c.dataset.v;
+    if(id==='ctl-type'){S.type=v;S.pick=null;}
+    if(id==='ctl-edit'){S.edit=v==='on';S.pick=null;}
+    if(id==='ctl-theme')S.theme=v; if(id==='ctl-game')S.game=v==='on'; if(id==='ctl-switch')S.switcher=v==='on';
+    render();return;}
+  const phone=e.target.closest('.phone'); if(!phone)return;
+  const ph=phone.dataset.ph, d=D(); let el;
+  if((el=e.target.closest('[data-type]'))){S.type=el.dataset.type;S.pick=null;}
+  else if((el=e.target.closest('[data-opt]'))){setField(S.pick.k,el.dataset.opt);S.pick=null;}
+  else if((el=e.target.closest('[data-color]'))){d.color=+el.dataset.color;}
+  else if((el=e.target.closest('[data-icon]'))){d.icon=el.dataset.icon;}
+  else if((el=e.target.closest('[data-clrm]'))){d.checklist.splice(+el.dataset.clrm,1);}
+  else if((el=e.target.closest('[data-step]'))){const [k,s]=el.dataset.step.split('|');const list=STEPS[k];
+    const i=Math.max(0,list.indexOf(d[k]));d[k]=list[Math.min(list.length-1,Math.max(0,i+ +s))];}
+  else if((el=e.target.closest('[data-pick]'))){S.pick={ph,k:el.dataset.pick};}
+  else if((el=e.target.closest('[data-set]'))){const [k,v]=el.dataset.set.split('|');setField(k,v);}
+  else if((el=e.target.closest('[data-act]'))){
+    const a=el.dataset.act;
+    if(a==='close'){if(el.classList.contains('pick-scrim')&&e.target.closest('.pick'))return;S.pick=null;}
+    if(a==='nowMore')S.nowMore=!S.nowMore;
+    if(a==='more')S.more[ph]=!S.more[ph];
+    if(a==='collapse')S.more[ph]=false;
+    if(a==='cladd')d.checklist.push('Novo item');
+  }else return;
+  render();
+});
+document.addEventListener('input',e=>{
+  const t=e.target, phone=t.closest('.phone'); if(!phone)return;
+  if(t.dataset.bind){D()[t.dataset.bind]=t.value;render(phone.dataset.ph);}
+  if(t.dataset.cl){D().checklist[+t.dataset.cl]=t.value;render(phone.dataset.ph);}
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render());
+render();
+</script>

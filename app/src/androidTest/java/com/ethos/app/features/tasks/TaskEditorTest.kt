@@ -6,6 +6,7 @@ import com.ethos.app.features.shell.CreateActions
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.remember
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.lifecycle.SavedStateHandle
@@ -18,7 +19,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
-/** Spec 013: quick capture, "Mais opções", date field semantics, review visibility and discard. */
+/** Specs 013/029: compact capture, "Mais" growing the sheet, review visibility, edit layout and discard. */
 class TaskEditorTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val day = LocalDate.of(2026, 11, 10)
@@ -53,16 +54,43 @@ class TaskEditorTest {
         show(repo)
         compose.onNodeWithContentDescription("Criar tarefa ou hábito").performClick()
         compose.onNodeWithText("Nova tarefa").performClick()
-        compose.onNodeWithText("Dificuldade").assertDoesNotExist()
-        compose.onNodeWithContentDescription("Data, Hoje").assertExists()
-        compose.onNodeWithText("Título").performTextInput("Comprar pão")
-        compose.onNodeWithText("Salvar").performClick()
+        compose.onNodeWithTag("row:IMPORTANCE").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Prazo: Hoje").assertExists()
+        compose.onNodeWithTag("editor-name").performTextInput("Comprar pão")
+        compose.onNodeWithTag("editor-save").performClick()
         compose.waitUntil(15_000) { repo.saved.value.activeOccurrences.size == 1 }
         val o = repo.saved.value.activeOccurrences.single()
         assertEquals(day, o.dueDate)
         assertEquals(1, o.fields.difficulty)
         assertEquals(RepeatKind.NONE, repo.saved.value.definitions.single().rule.kind)
-        compose.onNodeWithTag("more-options").assertDoesNotExist()
+        compose.onNodeWithTag("editor-sheet").assertDoesNotExist()
+    }
+
+    @Test fun moreExpandsTheSheetAndCollapseKeepsTheDraft() {
+        val repo = FakeRepository(clock)
+        show(repo)
+        compose.onNodeWithContentDescription("Criar tarefa ou hábito").performClick()
+        compose.onNodeWithText("Nova tarefa").performClick()
+        compose.onNodeWithTag("editor-name").performTextInput("Pagar luz")
+        compose.onNodeWithTag("editor-more").performClick()
+        compose.onNodeWithTag("row:IMPORTANCE").performScrollTo().performClick()
+        compose.onNodeWithText("Alta").performClick()
+        compose.onNodeWithText("Pronto").performClick()
+        compose.onNodeWithTag("row:IMPORTANCE").assertTextContains("Alta", substring = true)
+        compose.onNodeWithContentDescription("Recolher").performClick()
+        compose.onNodeWithTag("editor-more").assertExists()
+        compose.onNodeWithText("Pagar luz").assertExists()
+    }
+
+    @Test fun editingOpensExpandedWithoutCollapse() {
+        val repo = FakeRepository(clock)
+        runBlocking { repo.execute(TaskAction.Create("t", TaskFields(title = "Existente"), RepeatRule(start = day))) }
+        val vm = show(repo)
+        compose.runOnIdle { vm.edit(vm.state.value.snapshot.activeOccurrences.single()) }
+        compose.onNodeWithText("Editar tarefa").assertExists()
+        compose.onNodeWithTag("editor-more").assertDoesNotExist()
+        compose.onNodeWithTag("row:DESCRIPTION").assertExists()
+        compose.onNodeWithContentDescription("Fechar").assertExists()
     }
 
     @Test fun reviewConfirmationAppearsOnlyWhenOverdueDateChanges() {
@@ -82,15 +110,20 @@ class TaskEditorTest {
         show(repo)
         compose.onNodeWithContentDescription("Criar tarefa ou hábito").performClick()
         compose.onNodeWithText("Nova tarefa").performClick()
-        compose.onNodeWithText("Título").performTextInput("Rascunho")
-        compose.onNodeWithText("Voltar").performClick()
+        compose.onNodeWithTag("editor-name").performTextInput("Rascunho")
+        tapOutsideSheet()
         compose.onNodeWithText("Descartar alterações?").assertIsDisplayed()
         compose.onNodeWithText("Continuar editando").performClick()
         compose.onNodeWithText("Rascunho").assertExists()
-        compose.onNodeWithText("Voltar").performClick()
+        tapOutsideSheet()
         compose.onNodeWithText("Descartar").performClick()
         compose.onNodeWithText("Rascunho").assertDoesNotExist()
         assertEquals(0, repo.saved.value.activeOccurrences.size)
+    }
+
+    /** The compact sheet sits at the bottom of its dialog; a tap near the top lands on the area outside it. */
+    private fun tapOutsideSheet() {
+        compose.onAllNodes(isRoot()).onLast().performTouchInput { click(Offset(centerX, top + OUTSIDE_TAP_Y)) }
     }
 
     private class FakeRepository(private val clock: TaskClock) : TaskRepository {
@@ -101,3 +134,5 @@ class TaskEditorTest {
         }
     }
 }
+
+private const val OUTSIDE_TAP_Y = 120f

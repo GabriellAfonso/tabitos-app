@@ -49,13 +49,15 @@ class TasksContentTest {
         }
         compose.onNodeWithContentDescription("Criar tarefa ou hábito").performClick()
         compose.onNodeWithText("Nova tarefa").performClick()
-        compose.onNodeWithText("Título").performTextInput("Preparar mochila")
-        compose.onNodeWithTag("more-options").performClick()
+        compose.onNodeWithTag("editor-name").performTextInput("Preparar mochila")
+        compose.onNodeWithTag("editor-more").performClick()
+        compose.onNodeWithTag("row:CHECKLIST").performScrollTo().performClick()
         compose.onNodeWithText("+ Adicionar item").performScrollTo().performClick()
         compose.onNodeWithTag("checklist:0").performTextInput("Chaves")
         compose.onNodeWithText("+ Adicionar item").performScrollTo().performClick()
         compose.onNodeWithTag("checklist:1").performTextInput("Água")
-        compose.onNodeWithText("Salvar").performClick()
+        compose.onNodeWithText("Pronto").performScrollTo().performClick()
+        compose.onNodeWithTag("editor-save").performClick()
         compose.waitUntil(15_000) { repo.saved.value.activeOccurrences.size == 1 }
         compose.onNodeWithText("Preparar mochila", useUnmergedTree = true).performScrollTo().performClick()
         compose.onNodeWithText("Concluir").performScrollTo().performClick()

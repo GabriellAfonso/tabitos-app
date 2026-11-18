@@ -69,7 +69,6 @@
     <string name="picker_cancel">Cancelar</string>
     <string name="remove_time">Remover horário</string>
     <string name="more_options">Mais opções</string>
-    <string name="fewer_options">Menos opções</string>
     <string name="checklist">Checklist</string>
     <string name="checklist_item">Item %1$d</string>
     <string name="checklist_add">Adicionar item</string>
@@ -309,13 +308,6 @@
     <string name="habit_week">Semana</string>
     <string name="habit_month">Mês</string>
     <string name="habit_weekdays">Em quais dias</string>
-    <string name="habit_mon">Segunda</string>
-    <string name="habit_tue">Terça</string>
-    <string name="habit_wed">Quarta</string>
-    <string name="habit_thu">Quinta</string>
-    <string name="habit_fri">Sexta</string>
-    <string name="habit_sat">Sábado</string>
-    <string name="habit_sun">Domingo</string>
     <string name="habit_goal_effect">Quando alterar a meta?</string>
     <string name="habit_current_period">Já neste período</string>
     <string name="habit_next_period">A partir do próximo período</string>
@@ -504,8 +496,6 @@
     <string name="task_timer_done">Concluída pelo cronômetro</string>
     <string name="timer_chip_start">Iniciar cronômetro de %1$s, faltam %2$s</string>
     <string name="timer_chip_pause">Pausar cronômetro de %1$s, faltam %2$s</string>
-    <string name="variant">Tipo</string>
-    <string name="variant_normal">Normal</string>
     <string name="variant_timed">Com cronômetro</string>
     <string name="timed_removes_checklist">Com cronômetro não há checklist: os itens serão removidos ao salvar.</string>
     <string name="timed_confirm_title">Concluir sem completar o tempo?</string>
@@ -933,4 +923,23 @@
     <string name="channels_setting_hint">Lembretes e resumos</string>
     <string name="channels_dialog_title">Sons e vibração</string>
     <string name="channels_dialog_hint">Abre os ajustes do Android para o tipo de aviso escolhido.</string>
+    <!-- Editor em folha (spec 029) -->
+    <string name="editor_more">Mais</string>
+    <string name="editor_collapse">Recolher</string>
+    <string name="editor_description">Descrição</string>
+    <string name="editor_done">Pronto</string>
+    <string name="editor_chip_value">%1$s: %2$s</string>
+    <string name="editor_timer_add">Cronômetro</string>
+    <string name="editor_look">Cor e ícone</string>
+    <string name="editor_limit">Limite</string>
+    <string name="editor_days">Dias</string>
+    <string name="editor_times">Vezes</string>
+    <string name="editor_duration">Duração</string>
+    <string name="editor_none">Nenhuma</string>
+    <string name="editor_new_bad_habit">Quebrar hábito</string>
+    <string name="editor_minutes_value">%1$d min</string>
+    <plurals name="editor_checklist_items">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d itens</item>
+    </plurals>
 </resources>
