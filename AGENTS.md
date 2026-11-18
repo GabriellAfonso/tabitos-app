@@ -240,7 +240,16 @@ Spec027: abertura rápida — Hoje aparece completo (TodayReadiness) e depois Ca
 um por vez (core/startup/StartupSequence); abrir a página ou notificação carrega na hora. Refresh de tarefas e
 fechamento de hábitos só após o Hoje; tarefas/hábitos gravam só linhas alteradas (core/tasks/data/ChangedRows.kt).
 "Fully drawn" no logcat mede o tempo até o Hoje. 243 JVM; instrumentados não executados; medição no celular pendente.
+Spec029: editores de tarefa/bom/mau hábito em folha que cresce (core/ui/components/GrowingSheet.kt): criar abre
+compacta com chips de valor e teclado; "Mais" ou editar abre tela cheia com linhas rótulo→valor. Sem lembrete no
+editor nem troca de tipo; regras/schema inalterados; mapeamento de hábito em HabitEditorPresentation.kt. 262 JVM.
 <!-- SPECKIT END -->
 Spec025: Configurações em lista agrupada (Aparência/Modo jogo/Notificações e alarmes/Dados), linhas em
 core/ui/components/SettingsRows.kt; Tema abre diálogo; Ganhos e penalidades é sub-página (EARNINGS, só modo jogo).
 Aviso de notificações só quando bloqueadas; resumo diário com seletor de hora; sem mudança de regras/schema.
+Spec028: seletor de ícone com uma linha de principais fixos por editor/tipo + "Ver mais" (folha com busca e
+categorias); catálogo único core/icons/AppIcon (~127). Índices de lista/hábito e chaves de recompensa preservados:
+só acrescentar no fim do enum, nunca renomear (AppIconTest fixa a ordem). Sem mudança de schema.
+Spec030: Calendário opção C — Mês|Semana|Dia centralizado (Hoje à esquerda só fora do período, filtro à direita),
+"‹ período ›" abaixo, filtros em folha com chips removíveis; Mês = grade compacta fixa com pontos separados
+(tarefas/hábitos/acompanhamento) e lista do dia rolando embaixo; Semana = agenda de 7 dias; regras 009 inalteradas.
