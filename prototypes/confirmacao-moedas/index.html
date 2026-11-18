@@ -1,0 +1,362 @@
+<title>Confirmação de moedas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap">
+<style>
+/* Layout: cabeçalho com situação de exemplo e tema · fila de 4 celulares (Como está + A, B, C) · ficha de cada versão · o que fica igual. */
+:root{
+  --paper:#f5f4f7; --sheet:#ffffff; --ink:#1e1a23; --muted:#625b6b; --line:#e3dee8;
+  --plum:#6e4a8e; --plum-soft:#efe6f6; --amber:#93601a; --amber-soft:#fbf0e0;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif; --body:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--body)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.wrap{max-width:1680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 8px}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+h1{font:800 clamp(30px,4.4vw,46px)/1.05 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+h2{font:700 22px/1.2 var(--display);margin:0 0 6px}
+h3{font:700 16px/1.3 var(--display);margin:0}
+.lede{max-width:78ch;color:var(--muted);margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.ctl{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;min-width:0}
+.ctl>span{font-size:12.5px;color:var(--muted);font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--paper);padding:5px 11px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:var(--sheet);font-weight:600}
+main{padding-block:22px 60px;display:grid;gap:34px}
+.phones{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:26px;align-items:start}
+.col{display:grid;gap:12px;min-width:0}
+.col-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--plum-soft);color:var(--plum);font-weight:600;white-space:nowrap}
+.badge.now{background:var(--amber-soft);color:var(--amber)}
+.hint{font-size:12.5px;color:var(--muted);margin:0}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0}
+.card ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.card h5{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+.card h5:first-child{margin-top:0}
+.linkbtn{border:0;background:none;color:var(--plum);font-size:12.5px;text-decoration:underline;padding:0}
+.keep{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px}
+
+/* CELULAR — tokens Ameixa (core/ui/theme/EthosTheme.kt) */
+.phone{--p:#6E4A8E;--onp:#fff;--pc:#F1E7F8;--onpc:#2E1A40;--sc:#F1E7F8;--t:#93601A;--tc:#FBF0E0;--ontc:#4A3008;--bg:#FBF8FC;--on:#231D29;--onv:#655C6E;--low:#fff;--cont:#F3EEF6;--high:#F1E9F5;--ol:#8F8498;--olv:#E6DEEB;--err:#B3261E;--errc:#F9DEDC;--onerrc:#410E0B;
+  width:100%;max-width:380px;height:760px;margin:0 auto;border:8px solid #26212b;border-radius:44px;background:var(--bg);color:var(--on);position:relative;overflow:hidden;display:flex;flex-direction:column;font:14px/1.4 Roboto,system-ui,sans-serif;box-shadow:0 18px 40px rgba(30,20,40,.18)}
+.phone.dark{--p:#D7B8F2;--onp:#3B1F55;--pc:#44325A;--onpc:#F1E2FC;--sc:#3A2D47;--t:#E8BE7A;--tc:#352A1F;--ontc:#F6DDB4;--bg:#171419;--on:#ECE4F0;--onv:#B1A6B8;--low:#211C25;--cont:#1F1A23;--high:#2A2430;--ol:#82788A;--olv:#372F3D;--err:#F2B8B5;--errc:#5C1F1B;--onerrc:#F9DEDC}
+.phone *{box-sizing:border-box}
+.phone button{color:inherit}
+.p-status{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;font-weight:600}
+.p-head{display:flex;align-items:center;gap:4px;padding:6px 6px 8px;flex:none}
+.ib{width:44px;height:44px;border:0;background:none;font-size:19px;border-radius:50%;display:grid;place-items:center;color:var(--on);flex:none}
+.p-head .tt{flex:1;min-width:0}
+.p-head .dt{font-size:10px;letter-spacing:.06em;color:var(--onv)}
+.p-head .h{font-size:22px;font-weight:700}
+.p-head .wallet{font-size:13px;font-weight:600;color:var(--t);padding:0 6px;white-space:nowrap}
+.p-body{flex:1;overflow-y:auto;padding:4px 16px 100px;display:flex;flex-direction:column;gap:8px}
+.p-fab{position:absolute;right:16px;bottom:24px;width:56px;height:56px;border-radius:16px;border:0;background:var(--pc);color:var(--onpc);font-size:28px;box-shadow:0 4px 10px rgba(0,0,0,.18);z-index:2}
+.m-sec{font-size:14px;font-weight:600;margin-top:6px;color:var(--onv)}
+.m-task{display:flex;align-items:center;gap:4px;border:1px solid var(--olv);background:var(--low);border-radius:14px;padding:4px 10px 4px 2px}
+.m-task.res .m-tt{text-decoration:line-through;color:var(--onv)}
+.m-task.bad{background:var(--errc);border-color:var(--errc)}
+.m-ckc{width:46px;height:46px;flex:none;display:grid;place-items:center}
+.ring{width:22px;height:22px;border-radius:50%;border:2px solid var(--ol);display:grid;place-items:center;font-size:13px;color:var(--onp);flex:none}
+.ring.on{background:var(--p);border-color:var(--p)}
+.m-tb{flex:1;min-width:0;padding:8px 0}
+.m-tt{font-size:14px;font-weight:600}
+.m-meta{font-size:12px;color:var(--onv)}
+.coin{color:var(--t);font-weight:600}
+.m-scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:6;display:flex;align-items:center;justify-content:center;padding:20px}
+.m-scrim.bottom{align-items:flex-end;padding:0}
+.m-dialog{background:var(--high);border-radius:28px;padding:22px 22px 14px;width:100%;max-height:94%;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.m-dialog h6{font-size:22px;font-weight:400;margin:0;line-height:1.25}
+.m-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.m-tbtn{border:0;background:none;color:var(--p)!important;font-weight:500;font-size:14px;padding:10px 12px;border-radius:20px}
+.m-tbtn:hover{background:var(--cont)}
+.m-fbtn{border:0;border-radius:20px;background:var(--p);color:var(--onp)!important;padding:10px 22px;font-weight:500;font-size:14px}
+.m-fbtn.danger{background:var(--err);color:var(--bg)!important}
+.m-toast{position:absolute;left:50%;transform:translateX(-50%);bottom:96px;background:#322d36;color:#f3eff6;border-radius:20px;padding:8px 14px;font-size:12.5px;z-index:12;white-space:nowrap}
+.reopen{position:absolute;left:16px;right:88px;bottom:28px;z-index:3;border:1px dashed var(--ol);background:var(--low);border-radius:14px;padding:12px;font-size:13px;color:var(--p)!important;font-weight:500}
+
+/* Como está */
+.now-entry{display:grid;gap:2px;font-size:14px;color:var(--onv)}
+.now-entry b{font-size:14px;font-weight:500;color:var(--on)}
+.now-entry .t{color:var(--on)}
+
+/* A — recibo */
+.a-kind{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--onv);font-weight:500}
+.a-title{margin-top:-6px!important}
+.a-delta{display:flex;gap:10px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:baseline;gap:6px;border-radius:16px;padding:10px 16px;font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill small{font-size:13px;font-weight:500}
+.pill.coins{background:var(--tc);color:var(--ontc)}
+.pill.coins.neg{background:var(--errc);color:var(--onerrc)}
+.pill.xp{background:var(--pc);color:var(--onpc)}
+.pill.xp.neg{background:var(--cont);color:var(--onv)}
+.a-bal{font-size:14px;color:var(--onv);font-variant-numeric:tabular-nums}
+.a-bal b{color:var(--on);font-weight:600}
+.lvlup{display:flex;gap:8px;align-items:center;background:var(--pc);color:var(--onpc);border-radius:12px;padding:8px 12px;font-size:13.5px;font-weight:500}
+.floor{background:var(--tc);color:var(--ontc);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.4}
+
+/* B — folha */
+.s-sheet{background:var(--high);border-radius:28px 28px 0 0;width:100%;padding:10px 20px 18px;display:flex;flex-direction:column;gap:14px;animation:up .2s ease-out;max-height:92%;overflow-y:auto}
+@keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+.handle{width:32px;height:4px;border-radius:2px;background:var(--ol);opacity:.5;margin:0 auto 2px}
+.b-head{display:flex;gap:12px;align-items:center}
+.b-ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;font-size:20px;flex:none;background:var(--pc);color:var(--onpc)}
+.b-ic.neg{background:var(--errc);color:var(--onerrc)}
+.b-head .k{font-size:12.5px;color:var(--onv)}
+.b-head .n{font-size:17px;font-weight:500;line-height:1.25}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{border-radius:16px;padding:12px;display:grid;gap:4px;min-width:0}
+.tile.c{background:var(--tc);color:var(--ontc)}
+.tile.c.neg{background:var(--errc);color:var(--onerrc)}
+.tile.x{background:var(--cont)}
+.tile .lab{font-size:11.5px;letter-spacing:.04em;font-weight:500;opacity:.85}
+.tile .big{font-size:26px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile .from{font-size:12.5px;font-variant-numeric:tabular-nums;opacity:.9}
+.bar{height:6px;border-radius:3px;background:var(--olv);overflow:hidden;display:flex}
+.bar i{display:block;height:100%;background:var(--p)}
+.bar i.gain{background:var(--t)}
+.bar i.lost{background:repeating-linear-gradient(45deg,var(--ol) 0 3px,transparent 3px 6px)}
+.b-more{border:0;background:none;color:var(--p)!important;font-size:13px;padding:0;align-self:flex-start;font-weight:500}
+.b-det{display:grid;gap:4px;font-size:13px;color:var(--onv);border-top:1px solid var(--olv);padding-top:10px}
+.b-det div{display:flex;justify-content:space-between;gap:12px}
+.b-det span:last-child{color:var(--on);text-align:right}
+.b-btns{display:grid;gap:6px}
+.b-btns .m-fbtn{padding:13px;font-size:15px}
+.b-btns .m-tbtn{justify-self:center}
+
+/* C — extrato */
+.c-rows{display:grid;gap:0;font-variant-numeric:tabular-nums;border:1px solid var(--olv);border-radius:16px;background:var(--low);overflow:hidden}
+.c-row{display:flex;justify-content:space-between;gap:12px;align-items:baseline;padding:10px 14px;font-size:14px}
+.c-row+.c-row{border-top:1px solid var(--olv)}
+.c-row .l{min-width:0;color:var(--onv)}
+.c-row .l b{display:block;color:var(--on);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c-row .v{white-space:nowrap;font-weight:500}
+.c-row .v.pos{color:var(--t)}
+.c-row .v.neg{color:var(--err)}
+.c-row.total{background:var(--cont)}
+.c-row.total .l{color:var(--on);font-weight:600}
+.c-row.total .v{font-size:18px;font-weight:700}
+.c-xp{display:grid;gap:6px;font-size:13px;color:var(--onv)}
+.c-xp .top{display:flex;justify-content:space-between;gap:8px}
+.c-xp b{color:var(--on);font-weight:600}
+@media (max-width:420px){.phone{height:720px;border-width:6px;border-radius:36px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<header class="top wrap">
+  <div class="eyebrow">Ethos · protótipo de interface · rodada 1</div>
+  <h1>Confirmação de moedas</h1>
+  <p class="lede">O diálogo que aparece com o modo jogo ligado ao concluir, marcar como não será feita, desfazer uma tarefa ou registrar um mau hábito. Hoje ele lista o lançamento em frases técnicas (“Variação em moedas: 20 · XP: 40…”), com data no formato 2026-11-18. Abaixo, três propostas para a mesma informação. Troque a situação para ver ganho, penalidade, estorno, mau hábito e saldo no mínimo. Dados fictícios; hoje é quarta, 18 de novembro; saldo atual 135 ◈, nível 3.</p>
+  <div class="controls" id="controls"></div>
+</header>
+
+<main class="wrap">
+  <div class="phones" id="phones"></div>
+  <section>
+    <h2>O que fica igual em todas</h2>
+    <div class="keep">
+      <div class="card"><h5>Regras</h5><ul><li>A confirmação continua obrigatória antes de qualquer lançamento; Cancelar não grava nada.</li><li>Valores vêm da mesma prévia (<code>FinancialPreview</code>): lançamentos, saldo final e XP total.</li><li>Saldo mínimo −300 ◈, XP nunca é perdido por falha, hábito perdido não custa moedas.</li></ul></div>
+      <div class="card"><h5>Interface</h5><ul><li>Moedas em âmbar com ◈ e XP na cor primária, como no resto do app.</li><li>Nada muda com o modo jogo desligado: o diálogo não aparece.</li><li>Textos em <code>strings.xml</code>; números em algarismos alinhados; leitura completa pelo TalkBack.</li></ul></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const SCENARIOS = {
+  gain:  {label:"Concluir tarefa", kind:"Tarefa concluída", verb:"Concluir", icon:"✓", title:"Revisar relatório trimestral",
+          entryKind:"Ganho por cumprimento", source:"Tarefa · data de referência: 2026-11-18", detail:"Difícil", coins:20, nominal:20, xp:40, bal:135, xp0:430},
+  fail:  {label:"Não será feita", kind:"Não será feita", verb:"Marcar não será feita", icon:"✕", title:"Pagar conta de luz",
+          entryKind:"Penalidade confirmada", source:"Tarefa · data de referência: 2026-11-18", detail:"Importância alta", coins:-20, nominal:-20, xp:0, bal:135, xp0:430},
+  undo:  {label:"Desfazer conclusão", kind:"Desfazer conclusão", verb:"Desfazer", icon:"↺", title:"Correr 5 km",
+          entryKind:"Estorno por correção", source:"Tarefa · data de referência: 2026-11-18", detail:"Devolve o ganho de hoje", coins:-10, nominal:-10, xp:-20, bal:135, xp0:430},
+  bad:   {label:"Mau hábito excedido", kind:"Limite ultrapassado", verb:"Registrar", icon:"!", title:"Redes sociais · até 1 h por dia",
+          entryKind:"Penalidade confirmada", source:"Evento proibido ou excedente: 2026-11-18", detail:"2º registro hoje (limite 1)", coins:-10, nominal:-10, xp:0, bal:135, xp0:430},
+  floor: {label:"Saldo no mínimo", kind:"Não será feita", verb:"Marcar não será feita", icon:"✕", title:"Ligar para o dentista",
+          entryKind:"Penalidade confirmada", source:"Tarefa · data de referência: 2026-11-18", detail:"Importância alta", coins:-10, nominal:-20, xp:0, bal:-290, xp0:430},
+};
+const VERSIONS = [
+  {id:"now", title:"Como está", badge:"app atual", now:true},
+  {id:"a", title:"A · Recibo", badge:"proposta"},
+  {id:"b", title:"B · Folha com nível", badge:"proposta"},
+  {id:"c", title:"C · Extrato", badge:"proposta"},
+];
+const EXPLAIN = {
+  a:{what:["Título diz a ação (“Tarefa concluída”) e o nome da tarefa em destaque.","Variação em dois selos grandes: ◈ em âmbar (vermelho se perde) e XP.","Uma linha de saldo “135 ◈ → 155 ◈”; aviso quando sobe de nível ou bate no mínimo.","Botão principal com o verbo da ação, em vez de “Confirmar”."],
+     pro:["Lido num relance; continua sendo um diálogo do mesmo tamanho de hoje.","Menor mudança de código: troca o conteúdo de FinancialConfirmation."],
+     imp:["Data de referência e horário do lançamento saem do diálogo (continuam no Histórico).","Strings novas para cada tipo de ação."]},
+  b:{what:["Folha inferior com ícone, tipo de ação e nome.","Dois blocos lado a lado: Moedas (de → para) e XP com barra do nível.","“Ver detalhes” abre data de referência, regra aplicada e horário.","Botão largo com o verbo e Cancelar embaixo, ao alcance do polegar."],
+     pro:["Mostra o progresso de nível no momento em que ele muda, o que dá mais sensação de jogo.","Detalhes técnicos continuam acessíveis sem poluir."],
+     imp:["Mais alta que um diálogo; troca AlertDialog por ModalBottomSheet.","Precisa do nível atual na prévia (já dá para calcular com AccountingRules.progress)."]},
+  c:{what:["Diálogo com o lançamento em formato de extrato: saldo atual, linha da ação, novo saldo.","XP numa linha separada com barra fina.","Saldo no mínimo aparece como linha “Limite do saldo” no próprio extrato."],
+     pro:["Mais claro quando há mais de um lançamento (ex.: estorno + novo resultado).","Contas visíveis: quem quer conferir vê exatamente de onde vem o número."],
+     imp:["Mais linhas que A; em telas pequenas com fonte grande pode rolar.","Combina com a aba Histórico de Estatísticas, que já lista lançamentos."]},
+};
+const S = {scenario:"gain", theme:"page"};
+const P = {}; VERSIONS.forEach(v => P[v.id] = {open:true, more:false, toast:null});
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const sign = n => n > 0 ? `+${n}` : n < 0 ? `−${Math.abs(n)}` : "0";
+const dark = () => S.theme === "dark" || (S.theme === "page" && matchMedia("(prefers-color-scheme: dark)").matches);
+function progress(xp) {
+  let level = 1, start = 0, req = 100;
+  while (xp >= start + req) { start += req; level++; req = 100 + 50 * (level - 1); }
+  return {level, within: xp - start, req};
+}
+function calc(s) {
+  const bal1 = s.bal + s.coins, xp1 = s.xp0 + s.xp;
+  return {bal1, xp1, p0: progress(s.xp0), p1: progress(xp1), clipped: s.nominal !== s.coins};
+}
+
+/* ---------- fundo: tela Hoje ---------- */
+function home(s) {
+  const c = calc(s);
+  const card = (t, m, on, extra = "") => `<div class="m-task${on ? " res" : ""}${extra}"><div class="m-ckc"><span class="ring${on ? " on" : ""}">${on ? "✓" : ""}</span></div><div class="m-tb"><div class="m-tt">${esc(t)}</div><div class="m-meta">${m}</div></div></div>`;
+  return `<div class="m-sec">Hoje</div>
+    ${card(S.scenario === "bad" ? "Ler 20 páginas" : s.title, S.scenario === "gain" ? `Trabalho · <span class="coin">+20 ◈</span>` : `Casa · <span class="coin">+10 ◈</span>`, S.scenario === "gain" || S.scenario === "undo")}
+    ${card("Beber 2 L de água", `Saúde · <span class="coin">+5 ◈</span>`, false)}
+    ${card("Responder e-mails da escola", `Pessoal · 16:00 · <span class="coin">+10 ◈</span>`, false)}
+    ${S.scenario === "bad" ? card(s.title, "Mau hábito · 1 de 1 hoje", false, " bad") : ""}
+    <div class="m-sec">Amanhã</div>
+    ${card("Trocar filtro do ar-condicionado", `Casa · <span class="coin">+5 ◈</span>`, false)}`;
+}
+
+/* ---------- versões ---------- */
+const RENDER = {
+  now(s) {
+    const c = calc(s);
+    const clip = c.clipped ? `<div>Saldo no mínimo (−300 ◈): aplicado ${s.coins} de ${s.nominal}.</div>` : "";
+    return `<div class="m-scrim"><div class="m-dialog" role="dialog" aria-label="Confirmar efeito financeiro">
+      <h6>Confirmar efeito financeiro</h6>
+      <div class="now-entry"><b>${esc(s.entryKind)}</b><div class="t">${esc(s.title)}</div><div>${esc(s.source)}</div>
+        <div>Variação em moedas: ${s.coins} · XP: ${s.xp} · saldo em moedas: ${c.bal1}</div><div>Lançamento: 18/11/2026 14:32</div>${clip}</div>
+      <div class="now-entry"><div class="t">Saldo em moedas após confirmar: ${c.bal1} · XP acumulados: ${c.xp1}</div></div>
+      <div class="m-actions"><button class="m-tbtn" data-cancel>Cancelar</button><button class="m-tbtn" data-ok>Confirmar</button></div>
+    </div></div>`;
+  },
+  a(s) {
+    const c = calc(s), neg = s.coins < 0;
+    const xpPill = s.xp ? `<span class="pill xp${s.xp < 0 ? " neg" : ""}">${sign(s.xp)}<small>XP</small></span>` : "";
+    const lvl = c.p1.level > c.p0.level ? `<div class="lvlup">★ Você sobe para o nível ${c.p1.level}</div>` : "";
+    const floor = c.clipped ? `<div class="floor">O saldo não passa de −300 ◈. Desta vez saem só ${Math.abs(s.coins)} ◈ dos ${Math.abs(s.nominal)} ◈ da penalidade.</div>` : "";
+    const noXp = !s.xp && neg && S.scenario !== "undo" ? `<div class="a-bal">XP não muda: falhas nunca tiram XP.</div>` : "";
+    return `<div class="m-scrim"><div class="m-dialog" role="dialog" aria-label="${esc(s.kind)}">
+      <div class="a-kind">${esc(s.kind)}</div>
+      <h6 class="a-title">${esc(s.title)}</h6>
+      <div class="a-delta"><span class="pill coins${neg ? " neg" : ""}">${sign(s.coins)}<small>◈</small></span>${xpPill}</div>
+      <div class="a-bal">Saldo <b>${s.bal} ◈</b> → <b>${c.bal1} ◈</b></div>
+      ${noXp}${lvl}${floor}
+      <div class="m-actions"><button class="m-tbtn" data-cancel>Cancelar</button><button class="m-fbtn${neg ? " danger" : ""}" data-ok>${esc(s.verb)}</button></div>
+    </div></div>`;
+  },
+  b(s) {
+    const c = calc(s), neg = s.coins < 0, st = P.b;
+    const p = c.p1, up = c.p1.level > c.p0.level;
+    let bar;
+    if (s.xp > 0 && !up) bar = `<i style="width:${c.p0.within / p.req * 100}%"></i><i class="gain" style="width:${s.xp / p.req * 100}%"></i>`;
+    else if (s.xp < 0) bar = `<i style="width:${p.within / p.req * 100}%"></i><i class="lost" style="width:${-s.xp / p.req * 100}%"></i>`;
+    else bar = `<i style="width:${p.within / p.req * 100}%"></i>`;
+    const xpBig = s.xp ? sign(s.xp) : "0";
+    const xpLine = up ? `Nível ${c.p0.level} → <b>${p.level}</b>` : `Nível ${p.level} · ${p.within}/${p.req}`;
+    const det = st.more ? `<div class="b-det">
+        <div><span>Lançamento</span><span>${esc(s.entryKind)}</span></div>
+        <div><span>Regra</span><span>${esc(s.detail)}</span></div>
+        <div><span>Data de referência</span><span>18 nov</span></div>
+        ${c.clipped ? `<div><span>Penalidade cheia</span><span>${sign(s.nominal)} ◈ (limite −300 ◈)</span></div>` : ""}
+        <div><span>XP total</span><span>${s.xp0} → ${c.xp1}</span></div></div>` : "";
+    return `<div class="m-scrim bottom"><div class="s-sheet" role="dialog" aria-label="${esc(s.kind)}">
+      <div class="handle"></div>
+      <div class="b-head"><div class="b-ic${neg ? " neg" : ""}">${s.icon}</div><div style="min-width:0"><div class="k">${esc(s.kind)}</div><div class="n">${esc(s.title)}</div></div></div>
+      <div class="tiles">
+        <div class="tile c${neg ? " neg" : ""}"><span class="lab">MOEDAS</span><span class="big">${sign(s.coins)} ◈</span><span class="from">${s.bal} → ${c.bal1} ◈${c.clipped ? " · no mínimo" : ""}</span></div>
+        <div class="tile x"><span class="lab">XP</span><span class="big">${xpBig}</span><span class="from">${xpLine}</span><div class="bar">${bar}</div></div>
+      </div>
+      <button class="b-more" data-more>${st.more ? "Ocultar detalhes" : "Ver detalhes"}</button>
+      ${det}
+      <div class="b-btns"><button class="m-fbtn${neg ? " danger" : ""}" data-ok>${esc(s.verb)}</button><button class="m-tbtn" data-cancel>Cancelar</button></div>
+    </div></div>`;
+  },
+  c(s) {
+    const c = calc(s), neg = s.coins < 0, up = c.p1.level > c.p0.level;
+    const vcls = n => n > 0 ? "pos" : n < 0 ? "neg" : "";
+    const rows = c.clipped
+      ? `<div class="c-row"><span class="l"><b>${esc(s.title)}</b>${esc(s.entryKind)}</span><span class="v neg">${sign(s.nominal)} ◈</span></div>
+         <div class="c-row"><span class="l"><b>Limite do saldo</b>não passa de −300 ◈</span><span class="v pos">+${s.coins - s.nominal} ◈</span></div>`
+      : `<div class="c-row"><span class="l"><b>${esc(s.title)}</b>${esc(s.entryKind)}</span><span class="v ${vcls(s.coins)}">${sign(s.coins)} ◈</span></div>`;
+    const xp = s.xp
+      ? `<div class="c-xp"><div class="top"><span>XP <b>${sign(s.xp)}</b></span><span>${up ? `Nível ${c.p0.level} → <b>${c.p1.level}</b>` : `Nível ${c.p1.level} · ${c.p1.within}/${c.p1.req}`}</span></div><div class="bar"><i style="width:${c.p1.within / c.p1.req * 100}%"></i></div></div>`
+      : `<div class="c-xp">XP não muda.</div>`;
+    return `<div class="m-scrim"><div class="m-dialog" role="dialog" aria-label="${esc(s.kind)}">
+      <h6>${esc(s.kind)}</h6>
+      <div class="c-rows">
+        <div class="c-row"><span class="l">Saldo atual</span><span class="v">${s.bal} ◈</span></div>
+        ${rows}
+        <div class="c-row total"><span class="l">Novo saldo</span><span class="v">${c.bal1} ◈</span></div>
+      </div>
+      ${xp}
+      <div class="m-actions"><button class="m-tbtn" data-cancel>Cancelar</button><button class="m-fbtn${neg ? " danger" : ""}" data-ok>${esc(s.verb)}</button></div>
+    </div></div>`;
+  },
+};
+
+function explain(id) {
+  if (id === "now") return `<div class="card"><h5>Hoje</h5><ul><li>Título genérico (“Confirmar efeito financeiro”) não diz qual ação está sendo confirmada.</li><li>Cinco linhas de texto do mesmo peso; o número que importa fica no meio de uma frase.</li><li>Data em formato técnico (2026-11-18) e horário do lançamento, que não ajudam a decidir.</li><li>Negativos aparecem com hífen (“aplicado -10 de -20”); botão “Confirmar” igual ao Cancelar.</li></ul></div>`;
+  const e = EXPLAIN[id], ul = a => `<ul>${a.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  return `<div class="card"><h5>Muda</h5>${ul(e.what)}<h5>Vantagens</h5>${ul(e.pro)}<h5>Impacto</h5>${ul(e.imp)}</div>`;
+}
+function renderControls() {
+  const seg = (key, opts, label) => `<div class="ctl"><span>${label}</span><div class="seg" role="group" aria-label="${label}">${opts.map(([v, l]) => `<button data-set="${key}" data-val="${v}" aria-pressed="${S[key] === v}">${esc(l)}</button>`).join("")}</div></div>`;
+  document.getElementById("controls").innerHTML =
+    seg("scenario", Object.entries(SCENARIOS).map(([k, v]) => [k, v.label]), "Situação") +
+    seg("theme", [["page","Igual à página"],["light","Claro"],["dark","Escuro"]], "Tema dos celulares");
+}
+function render() {
+  renderControls();
+  const s = SCENARIOS[S.scenario];
+  document.getElementById("phones").innerHTML = VERSIONS.map(v => {
+    const st = P[v.id];
+    return `<div class="col"><div class="col-head"><h3>${esc(v.title)}</h3><span class="badge${v.now ? " now" : ""}">${esc(v.badge)}</span></div>
+      <div class="phone${dark() ? " dark" : ""}" data-phone="${v.id}">
+        <div class="p-status"><span>14:32</span><span>▴ ▮▮▮ 82%</span></div>
+        <div class="p-head"><button class="ib" aria-label="Menu">☰</button><div class="tt"><div class="dt">QUARTA-FEIRA, 18 DE NOVEMBRO</div><div class="h">Hoje</div></div><span class="wallet">◈ ${s.bal}</span><button class="ib" aria-label="Configurações">⚙</button></div>
+        <div class="p-body">${home(s)}</div>
+        <button class="p-fab" aria-label="Criar">+</button>
+        ${st.open ? RENDER[v.id](s) : `<button class="reopen" data-reopen>Mostrar a confirmação de novo</button>`}
+        ${st.toast ? `<div class="m-toast">${esc(st.toast)}</div>` : ""}
+      </div>
+      <p class="hint">${v.now ? "Espelha FinancialConfirmation (AccountingConsequences.kt)." : "Confirme, cancele e, na B, abra os detalhes."}</p>
+      ${explain(v.id)}</div>`;
+  }).join("");
+}
+
+let toastTimer = null;
+document.getElementById("controls").addEventListener("click", e => {
+  const b = e.target.closest("[data-set]"); if (!b) return;
+  S[b.dataset.set] = b.dataset.val;
+  if (b.dataset.set === "scenario") VERSIONS.forEach(v => Object.assign(P[v.id], {open:true, more:false, toast:null}));
+  render();
+});
+document.getElementById("phones").addEventListener("click", e => {
+  const ph = e.target.closest("[data-phone]"); if (!ph) return;
+  const st = P[ph.dataset.phone], hit = sel => e.target.closest(sel);
+  if (hit("[data-more]")) { st.more = !st.more; render(); return; }
+  if (hit("[data-reopen]")) { st.open = true; render(); return; }
+  if (hit("[data-ok]") || hit("[data-cancel]")) {
+    const s = SCENARIOS[S.scenario];
+    st.open = false;
+    st.toast = hit("[data-ok]") ? `Simulação: ${sign(s.coins)} ◈ lançado` : "Cancelado, nada foi gravado";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { VERSIONS.forEach(v => P[v.id].toast = null); render(); }, 1600);
+    render();
+  }
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
+render();
+</script>
