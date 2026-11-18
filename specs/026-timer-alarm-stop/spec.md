@@ -18,6 +18,8 @@ nem pela notificação nem dentro do app.
   - Deslizar a notificação para fora também conta como parar.
 - Com o Ethos aberto, aparece um pop-up "Tempo concluído" com o nome do item, "Marcado como feito." e o botão
   **Parar alarme**. Fechar o pop-up de qualquer forma (botão, voltar, tocar fora) para o alarme.
+- Quando o som acaba sozinho (2026-11-18), o pop-up some e a notificação, se ainda estiver visível, é trocada
+  pelo aviso silencioso de conclusão, sem **Parar alarme**.
 - Parar o alarme só cala o som: a conclusão automática, o "Concluída pelo cronômetro · Desfazer" e as regras de
   moedas/XP continuam iguais.
 - Só o fim de meta de tarefa/hábito toca alarme; tempo comprado de recompensa continua com aviso silencioso.
@@ -26,6 +28,8 @@ nem pela notificação nem dentro do app.
 
 - O som continua sendo o do canal `ethos_timer_alarms` (sem player próprio nem serviço novo); a duração do toque
   continua sendo a do som de alarme do sistema.
+- O fim do toque é estimado pela duração do som do canal (`MediaMetadataRetriever`), limitada a 5 s–5 min;
+  sem duração legível, 30 s. Notificações não repetem o som, então essa duração é o tempo real do toque.
 - O estado "alarme tocando" fica só em memória no `TimerCoordinator`. Se o processo morrer, o pop-up não volta,
   mas a notificação continua com Parar alarme.
 - Sem mudança de schema, permissão ou dependência.

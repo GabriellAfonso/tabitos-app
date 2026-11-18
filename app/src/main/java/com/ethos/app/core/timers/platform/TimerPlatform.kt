@@ -1,6 +1,7 @@
 package com.ethos.app.core.timers.platform
 
 import android.media.AudioAttributes
+import android.media.MediaMetadataRetriever
 import android.media.RingtoneManager
 import androidx.annotation.StringRes
 import com.ethos.app.core.preferences.AppearanceRepository
@@ -127,6 +128,31 @@ class TimerNotifications @Inject constructor(@param:ApplicationContext private v
     /** Removing the alert stops its sound; a no-op when it was already tapped or dismissed. */
     fun cancelAlert(sessionId: String) = manager.cancel(alertTag(sessionId), 0)
 
+    /**
+     * How long the alarm channel sound plays once. Notification sounds never loop, so after this the alert is
+     * silent and "Parar alarme" has nothing left to stop. Unknown durations fall back to a conservative guess.
+     */
+    fun alarmSoundMillis(): Long {
+        val sound = if (Build.VERSION.SDK_INT >= 26) manager.getNotificationChannel(ALARMS)?.sound
+            else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        val duration = sound?.let(::soundDurationMillis) ?: ALARM_FALLBACK_MILLIS
+        return duration.coerceIn(ALARM_MIN_MILLIS, ALARM_MAX_MILLIS)
+    }
+
+    private fun soundDurationMillis(sound: Uri): Long? {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(context, sound)
+            retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()
+        } catch (_: RuntimeException) { null } finally { retriever.release() }
+    }
+
+    /** Re-posts a still visible alarm alert on the silent channel, without the stop action that no longer applies. */
+    fun quietAlert(session: TimerSession) {
+        val visible = manager.activeNotifications.any { it.tag == alertTag(session.id) }
+        if (visible) alert(session, TimerAuditKind.REACHED, alarm = false)
+    }
+
     private fun alarmBuilder(session: TimerSession): Notification.Builder {
         val stopIntent = PendingIntent.getBroadcast(context, session.id.hashCode(),
             Intent(context, TimerActionReceiver::class.java).setAction(ACTION_STOP_ALARM)
@@ -148,6 +174,11 @@ class TimerNotifications @Inject constructor(@param:ApplicationContext private v
         const val SESSIONS = "ethos_timers"
         const val ALERTS = "ethos_timer_alerts_silent"
         const val ALARMS = "ethos_timer_alarms"
+        /** Used when the sound length cannot be read (e.g. a ringtone the app has no access to). */
+        private const val ALARM_FALLBACK_MILLIS = 30_000L
+        /** Vibration still runs on a silent channel; keeps the popup long enough to be noticed. */
+        private const val ALARM_MIN_MILLIS = 5_000L
+        private const val ALARM_MAX_MILLIS = 5 * 60_000L
         const val ONGOING_ID = 8001
         const val ACTION_PAUSE = "com.ethos.app.TIMER_PAUSE"
         const val ACTION_STOP_ALARM = "com.ethos.app.TIMER_STOP_ALARM"
@@ -209,9 +240,7 @@ class TimerCoordinator @Inject constructor(
             result.alerts.forEach { alert ->
                 val session = sessions.firstOrNull { it.id == alert.sessionId } ?: return@forEach
                 val posted = notifications.alert(session, alert.kind, alarm)
-                if (posted && TimerNotifications.ringsAlarm(alert.kind, alarm)) {
-                    ringing.value = TimerAlarm(session.id, session.title)
-                }
+                if (posted && TimerNotifications.ringsAlarm(alert.kind, alarm)) ring(session)
             }
         }
         if (!manageService) return@withLock result
@@ -229,6 +258,17 @@ class TimerCoordinator @Inject constructor(
             // Android may refuse a background start; time stays correct and the app retries when visible.
             serviceBlocked.value = true
         } catch (_: SecurityException) { serviceBlocked.value = true }
+    }
+
+    /** Shows the alarm until the user stops it or its sound ends by itself, whichever comes first. */
+    private fun ring(session: TimerSession) {
+        val alarm = TimerAlarm(session.id, session.title)
+        ringing.value = alarm
+        scope.launch {
+            delay(notifications.alarmSoundMillis())
+            // Stopping already cleared it; a newer alarm must not be dropped or silenced by this one.
+            if (ringing.compareAndSet(alarm, null)) notifications.quietAlert(session)
+        }
     }
 
     /** Silences and forgets the alarm of [sessionId]; the completion it announced stays as it is. */
