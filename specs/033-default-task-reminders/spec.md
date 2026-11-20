@@ -1,6 +1,6 @@
 ﻿# Lembretes padrão para tarefas novas
 
-Feature 033 · 2026-11-18 · Especificada para planejamento · Branch de trabalho `master`.
+Feature 033 · 2026-11-18 · Implementada · [Verificação](verification.md).
 
 ## User Scenarios & Testing
 
@@ -83,6 +83,9 @@ Os dados pessoais e os lembretes existentes devem ser preservados na atualizaç�
 
 “Só as novas” se refere à criação da tarefa ou série. Uma tarefa criada sem prazo pode receber lembretes
 manualmente depois. As preferências não são reaplicadas quando a pessoa edita o prazo.
+
+O horário opcional para tarefas só com data se aplica a um dia específico. Os prazos por semana ou
+semana útil continuam permitindo que a pessoa escolha manualmente quando quer o aviso.
 
 Regras relacionadas em [Lembretes e notificações](../007-reminders-notifications/spec.md) e
 [Remarcar tarefa](../032-reschedule-task/spec.md).

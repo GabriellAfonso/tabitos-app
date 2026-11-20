@@ -60,6 +60,9 @@ Como usuário, não recebo avisos obsoletos e entendo quando o dispositivo imped
 
 ### User Story 4 - Resumo diário escolhido (Priority: P2)
 
+**Histórico**. O comportamento desta história e de FR-009 foi substituído pelo
+[Lembrete de revisão da spec 036](../036-daily-review-reminder/spec.md).
+
 Como usuário, habilito opcionalmente um resumo de Hoje e pendências de revisão no horário escolhido.
 **Why this priority**: oferece visão compacta sem configurar alertas por item.
 **Independent Test**: habilitar, mudar horário, conferir contagens reais e desabilitar.

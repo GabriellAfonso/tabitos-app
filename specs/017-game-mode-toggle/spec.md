@@ -155,7 +155,7 @@ explanation; pause/finish the session and it becomes available.
 
 ### Key Entities
 
-- **Game mode preference**: on/off user preference; default on.
+- **Game mode preference**: on/off user preference; default off (changed 2026-11-19).
 - **Outcome scoring status**: whether an existing task/habit outcome is priced (pays) or exempt; set when
   the outcome is recorded according to the current mode and never changed by later mode switches.
 
