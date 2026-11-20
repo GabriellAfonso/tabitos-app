@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.lifecycle.compose)
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.datastore.preferences)
+    implementation(libs.play.app.update.ktx)
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
     androidTestImplementation(platform(libs.compose.bom))
