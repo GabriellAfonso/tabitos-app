@@ -1,4 +1,4 @@
-# Ethos
+# Tabitos
 
 Shell Android implementado: Hoje, Tarefas, Hábitos, Calendário e destinos do menu lateral.
 Aparência claro/escuro/sistema salva com DataStore; Compose/Material 3 e Hilt/KSP.
@@ -38,7 +38,7 @@ Com depuração USB autorizada ou emulador iniciado:
 ```sh
 adb devices
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -W -n com.ethos.app/.MainActivity
+adb shell am start -W -n com.tabitos.app/.MainActivity
 ```
 
 Android mínimo: 7.0 (API 24). Verifique abertura sem internet, rotação e reabertura,

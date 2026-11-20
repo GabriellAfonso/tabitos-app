@@ -1,10 +1,11 @@
-# Ethos — instruções para agentes
+# Tabitos — instruções para agentes
 
 ## Projeto
 - Estado atual: planejamento, sem app implementado. As escolhas abaixo descrevem a base pretendida.
 - Não iniciar implementação até o usuário solicitar a etapa de implementação do Spec Kit.
-- App Android de tarefas, hábitos e rotinas, escrito em Kotlin. Nome inicial: Ethos.
-- Um módulo `:app`, pacote inicial `com.ethos.app`, interface em Jetpack Compose e Material 3.
+- App Android de tarefas, hábitos e rotinas, escrito em Kotlin. Nome: Tabitos (antes Ethos; renomeado em 2026-11-19).
+- Um módulo `:app`, pacote e applicationId `com.tabitos.app`, interface em Jetpack Compose e Material 3.
+  Antes era `com.ethos.app`: Tabitos é instalação nova; a rotina passa do Ethos por backup (spec037).
 - Gradle Kotlin DSL e catálogo em `gradle/libs.versions.toml`. AGP 9 com Kotlin integrado; não aplicar
   `org.jetbrains.kotlin.android` nem desativar `android.builtInKotlin`/`android.newDsl`.
 - Não introduzir backend, login, Firebase ou sincronização sem uma necessidade definida.
@@ -46,11 +47,11 @@
 - Nunca usar `LocalDate.now()`/`Instant.now()`/`System.currentTimeMillis()` em Composables ou regras: a
   data vem do relógio injetado (`TaskClock`) via estado; parâmetros padrão não podem ler o relógio.
 - Ponto de composição único e plano: `MainActivity` só trata `Intent`s e chama `setContent`; a montagem
-  do app fica em `EthosApp.kt` (pacote raiz), dividida em funções pequenas. Proibido aninhar wrappers
+  do app fica em `TabitosApp.kt` (pacote raiz), dividida em funções pequenas. Proibido aninhar wrappers
   `XScreen { state -> YScreen { ... } }` para obter estado: coletar com `collectAsStateWithLifecycle()`.
 - Listas de parâmetros longas: usar argumentos nomeados nas chamadas e agrupar callbacks relacionados em
   uma `data class` de ações quando passar de ~5 lambdas.
-- Sem nomes totalmente qualificados no meio do código (`com.ethos.app...X(...)`): importar. Evitar
+- Sem nomes totalmente qualificados no meio do código (`com.tabitos.app...X(...)`): importar. Evitar
   imports com `*` em arquivos novos.
 - Sem código morto, placeholders ("em breve") ou ramos inalcançáveis: remover junto com strings e
   previews que só existiam por eles.
@@ -75,7 +76,7 @@
 - O plano base em `PLANO_BASE.md` é um registro inicial, não uma spec/plan gerada pelo Spec Kit.
 - Constituição oficial: `.specify/memory/constitution.md`; specs de features em `specs/`.
 - Integração local em `.agents/skills/`, infraestrutura em `.specify/`, scripts PowerShell.
-- Priorizar as skills locais do projeto. Resolver caminhos contra a raiz do Ethos.
+- Priorizar as skills locais do projeto. Resolver caminhos contra a raiz do projeto.
 - Hooks e scripts do Spec Kit não autorizam commits, publicação ou implementação por si só.
 - Atualizações automáticas de contexto devem alterar apenas o bloco SPECKIT deste arquivo.
 - Ler a documentação pertinente em `specs/` antes de mudar comportamento.
@@ -90,7 +91,7 @@
 - Mostrar mockups de celular de aproximadamente 380 px lado a lado, com barra de status,
   rolagem interna, áreas seguras e navegação coerentes com o app Android.
 - Ler o código e tema atuais antes de representar "Como está"; manter comparação com a tela real.
-- Não copiar o verde/top bar da IPB: usar os tokens do Ethos e identificar novas paletas como propostas.
+- Não copiar o verde/top bar da IPB: usar os tokens do Tabitos e identificar novas paletas como propostas.
 - Oferecer claro/escuro e "Igual à página", controles interativos e dados fictícios realistas.
 - Sob cada opção, explicar mudanças, vantagens e impacto previsto. Textos em português.
 - Após escolha do usuário, preservar decisões aprovadas e variar apenas os pontos em discussão.
@@ -102,7 +103,7 @@
 
 ## Salvar prompts de specify para outro chat
 - Quando o usuário pedir para guardar/gerar um specify após uma conversa de design, salvar um
-  prompt em `TODO/specify_<tema>_app.md`, na raiz do Ethos. Isso NÃO executa `$speckit-specify`.
+  prompt em `TODO/specify_<tema>_app.md`, na raiz do projeto. Isso NÃO executa `$speckit-specify`.
 - Conversar sobre os pontos pendentes antes de consolidar o prompt. Não tratar sugestões como decisões.
 - Cabeçalho em português: título, estado (rascunho/pronto), instrução para executar `$speckit-specify`
   com o corpo após `---` e referências aos documentos pertinentes.
@@ -118,7 +119,7 @@
 
 ## Verificação
 - Rotina após mudanças: só testes JVM, filtrando pelo que mudou quando possível (o PC do usuário trava com
-  builds pesados). Windows: `.\gradlew.bat :app:testDebugUnitTest --tests "com.ethos.app.features.tasks.*"`;
+  builds pesados). Windows: `.\gradlew.bat :app:testDebugUnitTest --tests "com.tabitos.app.features.tasks.*"`;
   sem filtro quando a mudança for ampla. Linux/macOS: `./gradlew` com os mesmos argumentos.
 - Verificação completa (`:app:assembleDebug :app:testDebugUnitTest :app:lintDebug`) só quando o usuário pedir;
   ao fim de uma spec (implement/verificação), pedir permissão antes de rodá-la. Sem permissão, registrar build
@@ -200,13 +201,13 @@ Spec014: hábito não deixa pendência; período fecha sozinho 2 dias após o fi
 Hábito perdido não tira moedas; evitar/limitar sem evento = sucesso automático (HabitAction.Settle).
 Cartão com sequência e % de constância; editor com frequências simples; "+" com Tarefa/Hábito/Quebrar hábito.
 Verificação: specs/014-habits-without-debt/verification.md; 134 JVM aprovados; instrumentados não executados.
-Refatoração 2026-11-11: MainActivity só trata Intents; montagem em EthosApp.kt; shell sem placeholders.
+Refatoração 2026-11-11: MainActivity só trata Intents; montagem em TabitosApp.kt; shell sem placeholders.
 ContentFilter em core/ui/components; seções das páginas de tarefas em função pura (TaskListPresentation).
 Spec015: reordenar sempre por arrastar (core/ui/components/Reorder.kt), vizinhos deslizam; ações TalkBack.
 Spec016: tarefa/hábito "Com cronômetro" escolhido ao criar (sem checklist); ▶ no cartão; ao zerar conclui sozinho
 (desmarcar desfaz), alarme global opcional; concluir manual pede confirmação; cronômetro livre removido.
 Constituição: .specify/memory/constitution.md v1.0.0.
-Spec017: "Modo jogo" no topo de Configurações (DataStore game_mode, padrão ligado); desligar pede confirmação.
+Spec017: "Modo jogo" no topo de Configurações (DataStore game_mode, padrão desligado desde 2026-11-19); desligar pede confirmação.
 Desligado: esconde Recompensas/Histórico, carteira, preços, dificuldade/estimativa e confirmações financeiras.
 Resultados gravados desligado ficam isentos sem lançamento (nunca pagos depois); desfazer pago ainda estorna.
 Repositórios leem o modo antes da transação; troca bloqueada com cronômetro de recompensa contando.
@@ -256,7 +257,17 @@ HabitRules.periods indexa registros/intervalos (era quadrático); streak/success
 5 anos fictícios (StatisticsDataset): abrir 3,0 s→0,27 s, trocar 2,0 s→3 ms (JVM). Sem mudança de schema. 274 JVM.
 Spec032: Remarcar nos detalhes oferece Hoje/Amanhã/calendário e preserva o horário. Antecipações e seus
 desfazeres aparecem no Histórico; Adiadas conta POSTPONED. Plano: specs/032-reschedule-task/plan.md.
-Spec033: lembretes padrão só na criação de tarefas. Plano: specs/033-default-task-reminders/plan.md.
+Spec033: novas tarefas com dia e horário recebem lembrete 30 min antes. Configurações permite também 1 dia
+e horário opcional para tarefas só com data. Novas séries herdam a escolha na criação. Plano: specs/033-default-task-reminders/plan.md.
+Spec035: prazo "Até uma data" (DeadlineKind.UNTIL_DATE, último do enum) só para tarefa única: início padrão hoje em
+RepeatRule.start, fim em fields.date com horário opcional; periodStart = min(início, fim); grupo de período em Hoje.
+Remarcar muda só o fim; lembretes padrão como Dia específico (hasDayTime). Sem mudança de schema.
+Folha Prazo = opção C de prototypes/prazo: lista com valor à direita + cartão de linhas (PickerStyle.ROW). Plano:
+specs/035-deadline-until-date/plan.md.
+Spec036: Lembrete de revisão substitui Resumo diário e conserva o horário. Só avisa para tarefas de Hoje ou
+bons hábitos disponíveis sem marcação no dia. Toque abre Hoje/Tudo; dispensa encerra o aviso e ele expira à
+meia-noite local. Plano: specs/036-daily-review-reminder/plan.md.
+Spec037: backup portátil Ethos → Tabitos em Configurações → Dados. Plano: specs/037-portable-backup/plan.md.
 <!-- SPECKIT END -->
 Spec025: Configurações em lista agrupada (Aparência/Modo jogo/Notificações e alarmes/Dados), linhas em
 core/ui/components/SettingsRows.kt; Tema abre diálogo; Ganhos e penalidades é sub-página (EARNINGS, só modo jogo).
@@ -272,3 +283,22 @@ para não deixar gatilho à vista (ContentFilter.showsBadHabits). Páginas de li
 Spec034: acompanhamento em página cheia (Voltar ao pop-up do hábito) com faixa Hoje e abas Registros/Evolução/
 Perguntas; registros por semana (4 + "Ver mais"), dia vazio preenche; data por calendário, sem aaaa-mm-dd. Editor
 com cartões expansíveis e barra Adicionar; registro em tela cheia com faixa de escala. Regras/schema 009 inalterados.
+Confirmação de moedas (2026-11-18, opção C de prototypes/confirmacao-moedas): diálogo em extrato — título e botão
+com a ação (Concluir/Não será feita/Desfazer/Registrar), saldo atual → linhas → novo saldo, "Limite do saldo" no
+mínimo, XP com barra do nível; botão vermelho se perde moedas. Função pura core/ui/accounting/FinancialStatement.kt.
+Lembretes (2026-11-19, opção A de prototypes/lembretes): pop-up vira folha com linhas (tipo, quando avisa, excluir),
+"Novo lembrete" e atalhos Na hora/30 min/1 h/1 dia antes (criam direto; somem se já existem). Escopo Só esta|Esta e
+próximas só em tarefa que repete (padrão Só esta). Editor em GrowingSheet com resumo "Avisa…", tipo segmentado, chips,
+calendário e dias da semana sem digitar; data escolhida no passado bloqueia, antecedência já passada não.
+Textos em features/reminders/ReminderPresentation.kt. Regras/schema inalterados; diálogo Adiar da notificação inalterado.
+Recompensas (2026-11-19, opção A de prototypes/recompensas e de prototypes/recompensa-editor): loja em lista
+compacta — carteira âmbar com "Histórico" (Estatísticas › Histórico filtro Moedas), linha com botão "◈ preço" ou
+motivo (Faltam N / Limite atingido · volta …), ⋮ Editar/Excluir, tocar edita, FAB Nova recompensa. Editor em
+GrowingSheet: criar compacto com chips Preço/Limite/Uso, editar em tela cheia com linhas; RewardDraft tipado
+(RewardPresentation.kt). EditorIconTile (lápis no canto do ícone) no editor de recompensa e de hábito. Regras/schema
+inalterados.
+Confirmar compra (2026-11-19, opção C de prototypes/confirmar-compra): sem diálogo — "◈ preço" abre faixa na própria
+linha (borda primária) com saldo antes → depois, uso, "Depois desta: N de M", aviso do cronômetro que será pausado
+(runningTimer observado no ViewModel; botão "Pausar e comprar") e Voltar/Comprar · ◈ N. Outro preço troca a faixa.
+Recibo vira Snackbar que fecha a intenção sozinho (tempo ajustado pela acessibilidade). Diálogo de pausa fica só como
+reserva. Funções puras purchaseStrip/receipt/stripIntent em RewardPresentation.kt; regras/schema inalterados.
