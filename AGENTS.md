@@ -317,3 +317,8 @@ Posições 0/1/2/3/6 viraram Verde/Azul/Roxo/Laranja/Vermelho; Rosa/Cinza (4/5) 
 Personalizada. Linha: Vermelho, Laranja, Verde, Azul, Roxo, Personalizada (células dividem a largura). Folha
 CustomColorSheet: prévia claro/escuro (sem aviso de contraste), roda Canvas + brilho, Hex | RGB, Partir de. Desenho só por
 itemColor/onItemColor (ícone claro/escuro pelo contraste). Plano: specs/038-custom-item-color/plan.md.
+Spec039: aviso de atualização pela Play (app-update-ktx 2.1.0, só FLEXIBLE, nunca força nem fecha). Após o Hoje,
+pedido da Play uma vez por processo (core/update/data/AppUpdateController); baixa em segundo plano e mostra faixa
+"Atualização pronta · Reiniciar/Agora não" no slot snackbar do shell; com cronômetro contando, sem Reiniciar
+("Disponível quando o cronômetro parar"). Recusa/Agora não valem até o próximo processo; nada persistido.
+Só testável fim a fim pelo teste interno da Play. Plano: specs/039-in-app-update/plan.md.
