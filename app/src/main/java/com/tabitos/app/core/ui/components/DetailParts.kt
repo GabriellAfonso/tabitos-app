@@ -4,21 +4,31 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +52,39 @@ import com.tabitos.app.R
 import com.tabitos.app.core.ui.theme.TabitosTheme
 
 // Pieces shared by the task and habit detail popups (specs 021 and 023).
+
+/**
+ * Popup frame of the task and habit details. AlertDialog is not used because, without buttons, it still keeps the
+ * text's 24 dp bottom padding plus its own 24 dp, leaving a large empty band under "Ver histórico".
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DetailDialog(
+    onDismissRequest: () -> Unit, title: @Composable () -> Unit, content: @Composable () -> Unit,
+) {
+    BasicAlertDialog(onDismissRequest) {
+        Surface(shape = AlertDialogDefaults.shape, color = AlertDialogDefaults.containerColor,
+            tonalElevation = AlertDialogDefaults.TonalElevation) {
+            Column(Modifier.padding(start = DialogPadding, end = DialogPadding, top = DialogPadding,
+                bottom = DialogBottomPadding)) {
+                CompositionLocalProvider(LocalContentColor provides AlertDialogDefaults.titleContentColor) {
+                    ProvideTextStyle(MaterialTheme.typography.headlineSmall, title)
+                }
+                Spacer(Modifier.height(TitleSpacing))
+                Box(Modifier.weight(1f, fill = false)) {
+                    CompositionLocalProvider(LocalContentColor provides AlertDialogDefaults.textContentColor) {
+                        ProvideTextStyle(MaterialTheme.typography.bodyMedium, content)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private val DialogPadding = 24.dp
+// The last item is usually the "Ver histórico" button, whose 48 dp touch area already leaves space under its text.
+private val DialogBottomPadding = 8.dp
+private val TitleSpacing = 16.dp
 
 /**
  * Icon with its label under it, one of the equal-width actions at the bottom of a detail popup.

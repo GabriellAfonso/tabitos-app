@@ -69,6 +69,7 @@ import com.tabitos.app.core.tasks.domain.TaskFields
 import com.tabitos.app.core.tasks.domain.TaskList
 import com.tabitos.app.core.tasks.domain.TaskOccurrence
 import com.tabitos.app.core.tasks.domain.TaskStatus
+import com.tabitos.app.core.ui.components.DetailDialog
 import com.tabitos.app.core.ui.components.DetailHistoryLink
 import com.tabitos.app.core.ui.components.DetailIconAction
 import com.tabitos.app.core.ui.components.DetailSummaryItem
@@ -112,12 +113,12 @@ fun TaskDetail(
     var pickingRescheduleDate by rememberSaveable(o.id) { mutableStateOf(false) }
     var pickingCompletionDate by rememberSaveable(o.id) { mutableStateOf(false) }
     var choosingList by rememberSaveable(o.id) { mutableStateOf(false) }
-    AlertDialog(onDismissRequest = { if (!busy) actions.close() }, confirmButton = {},
+    DetailDialog(onDismissRequest = { if (!busy) actions.close() },
         title = {
             Text(o.fields.title, textDecoration = if (model.isOpen) null else TextDecoration.LineThrough,
                 color = if (model.isOpen) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant)
         },
-        text = {
+        content = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 error()
                 TaskSummaryLine(model, today, busy, actions.openTimer)
@@ -126,9 +127,12 @@ fun TaskDetail(
                 if (model.isOpen) TaskMainButtons(model.dates != null, busy, actions.complete,
                     onOtherDay = { pickingCompletionDate = true }, onReschedule = { rescheduling = true })
                 else ResolvedStrip(o, today, busy, actions.undoResult)
-                TaskActionIcons(model.isOpen, busy, TaskIconActions(actions.notDone, actions.edit,
-                    actions.openReminders, { choosingList = true }, actions.delete))
-                actions.history?.let { DetailHistoryLink(!busy, it) }
+                // Icons and the history link share one block, so the link sits right under them.
+                Column {
+                    TaskActionIcons(model.isOpen, busy, TaskIconActions(actions.notDone, actions.edit,
+                        actions.openReminders, { choosingList = true }, actions.delete))
+                    actions.history?.let { DetailHistoryLink(!busy, it) }
+                }
             }
         })
     val dates = model.dates

@@ -23,7 +23,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -60,6 +59,7 @@ import com.tabitos.app.core.habits.domain.HabitStreak
 import com.tabitos.app.core.habits.domain.HabitType
 import com.tabitos.app.core.habits.domain.HabitUnit
 import com.tabitos.app.core.tasks.domain.TaskList
+import com.tabitos.app.core.ui.components.DetailDialog
 import com.tabitos.app.core.ui.components.DetailHistoryLink
 import com.tabitos.app.core.ui.components.DetailIconAction
 import com.tabitos.app.core.ui.components.DetailSummaryItem
@@ -101,9 +101,9 @@ fun HabitDetail(
     error: @Composable () -> Unit, actions: HabitDetailActions,
 ) {
     val habit = model.habit
-    AlertDialog(onDismissRequest = { if (!busy) actions.close() }, confirmButton = {},
+    DetailDialog(onDismissRequest = { if (!busy) actions.close() },
         title = { HabitDetailTitle(habit) },
-        text = {
+        content = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 error()
                 HabitSummaryLine(model.rule, list)
@@ -114,8 +114,11 @@ fun HabitDetail(
                     model.progress?.let { HabitProgressMeter(it) }
                 }
                 HabitMainArea(model, busy, actions)
-                if (model.main != HabitDetailMain.EXCLUDED) HabitActionIcons(model.main, busy, actions)
-                actions.history?.let { DetailHistoryLink(!busy, it) }
+                // Icons and the history link share one block, so the link sits right under them.
+                Column {
+                    if (model.main != HabitDetailMain.EXCLUDED) HabitActionIcons(model.main, busy, actions)
+                    actions.history?.let { DetailHistoryLink(!busy, it) }
+                }
             }
         })
 }
