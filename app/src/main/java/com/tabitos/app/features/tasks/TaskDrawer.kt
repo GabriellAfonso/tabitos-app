@@ -39,11 +39,12 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.tabitos.app.core.colors.PaletteColor
 import com.tabitos.app.R
 import com.tabitos.app.core.tasks.domain.TaskList
 import com.tabitos.app.core.ui.components.HoldGesture
 import com.tabitos.app.core.ui.components.ReorderableColumn
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColor
 import com.tabitos.app.core.ui.theme.TabitosTheme
 
 /** What the drawer can do with the user's lists; Caixa de entrada is fixed and has no actions. */
@@ -77,7 +78,7 @@ fun TaskDrawer(state: TasksUiState, highlighted: Boolean, callbacks: DrawerListC
         ),
     ) { list, handle ->
         Box {
-            DrawerListRow(list.name, list.iconDrawable, itemColors[list.color],
+            DrawerListRow(list.name, list.iconDrawable, itemColor(list.color),
                 selected = highlighted && state.selectedListId == list.id, modifier = handle,
                 onOpen = { if (idle) callbacks.onSelect(list.id) }, onActions = { if (idle) menuFor = list.id })
             DropdownMenu(expanded = menuFor == list.id, onDismissRequest = { menuFor = null }) {
@@ -147,6 +148,7 @@ private fun DrawerListRow(
 @Composable
 private fun DrawerListRowPreview() {
     TabitosTheme {
-        DrawerListRow("Casa", R.drawable.ic_home, itemColors[2], selected = true, onOpen = {}, onActions = {})
+        DrawerListRow("Casa", R.drawable.ic_home, itemColor(PaletteColor.PURPLE.position), selected = true,
+            onOpen = {}, onActions = {})
     }
 }

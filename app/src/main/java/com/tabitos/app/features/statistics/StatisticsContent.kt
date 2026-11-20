@@ -69,7 +69,7 @@ import com.tabitos.app.core.timers.domain.TimerKind
 import com.tabitos.app.core.timers.domain.TimerRules
 import com.tabitos.app.core.ui.components.CoinAmount
 import com.tabitos.app.core.ui.components.Eyebrow
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColor
 import com.tabitos.app.core.ui.format.TabitosDates
 import com.tabitos.app.core.ui.theme.TabitosTheme
 import java.time.Instant
@@ -320,7 +320,7 @@ private fun HabitRow(habit: HabitStat, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onClick)
         .clearAndSetSemantics { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(Modifier.size(10.dp).clip(CircleShape).background(itemColors.getOrElse(habit.color) { Color.Gray }))
+        Box(Modifier.size(10.dp).clip(CircleShape).background(itemColor(habit.color)))
         Text(habit.name, Modifier.weight(1f), color = tone, maxLines = 2)
         Text(stringResource(R.string.statistics_habit_streak, habit.streak), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)

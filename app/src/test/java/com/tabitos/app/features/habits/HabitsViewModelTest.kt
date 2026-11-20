@@ -8,7 +8,7 @@ import com.tabitos.app.core.icons.AppIconTables
 import com.tabitos.app.core.preferences.FixedGameMode
 import com.tabitos.app.core.tasks.domain.TaskClock
 import com.tabitos.app.core.tasks.domain.TaskList
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColor
 import java.io.IOException
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -139,16 +139,12 @@ class HabitsViewModelTest {
         vm.newHabit(null, breaking = true)
         val d = vm.state.value.draft!!
         assertEquals(AppIcon.BLOCK, AppIconTables.habit[d.habit.icon])
-        assertEquals(Color(0xFFB3261E), itemColors[d.habit.color])
+        assertEquals(Color(0xFFD93025), itemColor(d.habit.color))
         vm.draft(d.copy(habit = d.habit.copy(name = "Rede social", icon = AppIconTables.habit.lastIndex)))
         vm.preview()
         vm.save()
         advanceUntilIdle()
         assertEquals(AppIconTables.habit.lastIndex, repo.snapshot.value.habits.single().icon)
-    }
-    @Test fun editorColorsMatchTheIndicesTheRulesAccept() {
-        assertEquals(Habit.COLOR_COUNT, itemColors.size)
-        assertEquals(TaskList.COLOR_COUNT, itemColors.size)
     }
     @Test fun readFailureIsNotSuccessfulEmptyAndManualImportanceRestores() = runTest(dispatcher) {
         val repo = FakeRepository().apply { failRead = true }

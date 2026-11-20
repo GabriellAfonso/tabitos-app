@@ -2,7 +2,7 @@ package com.tabitos.app.features.habits
 
 import com.tabitos.app.core.ui.accounting.FinancialConfirmationKind
 import com.tabitos.app.core.ui.accounting.financialConfirmationKind
-import com.tabitos.app.core.ui.components.RED_ITEM_COLOR
+import com.tabitos.app.core.colors.ItemColors
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -161,7 +161,7 @@ class HabitsViewModel @Inject constructor(
     fun newHabit(listId: String?, breaking: Boolean = false) {
         val id = UUID.randomUUID().toString()
         val habit = Habit(id, clock.today(), "", listId = listId)
-        draft(HabitDraft(if (breaking) habit.copy(color = RED_ITEM_COLOR, icon = BLOCK_HABIT_ICON) else habit,
+        draft(HabitDraft(if (breaking) habit.copy(color = ItemColors.badHabitStart, icon = BLOCK_HABIT_ICON) else habit,
             HabitRule(UUID.randomUUID().toString(), id, clock.today(),
                 type = if (breaking) HabitType.AVOID else HabitType.PRACTICE),
             target = if (breaking) "0" else "1"))

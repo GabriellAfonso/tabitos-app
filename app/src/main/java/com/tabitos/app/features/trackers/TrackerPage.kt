@@ -65,7 +65,8 @@ import com.tabitos.app.core.trackers.domain.TrackerQuestion
 import com.tabitos.app.core.trackers.domain.TrackerRules
 import com.tabitos.app.core.ui.components.TabitosDatePickerDialog
 import com.tabitos.app.core.ui.components.SegmentedControl
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColor
+import com.tabitos.app.core.ui.components.onItemColor
 import com.tabitos.app.core.ui.components.option
 import com.tabitos.app.core.ui.format.TabitosDates
 import com.tabitos.app.core.ui.format.label
@@ -157,10 +158,10 @@ private fun TrackerEmptyState(model: TrackerPageModel, enabled: Boolean, create:
 
 @Composable
 private fun HabitTile(habit: Habit, size: Int) {
-    Box(Modifier.size(size.dp).clip(RoundedCornerShape((size / 3).dp)).background(itemColors[habit.color]),
+    Box(Modifier.size(size.dp).clip(RoundedCornerShape((size / 3).dp)).background(itemColor(habit.color)),
         contentAlignment = Alignment.Center) {
         Icon(painterResource(AppIconTables.habit[habit.icon].option.icon), contentDescription = null,
-            Modifier.size((size / 2).dp), tint = Color.White)
+            Modifier.size((size / 2).dp), tint = onItemColor(habit.color))
     }
 }
 

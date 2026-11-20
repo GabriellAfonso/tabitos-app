@@ -74,7 +74,7 @@ import com.tabitos.app.core.ui.components.DetailIconAction
 import com.tabitos.app.core.ui.components.DetailSummaryItem
 import com.tabitos.app.core.ui.components.TabitosDatePickerDialog
 import com.tabitos.app.core.ui.components.ExpandableDescription
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColor
 import com.tabitos.app.core.ui.format.TabitosDates
 import com.tabitos.app.core.ui.format.label
 import com.tabitos.app.core.ui.theme.TabitosTheme
@@ -160,7 +160,7 @@ private fun TaskSummaryLine(model: TaskDetailModel, today: LocalDate, busy: Bool
             emphasized = model.isOverdue)
         val list = model.list
         DetailSummaryItem(if (list == null) R.drawable.ic_checklist else list.iconDrawable,
-            list?.name ?: stringResource(R.string.inbox), tint = list?.let { itemColors[it.color] })
+            list?.name ?: stringResource(R.string.inbox), tint = list?.let { itemColor(it.color) })
         model.repeat?.let { DetailSummaryItem(R.drawable.ic_repeat, repeatLabel(it)) }
         if (model.isOpen && model.reminderCount > 0) {
             val spoken = pluralStringResource(R.plurals.task_reminder_count, model.reminderCount, model.reminderCount)
@@ -336,7 +336,7 @@ private fun ListChoiceDialog(
                 ListChoiceRow(R.drawable.ic_checklist, null, stringResource(R.string.inbox), selected == null) {
                     onSelect(null) }
                 lists.forEach { list ->
-                    ListChoiceRow(list.iconDrawable, itemColors[list.color], list.name,
+                    ListChoiceRow(list.iconDrawable, itemColor(list.color), list.name,
                         selected == list.id) { onSelect(list.id) }
                 }
             }

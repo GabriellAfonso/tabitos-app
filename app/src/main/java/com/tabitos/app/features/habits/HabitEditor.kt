@@ -49,8 +49,9 @@ import com.tabitos.app.core.ui.components.IconPicker
 import com.tabitos.app.core.ui.components.NumberStepper
 import com.tabitos.app.core.ui.components.RadioOptions
 import com.tabitos.app.core.ui.components.SettingsSectionHeader
-import com.tabitos.app.core.ui.components.itemColorNames
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColorName
+import com.tabitos.app.core.ui.components.itemColor
+import com.tabitos.app.core.ui.components.onItemColor
 import com.tabitos.app.core.ui.components.option
 import com.tabitos.app.core.ui.components.rememberExpandAction
 
@@ -136,7 +137,7 @@ private fun HabitNameRow(
     d: HabitDraft, busy: Boolean, focus: FocusRequester, change: (HabitDraft?) -> Unit, openLook: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        EditorIconTile(d.habit.iconDrawable, itemColors[d.habit.color], Color.White,
+        EditorIconTile(d.habit.iconDrawable, itemColor(d.habit.color), onItemColor(d.habit.color),
             stringResource(R.string.editor_look), enabled = !busy, onClick = openLook)
         EditorNameField(d.habit.name, { change(d.copy(habit = d.habit.copy(name = it))) },
             stringResource(R.string.habit_name), !busy, focus, Modifier.weight(1f))
@@ -168,8 +169,8 @@ private fun HabitChips(
             if (d.showsLimitChip) SheetChip(HabitEditorSheet.LIMIT, R.string.editor_limit, limitSummary(d),
                 R.drawable.ic_block, busy, open, tint = MaterialTheme.colorScheme.error)
         }
-        SheetChip(HabitEditorSheet.LOOK, R.string.editor_look, stringResource(itemColorNames[d.habit.color]),
-            d.habit.iconDrawable, busy, open, tint = itemColors[d.habit.color])
+        SheetChip(HabitEditorSheet.LOOK, R.string.editor_look, itemColorName(d.habit.color),
+            d.habit.iconDrawable, busy, open, tint = itemColor(d.habit.color))
         onMore?.let { EditorMoreChip(it, enabled = !busy) }
     }
 }
@@ -232,9 +233,9 @@ private fun HabitChoiceSheet(
                 label = { stringResource(breakingLabel(it)) })
             HabitEditorSheet.LIMIT -> LimitOptions(d, busy, change)
             HabitEditorSheet.LOOK -> {
-                ColorPicker(d.habit.color, !busy) { change(d.copy(habit = d.habit.copy(color = it))) }
+                ColorPicker(d.habit.color, d.habit.iconDrawable, !busy) { change(d.copy(habit = d.habit.copy(color = it))) }
                 IconPicker(R.string.habit_icon, if (d.isPractice) goodHabitPrincipalIcons else badHabitPrincipalIcons,
-                    AppIconTables.habit[d.habit.icon], !busy, tint = itemColors[d.habit.color]) {
+                    AppIconTables.habit[d.habit.icon], !busy, tint = itemColor(d.habit.color)) {
                     change(d.copy(habit = d.habit.copy(icon = AppIconTables.habit.indexOf(it)))) }
             }
             HabitEditorSheet.LIST -> RadioOptions(listOf<String?>(null) + lists.map { it.id }, d.habit.listId,

@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.tabitos.app.core.colors.PaletteColor
 import com.tabitos.app.R
 import com.tabitos.app.core.icons.AppIcon
 import com.tabitos.app.core.ui.theme.TabitosTheme
@@ -111,7 +112,7 @@ private fun IconPickerPreview() {
                 label = R.string.icon_label,
                 principal = listOf(AppIcon.LIST, AppIcon.WORK, AppIcon.HOME, AppIcon.STUDY),
                 selected = AppIcon.PETS,
-                tint = itemColors[1],
+                tint = itemColor(PaletteColor.BLUE.position),
                 onSelect = {},
             )
         }

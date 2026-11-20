@@ -1,5 +1,6 @@
 package com.tabitos.app.core.tasks.domain
 
+import com.tabitos.app.core.colors.ItemColors
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -133,7 +134,7 @@ object TaskRules {
             when (action) {
                 is TaskAction.SaveList -> {
                     val list = action.list
-                    requireInput(list.name.isNotBlank() && list.color in 0 until TaskList.COLOR_COUNT &&
+                    requireInput(list.name.isNotBlank() && ItemColors.isValid(list.color) &&
                         list.icon in 0 until TaskList.ICON_COUNT)
                     val i = lists.indexOfFirst { it.id == action.list.id }
                     val value = action.list.copy(name = action.list.name.trim())

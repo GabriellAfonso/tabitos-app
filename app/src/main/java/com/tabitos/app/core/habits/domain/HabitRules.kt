@@ -1,5 +1,6 @@
 package com.tabitos.app.core.habits.domain
 
+import com.tabitos.app.core.colors.ItemColors
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.TemporalAdjusters
@@ -198,7 +199,7 @@ object HabitRules {
             }
             is HabitAction.Save -> {
                 val h = action.habit
-                check(h.name.isNotBlank() && h.color in 0 until Habit.COLOR_COUNT &&
+                check(h.name.isNotBlank() && ItemColors.isValid(h.color) &&
                     h.icon in 0 until Habit.ICON_COUNT && h.difficulty in 0..2 && h.importance in 0..2)
                 check(h.listId == null || h.listId in listIds, HabitProblem.DESTINATION)
                 val old = before.habits.firstOrNull { it.id == h.id }

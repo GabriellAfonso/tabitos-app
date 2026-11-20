@@ -26,7 +26,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import com.tabitos.app.core.ui.components.ContentFilter
 import com.tabitos.app.core.ui.components.WeekBars
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColor
+import com.tabitos.app.core.ui.components.onItemColor
 import com.tabitos.app.core.habits.domain.*
 import java.time.LocalDate
 
@@ -144,9 +145,10 @@ fun HabitRow(
         border = BorderStroke(1.dp, if (breaking) colors.errorContainer else colors.outlineVariant)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(itemColors[habit.color]),
+                Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(itemColor(habit.color)),
                     contentAlignment = Alignment.Center) {
-                    Icon(painterResource(habit.iconDrawable), contentDescription = null, tint = Color.White)
+                    Icon(painterResource(habit.iconDrawable), contentDescription = null,
+                        tint = onItemColor(habit.color))
                 }
                 Column(Modifier.weight(1f)) {
                     Text(habit.name, style = MaterialTheme.typography.titleSmall)

@@ -39,8 +39,7 @@ data class TaskList(
     val position: Int = 0, val deleted: Boolean = false,
 ) : java.io.Serializable {
     companion object {
-        /** Sizes of the color choices and of the persisted icon table; saved indices must stay inside them. */
-        const val COLOR_COUNT = 7
+        /** Size of the persisted icon table; saved indices must stay inside it. Colors follow ItemColors. */
         val ICON_COUNT = AppIconTables.list.size
     }
 }

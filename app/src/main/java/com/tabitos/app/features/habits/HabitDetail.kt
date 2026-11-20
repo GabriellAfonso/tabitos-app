@@ -65,7 +65,8 @@ import com.tabitos.app.core.ui.components.DetailIconAction
 import com.tabitos.app.core.ui.components.DetailSummaryItem
 import com.tabitos.app.core.ui.components.ExpandableDescription
 import com.tabitos.app.core.ui.components.NumberStepper
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColor
+import com.tabitos.app.core.ui.components.onItemColor
 import com.tabitos.app.core.ui.format.TabitosDates
 import com.tabitos.app.core.ui.theme.TabitosTheme
 import java.time.LocalDate
@@ -122,9 +123,9 @@ fun HabitDetail(
 @Composable
 private fun HabitDetailTitle(habit: Habit) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(itemColors[habit.color]),
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(itemColor(habit.color)),
             contentAlignment = Alignment.Center) {
-            Icon(painterResource(habit.iconDrawable), contentDescription = null, tint = Color.White)
+            Icon(painterResource(habit.iconDrawable), contentDescription = null, tint = onItemColor(habit.color))
         }
         Text(habit.name, Modifier.weight(1f))
     }
@@ -136,7 +137,7 @@ private fun HabitSummaryLine(rule: HabitRule, list: TaskList?) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         DetailSummaryItem(R.drawable.ic_repeat, frequencyLabel(rule))
         DetailSummaryItem(R.drawable.ic_format_list_bulleted, list?.name ?: stringResource(R.string.inbox),
-            tint = list?.let { itemColors[it.color] })
+            tint = list?.let { itemColor(it.color) })
     }
 }
 

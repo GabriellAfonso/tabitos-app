@@ -80,7 +80,8 @@ import com.tabitos.app.core.tasks.domain.TaskOccurrence
 import com.tabitos.app.core.tasks.domain.TaskSnapshot
 import com.tabitos.app.core.ui.components.ChoiceSheet
 import com.tabitos.app.core.ui.components.SegmentedControl
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColor
+import com.tabitos.app.core.ui.components.onItemColor
 import com.tabitos.app.core.ui.components.option
 import com.tabitos.app.core.ui.format.DateText
 import com.tabitos.app.core.ui.format.TabitosDates
@@ -453,10 +454,10 @@ private fun HabitRecordRow(record: HabitDayRecords, open: () -> Unit) {
 
 @Composable
 private fun HabitTile(habit: Habit) {
-    Box(Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)).background(itemColors[habit.color]),
+    Box(Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)).background(itemColor(habit.color)),
         contentAlignment = Alignment.Center) {
         Icon(painterResource(AppIconTables.habit[habit.icon].option.icon), contentDescription = null,
-            tint = Color.White, modifier = Modifier.size(18.dp))
+            tint = onItemColor(habit.color), modifier = Modifier.size(18.dp))
     }
 }
 

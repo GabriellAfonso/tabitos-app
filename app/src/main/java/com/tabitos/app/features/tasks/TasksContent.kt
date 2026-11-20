@@ -57,7 +57,7 @@ import com.tabitos.app.core.ui.components.ContentFilter
 import com.tabitos.app.core.ui.components.IconPicker
 import com.tabitos.app.core.ui.components.LazyReorderState
 import com.tabitos.app.core.ui.components.RoundCheck
-import com.tabitos.app.core.ui.components.itemColors
+import com.tabitos.app.core.ui.components.itemColor
 import com.tabitos.app.core.ui.components.lazyReorderGestures
 import com.tabitos.app.core.ui.components.moved
 import com.tabitos.app.core.ui.components.reorderActions
@@ -151,7 +151,7 @@ fun TasksContent(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     selectedList?.let {
                         Icon(painterResource(it.iconDrawable), contentDescription = null,
-                            tint = itemColors[it.color])
+                            tint = itemColor(it.color))
                     }
                     Text(selectedList?.name ?: stringResource(R.string.inbox),
                         style = MaterialTheme.typography.headlineSmall)
@@ -413,9 +413,9 @@ private fun ListEditor(
         text = { Column(Modifier.verticalScroll(rememberScrollState())) {
             error()
             Input(R.string.list_name, list.name, !busy) { change(list.copy(name = it)) }
-            ColorPicker(list.color, !busy) { change(list.copy(color = it)) }
+            ColorPicker(list.color, list.iconDrawable, !busy) { change(list.copy(color = it)) }
             IconPicker(R.string.icon_label, listPrincipalIcons, AppIconTables.list[list.icon], !busy,
-                tint = itemColors[list.color]) { change(list.copy(icon = AppIconTables.list.indexOf(it))) }
+                tint = itemColor(list.color)) { change(list.copy(icon = AppIconTables.list.indexOf(it))) }
         } }, confirmButton = { TextButton(save, enabled = !busy) { Text(stringResource(R.string.save)) } },
         dismissButton = { TextButton(close, enabled = !busy) { Text(stringResource(R.string.cancel)) } })
 }
