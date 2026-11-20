@@ -1,79 +1,52 @@
-# Tabitos
+<p align="center">
+  <img src="app/src/main/res/drawable-nodpi/tabitos_icon.png" width="96" alt="Ícone do Tabitos">
+</p>
 
-Shell Android implementado: Hoje, Tarefas, Hábitos, Calendário e destinos do menu lateral.
-Aparência claro/escuro/sistema salva com DataStore; Compose/Material 3 e Hilt/KSP.
-Listas, Caixa de entrada, tarefas, checklists, prazos, recorrências e revisão são persistidos localmente com Room.
-Hábitos/metas e moedas/XP/níveis estão implementados, com tabelas editáveis e histórico financeiro local.
-Recompensas para resgate continuam como etapa futura, sem dados ou valores fictícios.
+<h1 align="center">Tabitos</h1>
 
-## Abrir e compilar
+<p align="center">
+  Tarefas, hábitos e rotinas num só lugar.
+</p>
 
-Use Android Studio compatível com AGP 9 (Otter 2025.2.3 ou superior), JDK 17+ (JDK 21 usado
-na validação), SDK Platform 36 e Build Tools 36.0.0. Abra a raiz do projeto no Android Studio.
-Configure o SDK pelo Android Studio (`local.properties`, ignorado) ou pela variável `ANDROID_HOME`.
-Configure `JAVA_HOME` para o JDK. A primeira resolução de dependências precisa de internet.
+<p align="center">
+  <img src="https://img.shields.io/badge/Android-3DDC84?style=flat&logo=android&logoColor=white" alt="Android">
+  <img src="https://img.shields.io/badge/Kotlin-2.3.10-7F52FF?style=flat&logo=kotlin&logoColor=white" alt="Kotlin">
+  <img src="https://img.shields.io/badge/Jetpack%20Compose-BOM%202026.02-4285F4?style=flat&logo=jetpackcompose&logoColor=white" alt="Jetpack Compose">
+  <img src="https://img.shields.io/badge/minSdk-24-brightgreen?style=flat" alt="Min SDK 24">
+  <img src="https://img.shields.io/badge/licença-GPL--3.0-blue?style=flat" alt="Licença GPL-3.0">
+</p>
 
-Windows PowerShell:
+---
 
-```powershell
-.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
+## O que faz
+
+- **Hoje** — tarefas do dia e bons hábitos para marcar com um toque
+- **Tarefas e listas** — prazos, recorrências, checklists e revisão do que ficou para trás
+- **Hábitos** — bons hábitos para manter e maus hábitos para quebrar, com sequência e constância
+- **Cronômetro** — tarefas e hábitos com tempo, que concluem sozinhos ao zerar
+- **Calendário** — mês, semana e dia, com acompanhamentos por hábito
+- **Lembretes** — avisos por tarefa ou hábito e um lembrete diário de revisão
+- **Estatísticas** — resumo e histórico por semana, mês, ano ou tudo
+- **Modo jogo** (opcional) — moedas, XP, níveis e recompensas pessoais
+
+Tudo fica no aparelho: sem login, sem servidor, sem anúncios.
+
+## Stack
+
+Kotlin · Jetpack Compose + Material 3 · Hilt (KSP) · Room · DataStore · Coroutines/Flow · AGP 9
+
+## Rodar localmente
+
+Requisitos: Android Studio compatível com AGP 9, JDK 17+ e SDK 36.
+
+```bash
+git clone https://github.com/GabriellAfonso/tabitos-app.git
+cd tabitos-app
+./gradlew :app:assembleDebug        # Windows: .\gradlew.bat :app:assembleDebug
 ```
 
-Linux/macOS:
+O APK sai em `app/build/outputs/apk/debug/app-debug.apk`. Roda em Android 7.0 (API 24) ou superior.
 
-```sh
-sh ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug :app:assembleRelease
-```
+## Licença
 
-- Debug instalável: `app/build/outputs/apk/debug/app-debug.apk`.
-- Release otimizado sem assinatura: `app/build/outputs/apk/release/app-release-unsigned.apk`.
-- Lint: `app/build/reports/lint-results-debug.html`.
-- Testes JVM verificam datas, recorrências, correções, aparência e recuperação de falhas. Testes Room/Compose
-  executam com `:app:connectedDebugAndroidTest` em dispositivo/emulador.
-
-## Instalar e verificar
-
-Com depuração USB autorizada ou emulador iniciado:
-
-```sh
-adb devices
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -W -n com.tabitos.app/.MainActivity
-```
-
-Android mínimo: 7.0 (API 24). Verifique abertura sem internet, rotação e reabertura,
-aparência clara/escura, maior fonte do sistema, retrato/paisagem e rótulos das ações pelo leitor de tela.
-A aplicação não solicita permissões nem depende de rede em execução.
-Resultados e limitações reais: [verificação atual](specs/005-coins-xp-levels/verification.md).
-A fundação tem [evidência histórica](specs/001-android-foundation/verification.md).
-
-## Assinatura local de release
-
-O release usa R8 e redução de recursos; não usa chave debug e não exige chave para compilar sem assinatura.
-Para distribuir um APK release, use Android Studio > Build > Generate Signed App Bundle / APK > APK,
-selecione release e um keystore privado armazenado fora do repositório. Se precisar criar a chave,
-faça isso localmente e mantenha cópia segura; não foi criada uma chave pessoal nesta entrega.
-Não use a chave de depuração como identidade de produção. Não versione chaves, senhas ou arquivos de assinatura.
-Não há automação de assinatura ou publicação configurada.
-
-## Organização e escopo
-
-`features/shell` contém navegação e apresentações; `features/settings` contém estado e UI de aparência.
-`core/preferences` contém o contrato/DataStore e `core/ui/theme` os temas sálvia claro/escuro.
-Amostras fictícias existem apenas em previews explícitos; não alimentam o app em produção.
-Não há camadas ou dependências futuras instaladas sem uso. Kotlin é integrado ao AGP 9;
-o plugin Compose e o classpath Kotlin têm versão alinhada no catálogo central.
-As versões são fixas em `gradle/libs.versions.toml`; use o Wrapper incluído.
-Documentação da entrega: [spec](specs/001-android-foundation/spec.md),
-[plano](specs/001-android-foundation/plan.md), [tarefas](specs/001-android-foundation/tasks.md).
-
-Shell anterior: [spec](specs/002-app-shell/spec.md), [plano](specs/002-app-shell/plan.md).
-
-Entrega de tarefas: [spec](specs/003-task-lists/spec.md), [plano](specs/003-task-lists/plan.md),
-[tarefas](specs/003-task-lists/tasks.md), [validação](specs/003-task-lists/quickstart.md).
-
-O domínio compartilhado está em `core/tasks/domain`; o Room em `core/tasks/data` e as telas em `features/tasks`.
-O schema inicial é versionado em `app/schemas`. Migrações 1→2→3 preservam os dados; não há fallback destrutivo, lembretes ou resgate de recompensas.
-Contabilização em `core/accounting` e interface em `features/accounting`. Documentação:
-[spec financeira](specs/005-coins-xp-levels/spec.md), [plano](specs/005-coins-xp-levels/plan.md),
-[tarefas](specs/005-coins-xp-levels/tasks.md).
+Distribuído sob a [GNU GPL v3](LICENSE).
