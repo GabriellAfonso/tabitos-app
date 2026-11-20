@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
@@ -193,14 +194,16 @@ fun EditorIconTile(
     @DrawableRes icon: Int, background: Color, tint: Color, description: String, enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    Box(Modifier.size(ICON_TILE_AREA).clip(RoundedCornerShape(16.dp))
-        .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-        .semantics { contentDescription = description }) {
-        Box(Modifier.align(Alignment.BottomStart).size(ICON_TILE_SIZE).clip(RoundedCornerShape(14.dp))
-            .background(background), contentAlignment = Alignment.Center) {
+    // Only the tile is clipped: the badge is drawn over its corner, outside the layout bounds, so the tile stays
+    // centered in the name row and the badge is never cut by the tile's rounded corner.
+    Box(Modifier.size(ICON_TILE_SIZE)) {
+        Box(Modifier.matchParentSize().clip(RoundedCornerShape(14.dp)).background(background)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = description }, contentAlignment = Alignment.Center) {
             Icon(painterResource(icon), contentDescription = null, tint = tint)
         }
-        Box(Modifier.align(Alignment.TopEnd).size(PENCIL_BADGE_SIZE).clip(CircleShape)
+        Box(Modifier.align(Alignment.TopEnd).offset(PENCIL_BADGE_OVERHANG, -PENCIL_BADGE_OVERHANG)
+            .size(PENCIL_BADGE_SIZE).clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(1.5.dp).clip(CircleShape)
             .background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
             Icon(painterResource(R.drawable.ic_edit), contentDescription = null, Modifier.size(10.dp),
@@ -332,8 +335,7 @@ fun EditorValueRow(
 
 private const val GRABBER_ALPHA = 0.6f
 private val ICON_TILE_SIZE = 48.dp
-// The badge overhangs the tile by 4 dp on the top and end sides.
-private val ICON_TILE_AREA = 52.dp
+private val PENCIL_BADGE_OVERHANG = 4.dp
 private val PENCIL_BADGE_SIZE = 17.dp
 
 @Preview
