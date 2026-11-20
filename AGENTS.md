@@ -302,3 +302,18 @@ linha (borda primária) com saldo antes → depois, uso, "Depois desta: N de M",
 (runningTimer observado no ViewModel; botão "Pausar e comprar") e Voltar/Comprar · ◈ N. Outro preço troca a faixa.
 Recibo vira Snackbar que fecha a intenção sozinho (tempo ajustado pela acessibilidade). Diálogo de pausa fica só como
 reserva. Funções puras purchaseStrip/receipt/stripIntent em RewardPresentation.kt; regras/schema inalterados.
+Página da lista (2026-11-20, opção A de prototypes/listas): barra mostra ícone + nome da lista no lugar de "Tarefas"
+(Caixa de entrada sem ícone nem ⋮; listas com ⋮ Editar/Excluir); abas segmentadas "Tarefas N | Hábitos N" sem rótulo
+"Lista". Cartão de tarefa (todas as páginas) não mostra "Pendente"; vencida tem meta em vermelho (needsReview).
+Sem ⚙ no topo de nenhuma tela: Configurações só pelo menu ☰. Regras/schema inalterados.
+Hoje/menu (2026-11-20, opção C de prototypes/hoje e prototypes/menu): cartões com canto único CardShape (16),
+ícone do hábito na coluna do checkbox (nome alinhado ao título da tarefa), sem item vazio na lista (header/erro só
+quando existem), SectionLabel igual em "Nesta semana", "Hábitos" (Hoje, só com tarefas acima) e "Concluídas".
+Menu ☰ com DrawerRow (core/ui/components, 48 dp): só "Tabitos" no topo, Caixa de entrada com ic_inbox, "Criar lista"
+como linha, Configurações fixa no rodapé. Destinos, gestos das listas e regras inalterados.
+Spec038: cores primárias e cor personalizada em listas/hábitos (core/colors/ItemColor.kt, puro). Campo color Int:
+posição 0–6 (PaletteColor.position; nunca mudar) ou ARGB opaco negativo = personalizada; sem schema/migração.
+Posições 0/1/2/3/6 viraram Verde/Azul/Roxo/Laranja/Vermelho; Rosa/Cinza (4/5) saem da linha e mostram no círculo
+Personalizada. Linha: Vermelho, Laranja, Verde, Azul, Roxo, Personalizada (células dividem a largura). Folha
+CustomColorSheet: prévia claro/escuro (sem aviso de contraste), roda Canvas + brilho, Hex | RGB, Partir de. Desenho só por
+itemColor/onItemColor (ícone claro/escuro pelo contraste). Plano: specs/038-custom-item-color/plan.md.
