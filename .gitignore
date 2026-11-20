@@ -23,3 +23,7 @@ signing.properties
 
 # Personal Claude Code settings
 .claude/settings.local.json
+
+# Local design notes and HTML prototypes
+TODO/
+prototypes/
