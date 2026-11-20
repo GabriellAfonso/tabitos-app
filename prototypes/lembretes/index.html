@@ -1,0 +1,650 @@
+<title>Lembretes do Ethos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap">
+<style>
+/* Layout: cabeçalho com controles · por opção, dois celulares (Lembretes do item | Editar lembrete) + ficha · pendências. */
+:root{
+  --paper:#f5f4f7; --sheet:#ffffff; --ink:#1e1a23; --muted:#625b6b; --line:#e3dee8;
+  --plum:#6e4a8e; --plum-soft:#efe6f6; --amber:#93601a; --amber-soft:#fbf0e0;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif; --body:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--body)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.wrap{max-width:1680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 8px}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+h1{font:800 clamp(30px,4.4vw,46px)/1.05 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+h2{font:700 24px/1.2 var(--display);margin:0;text-wrap:balance}
+.lede{max-width:76ch;color:var(--muted);margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.ctl{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;min-width:0}
+.ctl>span{font-size:12.5px;color:var(--muted);font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--paper);padding:5px 11px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:var(--sheet);font-weight:600}
+main{padding-block:22px 60px;display:grid;gap:44px}
+section.opt{display:grid;gap:14px}
+.opt-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--plum-soft);color:var(--plum);font-weight:600;white-space:nowrap}
+.badge.now{background:var(--amber-soft);color:var(--amber)}
+.opt-body{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:22px;align-items:start}
+.ph-col{display:grid;gap:8px;min-width:0}
+.ph-cap{font:600 12px/1.2 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:center}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0}
+.card ul{margin:4px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.card h5{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:14px 0 4px}
+.card h5:first-child{margin-top:0}
+.pend{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px}
+
+/* CELULAR — tokens Ameixa (core/ui/theme) */
+.phone{--p:#6E4A8E;--onp:#fff;--pc:#F1E7F8;--onpc:#2E1A40;--sc:#F1E7F8;--t:#93601A;--tc:#FBF0E0;--bg:#FBF8FC;--on:#231D29;--onv:#655C6E;--low:#fff;--cont:#F3EEF6;--high:#F1E9F5;--ol:#8F8498;--olv:#E6DEEB;--err:#B3261E;
+  width:100%;max-width:380px;height:760px;margin:0 auto;border:8px solid #26212b;border-radius:44px;background:var(--bg);color:var(--on);position:relative;overflow:hidden;display:flex;flex-direction:column;font:14px/1.4 Roboto,system-ui,sans-serif;box-shadow:0 18px 40px rgba(30,20,40,.18);user-select:none;-webkit-user-select:none}
+.phone.dark{--p:#D7B8F2;--onp:#3B1F55;--pc:#44325A;--onpc:#F1E2FC;--sc:#3A2D47;--t:#E8BE7A;--tc:#352A1F;--bg:#171419;--on:#ECE4F0;--onv:#B1A6B8;--low:#211C25;--cont:#1F1A23;--high:#2A2430;--ol:#82788A;--olv:#372F3D;--err:#F2B8B5}
+.phone *{box-sizing:border-box}
+.phone button{color:var(--on);font-family:inherit}
+.p-status{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;font-weight:600}
+.p-nav{height:18px;flex:none;display:grid;place-items:center}
+.p-nav::after{content:"";width:110px;height:4px;border-radius:2px;background:var(--on);opacity:.45}
+.p-screen{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column}
+/* fundo: Hoje esmaecido */
+.bg-today{padding:8px 16px;display:grid;gap:8px;opacity:.9}
+.bg-today .tb{display:flex;align-items:center;gap:10px;font-size:20px;padding:4px 0 6px}
+.bg-today .tb i{font-style:normal;width:36px;text-align:center}
+.bg-card{background:var(--low);border-radius:16px;padding:12px 14px;display:flex;gap:12px;align-items:center}
+.bg-card .bx{width:20px;height:20px;border:2px solid var(--ol);border-radius:4px;flex:none}
+.bg-card small{display:block;color:var(--onv);font-size:12px}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;z-index:8;background:var(--high);border-radius:28px 28px 0 0;max-height:92%;display:flex;flex-direction:column;padding:8px 0 10px}
+.sheet.full{top:0;border-radius:0;max-height:none}
+.handle{width:32px;height:4px;border-radius:2px;background:var(--ol);opacity:.5;margin:4px auto 10px;flex:none}
+.s-scroll{overflow-y:auto;padding:0 16px 8px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;flex:1}
+.s-head{display:flex;align-items:center;gap:6px;padding:0 8px 6px 16px;flex:none}
+.s-head .t{flex:1;min-width:0}
+.s-head .t b{display:block;font-size:20px;font-weight:400}
+.s-head .t small{display:block;font-size:12.5px;color:var(--onv);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconb{width:40px;height:40px;border:0;background:none;border-radius:50%;font-size:17px;flex:none}
+.iconb:hover{background:var(--cont)}
+.pill{border:0;border-radius:20px;background:var(--p);color:var(--onp)!important;padding:9px 18px;font-weight:500}
+.pill.tonal{background:var(--sc);color:var(--onpc)!important}
+.textb{border:0;background:none;color:var(--p)!important;font-weight:600;padding:9px 12px;border-radius:20px}
+.textb.err{color:var(--err)!important}
+.segm{display:flex;border:1px solid var(--ol);border-radius:999px;overflow:hidden;flex:none}
+.segm button{flex:1;border:0;background:none;padding:8px 4px;font-size:13px;min-height:40px;line-height:1.15}
+.segm button+button{border-left:1px solid var(--ol)}
+.segm button[aria-pressed="true"]{background:var(--sc);color:var(--onpc)!important;font-weight:600}
+.segm button[aria-pressed="true"]::before{content:"✓ "}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--ol);border-radius:8px;background:none;padding:7px 12px;font-size:13.5px;min-height:36px}
+.chip[aria-pressed="true"]{background:var(--sc);border-color:var(--sc);color:var(--onpc)!important;font-weight:500}
+.chip.add::before{content:"+ ";color:var(--p)}
+.lbl{font-size:12.5px;color:var(--onv);font-weight:500;padding:4px 2px 0}
+.note{font-size:12.5px;color:var(--onv);padding:0 2px}
+.group{background:var(--low);border-radius:18px;overflow:hidden}
+.rrow{display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 6px 8px 14px;width:100%;border:0;background:none;text-align:left}
+.group>*+*{border-top:1px solid var(--olv)}
+.rrow:hover{background:var(--cont)}
+.rrow .ic{width:36px;height:36px;border-radius:50%;background:var(--sc);display:grid;place-items:center;flex:none;font-size:15px}
+.rrow .tx{flex:1;min-width:0}
+.rrow .tx b{display:block;font-weight:500;font-size:15px}
+.rrow .tx small{display:block;color:var(--onv);font-size:12.5px}
+.rrow.sel{background:var(--pc)}
+.rrow.addrow{color:var(--p)!important;font-weight:500;min-height:52px}
+.rrow.addrow .ic{background:none;border:1.5px dashed var(--p);color:var(--p)}
+.lv{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 14px;width:100%;border:0;background:none;text-align:left}
+.lv:hover{background:var(--cont)}
+.lv .lb{flex:1}
+.lv .vl{color:var(--onv);font-size:14px;text-align:right}
+.lv .vl b{color:var(--p);font-weight:500}
+.lv .chev{color:var(--onv)}
+.lv.open{background:var(--cont)}
+.inl{padding:4px 14px 14px;display:grid;gap:8px;background:var(--cont)}
+.summary{background:var(--pc);color:var(--onpc);border-radius:16px;padding:12px 14px;display:flex;gap:12px;align-items:center}
+.summary .ic{font-size:20px}
+.summary small{display:block;font-size:12px;opacity:.8}
+.summary b{font-size:16.5px;font-weight:500}
+.summary.warn{background:var(--tc);color:var(--on)}
+.stepper{display:flex;align-items:center;gap:6px;background:var(--low);border-radius:14px;padding:6px}
+.stepper button{width:44px;height:44px;border-radius:12px;border:1px solid var(--olv);background:none;font-size:18px}
+.stepper output{flex:1;text-align:center;font-size:26px;font-variant-numeric:tabular-nums}
+.days{display:flex;justify-content:space-between;gap:4px}
+.days button{width:40px;height:40px;border-radius:50%;border:1px solid var(--ol);background:none;font-size:13px;font-weight:500}
+.days button[aria-pressed="true"]{background:var(--p);border-color:var(--p);color:var(--onp)!important}
+.cal{background:var(--low);border-radius:16px;padding:6px 6px 8px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;padding:0 6px 2px;font-weight:500;font-size:13.5px}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}
+.cal-g .wd{font-size:11px;color:var(--onv);padding:3px 0}
+.cal-g button{border:0;background:none;height:34px;font-size:12.5px;font-variant-numeric:tabular-nums;padding:0}
+.cal-g button span{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%}
+.cal-g button:disabled{opacity:.3;cursor:default}
+.cal-g button.today span{border:1px solid var(--p)}
+.cal-g button.due span{box-shadow:inset 0 -3px 0 var(--t)}
+.cal-g button.sel span{background:var(--p);color:var(--onp)}
+.bottom{flex:none;display:flex;gap:8px;justify-content:flex-end;padding:8px 16px 4px;align-items:center}
+.bottom .grow{flex:1}
+/* timeline (C) */
+.tl{background:var(--low);border-radius:16px;padding:12px 14px 10px}
+.tl-bar{position:relative;height:44px;margin:4px 6px 0}
+.tl-bar::before{content:"";position:absolute;left:0;right:0;top:20px;height:3px;border-radius:2px;background:var(--olv)}
+.tl-pt{position:absolute;top:12px;transform:translateX(-50%);display:grid;justify-items:center;gap:2px;border:0;background:none;padding:0}
+.tl-pt i{width:19px;height:19px;border-radius:50%;background:var(--p);border:3px solid var(--low);font-style:normal}
+.tl-pt.due i{background:var(--t);border-radius:4px}
+.tl-pt.sel i{outline:2px solid var(--p);outline-offset:1px}
+.tl-pt span{font-size:10.5px;color:var(--onv);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tl-cap{display:flex;justify-content:space-between;font-size:11px;color:var(--onv)}
+.acc{background:var(--low);border-radius:16px;overflow:hidden}
+.acc.open{outline:2px solid var(--p)}
+.acc-body{padding:0 14px 12px;display:grid;gap:8px}
+/* como está */
+.m3dlg-scrim{position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:6;display:flex;align-items:center;justify-content:center;padding:22px}
+.m3dlg{background:var(--high);border-radius:28px;padding:22px 20px 12px;width:100%;max-height:88%;display:flex;flex-direction:column;gap:6px}
+.m3dlg h6{font-size:22px;font-weight:400;margin:0 0 6px}
+.m3dlg .sc{overflow-y:auto;display:flex;flex-direction:column;gap:4px;flex:1;scrollbar-width:thin}
+.m3dlg .tbtn{align-self:flex-start;border:0;background:none;color:var(--p)!important;font-weight:500;padding:8px 10px;border-radius:20px;text-align:left;font-size:13.5px}
+.m3dlg hr{border:0;border-top:1px solid var(--olv);margin:4px 0;width:100%}
+.m3dlg .fbtn{align-self:flex-start;border:0;border-radius:20px;background:var(--p);color:var(--onp)!important;padding:9px 16px;font-weight:500;font-size:13.5px}
+.m3dlg .act{display:flex;justify-content:flex-end;gap:4px}
+.ofield{border:1px solid var(--ol);border-radius:6px;padding:6px 12px;display:grid;font-size:15px}
+.ofield small{font-size:11.5px;color:var(--onv)}
+.cb{display:flex;align-items:center;gap:10px;font-size:14px;padding:2px 0}
+.cb i{width:18px;height:18px;border:2px solid var(--ol);border-radius:3px;font-style:normal;display:grid;place-items:center;font-size:11px}
+.cb i.on{background:var(--p);border-color:var(--p);color:var(--onp)}
+.toast{position:absolute;left:12px;right:12px;bottom:12px;z-index:20;background:var(--on);color:var(--bg);border-radius:8px;padding:12px 14px;font-size:13.5px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.toast button{border:0;background:none;color:var(--pc)!important;font-weight:600}
+.empty{padding:18px 8px;text-align:center;color:var(--onv);font-size:13.5px}
+@media (prefers-reduced-motion:no-preference){.sheet,.inl,.acc-body{animation:up .18s ease-out}}
+@keyframes up{from{transform:translateY(6px);opacity:.6}to{transform:none;opacity:1}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Protótipo · Pop-up de detalhes · Lembretes</div>
+  <h1>Lembretes de tarefas e hábitos</h1>
+  <p class="lede">O que abre quando você toca em 🔔 Lembretes no pop-up de uma tarefa ou hábito, e a tela para criar ou
+    editar um lembrete. Primeiro como está hoje, depois três propostas. Em cada opção, o celular da esquerda é a lista
+    e o da direita é o editor: toque num lembrete da esquerda para editá-lo à direita, salve e veja a lista mudar.
+    Hoje é quinta, 19 nov 2026 (dados fictícios).</p>
+  <div class="controls">
+    <div class="ctl"><span>Item aberto</span><div class="seg" id="ctl-item">
+      <button data-v="rep" aria-pressed="true">Tarefa que repete</button>
+      <button data-v="date">Tarefa só com data</button>
+      <button data-v="habit">Bom hábito</button></div></div>
+    <div class="ctl"><span>Tema dos celulares</span><div class="seg" id="ctl-theme">
+      <button data-v="page" aria-pressed="true">Igual à página</button>
+      <button data-v="light">Claro</button><button data-v="dark">Escuro</button></div></div>
+    <div class="ctl"><span>Dados</span><div class="seg"><button id="reset">Restaurar exemplo</button></div></div>
+  </div>
+</header>
+<main id="main"></main>
+</div>
+
+<script>
+const TODAY = 19; // 19 nov 2026, quinta
+const WD = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+const WD1 = ["S","T","Q","Q","S","S","D"];
+const PRESETS = [0, 10, 30, 60, 120, 1440];
+const TIMES = ["07:00","08:00","12:00","18:00","21:00"];
+
+function sample() {
+  return {
+    rep: { kind: "task", title: "Pagar conta de luz", dueDay: 19, dueTime: "18:00", repeats: "Todo mês, dia 19",
+      reminders: [{ id: 1, mode: "rel", off: 30 }, { id: 2, mode: "date", day: 18, time: "20:00" }] },
+    date: { kind: "task", title: "Levar notebook para revisão", dueDay: 20, dueTime: null, repeats: null,
+      reminders: [{ id: 3, mode: "rel", off: 1440, ref: "09:00" }] },
+    habit: { kind: "habit", title: "Ler 20 minutos", dueDay: null, dueTime: null, repeats: "Seg a sex",
+      reminders: [{ id: 4, mode: "week", time: "21:00", days: [1,1,1,1,1,0,0] }] },
+  };
+}
+let data = sample();
+let itemKey = "rep";
+let themeMode = "page";
+let nextId = 10;
+// estado por opção: selecionado, rascunho, escopo, extras de UI
+const ui = {};
+const OPTS = ["now", "A", "B", "C"];
+function resetUi() { OPTS.forEach(o => ui[o] = { sel: null, draft: null, scope: "one", open: null, toast: null, menu: null }); }
+resetUi();
+
+const item = () => data[itemKey];
+const isHabit = () => item().kind === "habit";
+const pad = n => String(n).padStart(2, "0");
+const toMin = t => +t.slice(0, 2) * 60 + +t.slice(3);
+const fromMin = m => pad(Math.floor(((m % 1440) + 1440) % 1440 / 60)) + ":" + pad(((m % 60) + 60) % 60);
+function dayLabel(d) {
+  if (d === TODAY) return "Hoje";
+  if (d === TODAY + 1) return "Amanhã";
+  if (d === TODAY - 1) return "Ontem";
+  return d + " nov";
+}
+function offLabel(off) {
+  if (off === 0) return "Na hora do prazo";
+  if (off % 1440 === 0) return (off / 1440) + (off === 1440 ? " dia antes" : " dias antes");
+  if (off % 60 === 0) return (off / 60) + " h antes";
+  if (off > 60) return Math.floor(off / 60) + " h " + (off % 60) + " min antes";
+  return off + " min antes";
+}
+function offShort(off) {
+  if (off === 0) return "Na hora";
+  return offLabel(off).replace(" antes", "");
+}
+function daysLabel(days) {
+  if (days.every(Boolean)) return "Todos os dias";
+  if (days.slice(0, 5).every(Boolean) && !days[5] && !days[6]) return "Seg a sex";
+  if (!days.slice(0, 5).some(Boolean) && days[5] && days[6]) return "Fim de semana";
+  return days.map((v, i) => v ? WD[i] : null).filter(Boolean).join(", ") || "Nenhum dia";
+}
+/** Momento real do aviso para a ocorrência aberta: {day, time} ou null. */
+function fireAt(r) {
+  const it = item();
+  if (r.mode === "date") return { day: r.day, time: r.time };
+  if (r.mode === "rel") {
+    const base = it.dueTime || r.ref;
+    if (!base || it.dueDay == null) return null;
+    const m = it.dueDay * 1440 + toMin(base) - r.off;
+    return { day: Math.floor(m / 1440), time: fromMin(m) };
+  }
+  return null;
+}
+function describe(r) {
+  const it = item();
+  if (r.mode === "week") return { main: r.time, sub: daysLabel(r.days), icon: "↻" };
+  if (r.mode === "date") return { main: dayLabel(r.day) + ", " + r.time, sub: "Data escolhida", icon: "📅" };
+  const f = fireAt(r);
+  const sub = f ? "Avisa " + dayLabel(f.day).toLowerCase().replace(/^(\d)/, "$1") + " às " + f.time
+    : "Falta horário de referência";
+  return { main: offLabel(r.off), sub: it.dueTime ? sub : sub + " · ref. " + (r.ref || "—"), icon: "⏱" };
+}
+function sentence(r) {
+  if (r.mode === "week") return { k: "Avisa", v: daysLabel(r.days) + " às " + r.time };
+  const f = fireAt(r);
+  if (!f) return { k: "Escolha um horário de referência", v: "A tarefa não tem horário", warn: true };
+  const past = f.day < TODAY;
+  return { k: past ? "Esse horário já passou" : "Avisa", v: dayLabel(f.day) + ", " + f.day + " nov, às " + f.time, warn: past };
+}
+function newDraft() {
+  const it = item();
+  if (it.kind === "habit") return { id: null, mode: "week", time: "08:00", days: [1,1,1,1,1,1,1] };
+  return { id: null, mode: "rel", off: 30, ref: it.dueTime ? null : "09:00", day: it.dueDay || TODAY, time: "09:00",
+    days: [1,1,1,1,1,1,1] };
+}
+function fillDraft(r) {
+  const base = newDraft();
+  return Object.assign(base, JSON.parse(JSON.stringify(r)), { days: r.days ? [...r.days] : base.days });
+}
+function saveDraft(o) {
+  const d = ui[o].draft; if (!d) return;
+  const clean = { id: d.id ?? nextId++, mode: d.mode };
+  if (d.mode === "rel") { clean.off = d.off; if (!item().dueTime) clean.ref = d.ref || "09:00"; }
+  if (d.mode === "date") { clean.day = d.day; clean.time = d.time; }
+  if (d.mode === "week") { clean.time = d.time; clean.days = [...d.days]; }
+  const list = item().reminders;
+  const i = list.findIndex(r => r.id === clean.id);
+  if (i >= 0) list[i] = clean; else list.push(clean);
+  ui[o].sel = clean.id; ui[o].draft = fillDraft(clean);
+  ui[o].toast = { text: "Lembrete salvo" };
+  render();
+}
+function removeRem(o, id) {
+  const list = item().reminders; const i = list.findIndex(r => r.id === id); if (i < 0) return;
+  const [gone] = list.splice(i, 1);
+  ui[o].toast = { text: "Lembrete excluído", undo: { gone, i } };
+  if (ui[o].sel === id) { ui[o].sel = null; ui[o].draft = newDraft(); }
+  ui[o].menu = null; ui[o].open = null;
+  render();
+}
+function quickAdd(o, off) {
+  const r = { id: nextId++, mode: "rel", off };
+  if (!item().dueTime) r.ref = "09:00";
+  item().reminders.push(r);
+  ui[o].toast = { text: offLabel(off) + " adicionado" };
+  render();
+}
+function select(o, id) {
+  const r = item().reminders.find(x => x.id === id);
+  ui[o].sel = id; ui[o].draft = r ? fillDraft(r) : newDraft();
+  render();
+}
+
+/* ---------- blocos comuns ---------- */
+function status() { return `<div class="p-status"><span>09:41</span><span>▴ ◢ ▮</span></div>`; }
+function background() {
+  const it = item();
+  const sub = it.kind === "habit" ? "Bom hábito · " + it.repeats : (it.dueTime ? dayLabel(it.dueDay) + ", " + it.dueTime : dayLabel(it.dueDay));
+  return `<div class="bg-today"><div class="tb"><i>☰</i>Hoje</div>
+    <div class="bg-card"><span class="bx"></span><div><b>${it.title}</b><small>${sub}</small></div></div>
+    <div class="bg-card"><span class="bx"></span><div>Regar as plantas<small>Hoje</small></div></div>
+    <div class="bg-card"><span class="bx"></span><div>Revisar orçamento do mês<small>Hoje, 20:00</small></div></div></div>`;
+}
+function itemSub() {
+  const it = item();
+  if (it.kind === "habit") return "Bom hábito · " + it.repeats;
+  const due = "Prazo " + dayLabel(it.dueDay).toLowerCase() + (it.dueTime ? ", " + it.dueTime : " (sem horário)");
+  return due + (it.repeats ? " · " + it.repeats : "");
+}
+function scopeSeg(o) {
+  if (!item().repeats || isHabit()) return "";
+  const s = ui[o].scope;
+  return `<div class="segm" role="group" aria-label="Aplicar a">
+    <button data-o="${o}" data-act="scope" data-v="one" aria-pressed="${s === "one"}">Só esta</button>
+    <button data-o="${o}" data-act="scope" data-v="all" aria-pressed="${s === "all"}">Esta e próximas</button></div>`;
+}
+function toast(o) {
+  const t = ui[o].toast; if (!t) return "";
+  return `<div class="toast" role="status"><span>${t.text}</span>${t.undo ? `<button data-o="${o}" data-act="undo">Desfazer</button>` : ""}</div>`;
+}
+function presetChips(o) {
+  if (isHabit()) return "";
+  const used = item().reminders.filter(r => r.mode === "rel").map(r => r.off);
+  const free = [0, 30, 60, 1440].filter(p => !used.includes(p));
+  if (!free.length) return "";
+  return `<div class="lbl">Adicionar rápido</div><div class="chips">${free.map(p =>
+    `<button class="chip add" data-o="${o}" data-act="quick" data-v="${p}">${offShort(p)}${p ? " antes" : ""}</button>`).join("")}</div>`;
+}
+function summaryBox(d) {
+  const s = sentence(d);
+  return `<div class="summary${s.warn ? " warn" : ""}"><span class="ic">${s.warn ? "⚠" : "🔔"}</span><div><small>${s.k}</small><b>${s.v}</b></div></div>`;
+}
+function modeSeg(o, d) {
+  if (isHabit()) return "";
+  const b = (v, t) => `<button data-o="${o}" data-act="mode" data-v="${v}" aria-pressed="${d.mode === v}">${t}</button>`;
+  return `<div class="segm" role="group" aria-label="Tipo de lembrete">${b("rel", "Antes do prazo")}${b("date", "Data e hora")}${b("week", "Dias da semana")}</div>`;
+}
+function offPicker(o, d) {
+  return `<div class="chips">${PRESETS.map(p => `<button class="chip" data-o="${o}" data-act="off" data-v="${p}" aria-pressed="${d.off === p}">${offShort(p)}</button>`).join("")}</div>
+    <div class="stepper"><button data-o="${o}" data-act="offstep" data-v="-5" aria-label="Menos 5 minutos">−</button>
+    <output>${offShort(d.off)}</output><button data-o="${o}" data-act="offstep" data-v="5" aria-label="Mais 5 minutos">+</button></div>`;
+}
+function timePicker(o, d, field = "time") {
+  const v = d[field] || "09:00";
+  return `<div class="stepper"><button data-o="${o}" data-act="tstep" data-f="${field}" data-v="-15" aria-label="Menos 15 minutos">−</button>
+    <output>${v}</output><button data-o="${o}" data-act="tstep" data-f="${field}" data-v="15" aria-label="Mais 15 minutos">+</button></div>
+    <div class="chips">${TIMES.map(t => `<button class="chip" data-o="${o}" data-act="time" data-f="${field}" data-v="${t}" aria-pressed="${v === t}">${t}</button>`).join("")}</div>`;
+}
+function calendar(o, d) {
+  let cells = WD1.map(w => `<span class="wd">${w}</span>`).join("");
+  cells += "<span></span>".repeat(6); // 1 nov 2026 é domingo
+  for (let n = 1; n <= 30; n++) {
+    const cls = [n === TODAY ? "today" : "", n === d.day ? "sel" : "", n === item().dueDay ? "due" : ""].join(" ");
+    cells += `<button class="${cls}" ${n < TODAY ? "disabled" : ""} data-o="${o}" data-act="day" data-v="${n}" aria-label="${n} de novembro"><span>${n}</span></button>`;
+  }
+  return `<div class="cal"><div class="cal-h"><span>‹</span><span>novembro 2026</span><span>›</span></div><div class="cal-g">${cells}</div></div>
+    <div class="note">Traço âmbar = dia do prazo.</div>`;
+}
+function dayPicker(o, d) {
+  return `<div class="days">${WD1.map((w, i) => `<button data-o="${o}" data-act="wd" data-v="${i}" aria-pressed="${!!d.days[i]}" aria-label="${WD[i]}">${w}</button>`).join("")}</div>
+  <div class="chips">${[["Todos os dias",[1,1,1,1,1,1,1]],["Seg a sex",[1,1,1,1,1,0,0]],["Fim de semana",[0,0,0,0,0,1,1]]].map(([t, v]) =>
+    `<button class="chip" data-o="${o}" data-act="days" data-v="${v.join("")}" aria-pressed="${d.days.join("") === v.join("")}">${t}</button>`).join("")}</div>`;
+}
+function modeBody(o, d) {
+  if (d.mode === "rel") return `<div class="lbl">Quanto antes do prazo</div>${offPicker(o, d)}
+    ${item().dueTime ? "" : `<div class="lbl">Horário de referência (a tarefa não tem horário)</div>${timePicker(o, d, "ref")}`}`;
+  if (d.mode === "date") return `<div class="lbl">Dia</div>
+    <div class="chips">${[TODAY, TODAY + 1].map(n => `<button class="chip" data-o="${o}" data-act="day" data-v="${n}" aria-pressed="${d.day === n}">${dayLabel(n)}</button>`).join("")}</div>
+    ${calendar(o, d)}<div class="lbl">Horário</div>${timePicker(o, d)}`;
+  return `<div class="lbl">Dias</div>${dayPicker(o, d)}<div class="lbl">Horário</div>${timePicker(o, d)}`;
+}
+
+/* ---------- Como está ---------- */
+function nowList() {
+  const it = item();
+  const scope = it.kind === "task" ? `<button class="tbtn">Escopo: ${ui.now.scope === "all" ? "esta e futuras ocorrências" : "somente esta ocorrência"} · toque para mudar</button>` : "";
+  const rows = it.reminders.map(r => {
+    const lines = r.mode === "rel" ? [(r.off ? offLabel(r.off).replace(" antes", "") + " antes" : ""), it.dueTime ? (r.off ? "Horário de referência: " + it.dueTime : "Às " + it.dueTime) : "Horário de referência: " + (r.ref || "—")]
+      : r.mode === "date" ? [r.time, "2026-11-" + pad(r.day)] : [r.time, r.days.map((v, i) => v ? ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"][i] : null).filter(Boolean).join(", ")];
+    const mode = { rel: "Antecedência", date: "Data e horário escolhidos", week: "Dias da semana e horário" }[r.mode];
+    return `<div>${mode}</div>${lines.filter(Boolean).map(l => `<div>${l}</div>`).join("")}
+      <button class="tbtn" data-o="now" data-act="sel" data-v="${r.id}">Editar</button><button class="tbtn" data-o="now" data-act="del" data-v="${r.id}">Excluir</button><hr>`;
+  }).join("");
+  return `<div class="m3dlg-scrim"><div class="m3dlg"><h6>Lembretes</h6><div class="sc"><div>${it.title}</div>${scope}
+    ${it.reminders.length ? rows : "<div>Nenhum lembrete configurado para este item.</div>"}
+    <button class="fbtn" data-o="now" data-act="new">Adicionar ou editar lembrete</button></div>
+    <div class="act"><button class="tbtn">Fechar</button></div></div></div>`;
+}
+function nowEditor() {
+  const d = ui.now.draft || newDraft();
+  const modes = isHabit() ? "" : ["rel:Data e horário escolhidos", "rel:Antecedência", "rel:Dias da semana e horário"].map((x, i) =>
+    `<button class="tbtn" data-o="now" data-act="mode" data-v="${["date","rel","week"][i]}">${x.split(":")[1]}</button>`).join("");
+  const title = { rel: "Antecedência", date: "Data e horário escolhidos", week: "Dias da semana e horário" }[d.mode];
+  let body = "";
+  if (d.mode === "date") body = `<div class="ofield"><small>Data (AAAA-MM-DD)</small>2026-11-${pad(d.day)}</div><div class="ofield"><small>Horário</small>${d.time}</div>`;
+  if (d.mode === "rel") body = `<div class="ofield"><small>Antecedência em minutos (até 525600)</small>${d.off}</div><div class="ofield"><small>Horário de referência se não houver horário no prazo</small>${d.ref || ""}</div>`;
+  if (d.mode === "week") body = `<div class="ofield"><small>Horário</small>${d.time}</div>` + ["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"].map((w, i) =>
+    `<div class="cb"><i class="${d.days[i] ? "on" : ""}">${d.days[i] ? "✓" : ""}</i>${w}</div>`).join("");
+  return `<div class="m3dlg-scrim"><div class="m3dlg"><h6>Adicionar ou editar lembrete</h6><div class="sc">
+    <div class="note">O lembrete não altera o prazo nem a meta do item.</div>
+    ${isHabit() ? "" : `<button class="tbtn">Escopo: somente esta ocorrência · toque para mudar</button>`}${modes}
+    <div style="font-weight:500;margin-top:4px">${title}</div>${body}</div>
+    <div class="act"><button class="tbtn">Cancelar</button><button class="tbtn" data-o="now" data-act="save">Salvar</button></div></div></div>`;
+}
+
+/* ---------- A: folha com atalhos ---------- */
+function aList() {
+  const it = item();
+  const rows = it.reminders.map(r => { const x = describe(r);
+    return `<div class="rrow ${ui.A.sel === r.id ? "sel" : ""}" style="padding:0">
+      <button class="rrow" style="flex:1" data-o="A" data-act="sel" data-v="${r.id}" aria-label="Editar lembrete ${x.main}"><span class="ic">${x.icon}</span><span class="tx"><b>${x.main}</b><small>${x.sub}</small></span></button>
+      <button class="iconb" data-o="A" data-act="del" data-v="${r.id}" aria-label="Excluir lembrete ${x.main}">🗑</button></div>`; }).join("");
+  return `<div class="scrim"></div><div class="sheet"><div class="handle"></div>
+    <div class="s-head"><div class="t"><b>Lembretes</b><small>${it.title} · ${itemSub()}</small></div></div>
+    <div class="s-scroll">${scopeSeg("A")}
+      <div class="group">${rows || `<div class="empty">Nenhum lembrete. Escolha um atalho ou crie um personalizado.</div>`}
+        <button class="rrow addrow" data-o="A" data-act="new"><span class="ic">+</span><span class="tx">Novo lembrete</span></button></div>
+      ${presetChips("A")}
+      <div class="note">O lembrete só avisa: não muda o prazo${isHabit() ? " nem a meta do hábito" : ""}.</div>
+    </div></div>${toast("A")}`;
+}
+function aEditor() {
+  const d = ui.A.draft || newDraft();
+  return `<div class="scrim"></div><div class="sheet" style="max-height:96%"><div class="handle"></div>
+    <div class="s-head"><button class="iconb" aria-label="Fechar">✕</button><div class="t"><b>${d.id ? "Editar lembrete" : "Novo lembrete"}</b><small>${item().title}</small></div>
+      ${d.id ? `<button class="iconb" data-o="A" data-act="del" data-v="${d.id}" aria-label="Excluir">🗑</button>` : ""}</div>
+    <div class="s-scroll">${summaryBox(d)}${modeSeg("A", d)}${modeBody("A", d)}</div>
+    <div class="bottom"><button class="textb">Cancelar</button><button class="pill" data-o="A" data-act="save">Salvar</button></div></div>`;
+}
+
+/* ---------- B: página com linhas rótulo → valor ---------- */
+function bList() {
+  const it = item();
+  const rows = it.reminders.map(r => { const x = describe(r);
+    return `<button class="lv ${ui.B.sel === r.id ? "open" : ""}" data-o="B" data-act="sel" data-v="${r.id}"><span class="lb">${x.main}<br><small style="color:var(--onv);font-size:12.5px">${x.sub}</small></span><span class="chev">›</span></button>`; }).join("");
+  const scope = it.repeats && !isHabit() ? `<div class="group"><button class="lv" data-o="B" data-act="scope" data-v="${ui.B.scope === "one" ? "all" : "one"}"><span class="lb">Vale para</span><span class="vl"><b>${ui.B.scope === "one" ? "Só esta ocorrência" : "Esta e as próximas"}</b></span><span class="chev">⇅</span></button></div>` : "";
+  return `<div class="sheet full"><div class="s-head" style="padding-top:4px"><button class="iconb" aria-label="Voltar">←</button><div class="t"><b>Lembretes</b><small>${it.title}</small></div></div>
+    <div class="s-scroll">
+      <div class="summary"><span class="ic">${isHabit() ? "↻" : "⏰"}</span><div><small>${isHabit() ? "Hábito" : "Prazo"}</small><b>${itemSub().replace(/^Prazo /, "").replace(/^Bom hábito · /, "")}</b></div></div>
+      ${scope}
+      <div class="lbl">${it.reminders.length} ${it.reminders.length === 1 ? "lembrete" : "lembretes"}</div>
+      <div class="group">${rows || `<div class="empty">Nenhum lembrete ainda.</div>`}
+        <button class="lv" data-o="B" data-act="new" style="color:var(--p);font-weight:500"><span class="lb">+ Adicionar lembrete</span></button></div>
+      <div class="note">Lembretes só avisam; prazo e meta continuam iguais.</div>
+    </div></div>${toast("B")}`;
+}
+function bEditor() {
+  const d = ui.B.draft || newDraft();
+  const open = ui.B.open;
+  const row = (key, label, value, body) => `<button class="lv ${open === key ? "open" : ""}" data-o="B" data-act="open" data-v="${key}"><span class="lb">${label}</span><span class="vl"><b>${value}</b></span><span class="chev">${open === key ? "⌃" : "⌄"}</span></button>${open === key ? `<div class="inl">${body}</div>` : ""}`;
+  const modeName = { rel: "Antes do prazo", date: "Data e hora", week: "Dias da semana" }[d.mode];
+  const modeRadios = ["rel", "date", "week"].map(m => `<button class="chip" data-o="B" data-act="mode" data-v="${m}" aria-pressed="${d.mode === m}">${{ rel: "Antes do prazo", date: "Data e hora", week: "Dias da semana" }[m]}</button>`).join("");
+  let rows = isHabit() ? "" : row("mode", "Tipo", modeName, `<div class="chips">${modeRadios}</div>`);
+  if (d.mode === "rel") {
+    rows += row("off", "Antecedência", offShort(d.off), offPicker("B", d));
+    if (!item().dueTime) rows += row("ref", "Horário de referência", d.ref || "—", timePicker("B", d, "ref"));
+  } else if (d.mode === "date") {
+    rows += row("day", "Dia", dayLabel(d.day) + (d.day > TODAY + 1 ? "" : ", " + d.day + " nov"), calendar("B", d));
+    rows += row("time", "Horário", d.time, timePicker("B", d));
+  } else {
+    rows += row("days", "Dias", daysLabel(d.days), dayPicker("B", d));
+    rows += row("time", "Horário", d.time, timePicker("B", d));
+  }
+  return `<div class="sheet full"><div class="s-head" style="padding-top:4px"><button class="iconb" aria-label="Cancelar">✕</button><div class="t"><b>${d.id ? "Editar lembrete" : "Novo lembrete"}</b><small>${item().title}</small></div>
+      <button class="pill" data-o="B" data-act="save">Salvar</button></div>
+    <div class="s-scroll">${summaryBox(d)}<div class="group">${rows}</div>
+      ${d.id ? `<button class="textb err" style="align-self:flex-start" data-o="B" data-act="del" data-v="${d.id}">Excluir lembrete</button>` : ""}</div></div>`;
+}
+
+/* ---------- C: folha com linha do tempo e cartões que abrem ---------- */
+function timeline(o) {
+  const it = item();
+  if (isHabit()) {
+    const hours = it.reminders.map(r => ({ r, m: toMin(r.time) }));
+    return `<div class="tl"><div class="lbl" style="padding:0">Seu dia</div><div class="tl-bar">${hours.map(({ r, m }) =>
+      `<button class="tl-pt ${ui[o].sel === r.id ? "sel" : ""}" style="left:${(m / 1440 * 100).toFixed(1)}%" data-o="${o}" data-act="sel" data-v="${r.id}"><i></i><span>${r.time}</span></button>`).join("")}</div>
+      <div class="tl-cap"><span>00:00</span><span>12:00</span><span>24:00</span></div></div>`;
+  }
+  const dueM = it.dueDay * 1440 + toMin(it.dueTime || "23:59");
+  const pts = it.reminders.map(r => { const f = fireAt(r); return f ? { r, m: f.day * 1440 + toMin(f.time) } : null; }).filter(Boolean);
+  const start = Math.min(dueM - 180, ...pts.map(p => p.m)) - 60;
+  const end = Math.max(dueM, ...pts.map(p => p.m)) + 60;
+  const x = m => ((m - start) / (end - start) * 100).toFixed(1);
+  const dueLbl = it.dueTime ? "Prazo " + it.dueTime : "Prazo " + dayLabel(it.dueDay).toLowerCase();
+  return `<div class="tl"><div class="lbl" style="padding:0">Até o prazo</div><div class="tl-bar">
+    ${pts.map(({ r, m }) => `<button class="tl-pt ${ui[o].sel === r.id ? "sel" : ""}" style="left:${x(m)}%" data-o="${o}" data-act="sel" data-v="${r.id}" aria-label="Lembrete ${describe(r).main}"><i></i><span>${fromMin(m)}</span></button>`).join("")}
+    <span class="tl-pt due" style="left:${x(dueM)}%"><i></i><span>${dueLbl}</span></span></div>
+    <div class="tl-cap"><span>${dayLabel(Math.floor(start / 1440))}</span><span>${dayLabel(Math.floor(end / 1440))}</span></div></div>`;
+}
+function cSheet(withEditor) {
+  const it = item();
+  const cards = it.reminders.map(r => { const x = describe(r); const open = withEditor && ui.C.sel === r.id;
+    const d = open ? ui.C.draft : null;
+    return `<div class="acc ${open ? "open" : ""}"><button class="rrow" data-o="C" data-act="${withEditor ? "sel" : "selc"}" data-v="${r.id}"><span class="ic">${x.icon}</span><span class="tx"><b>${open ? describe(d).main : x.main}</b><small>${open ? describe(d).sub : x.sub}</small></span><span class="chev">${open ? "⌃" : "⌄"}</span></button>
+      ${open ? `<div class="acc-body">${modeSeg("C", d)}${modeBody("C", d)}<div class="bottom" style="padding:4px 0 0"><button class="textb err" data-o="C" data-act="del" data-v="${r.id}">Excluir</button><span class="grow"></span><button class="textb" data-o="C" data-act="sel" data-v="${r.id}">Cancelar</button><button class="pill" data-o="C" data-act="save">Salvar</button></div></div>` : ""}</div>`; }).join("");
+  const newOpen = withEditor && ui.C.draft && ui.C.draft.id == null;
+  const newCard = newOpen ? `<div class="acc open"><div class="rrow"><span class="ic">+</span><span class="tx"><b>Novo: ${describe(ui.C.draft).main}</b><small>${describe(ui.C.draft).sub}</small></span></div>
+    <div class="acc-body">${modeSeg("C", ui.C.draft)}${modeBody("C", ui.C.draft)}<div class="bottom" style="padding:4px 0 0"><button class="textb" data-o="C" data-act="cancelnew">Cancelar</button><button class="pill" data-o="C" data-act="save">Adicionar</button></div></div></div>` : "";
+  return `<div class="scrim"></div><div class="sheet" style="max-height:96%"><div class="handle"></div>
+    <div class="s-head"><div class="t"><b>Lembretes</b><small>${it.title}</small></div><button class="pill tonal" data-o="C" data-act="new">+ Novo</button></div>
+    <div class="s-scroll">${timeline("C")}${scopeSeg("C")}${cards}${newCard}
+      ${it.reminders.length || newOpen ? "" : `<div class="empty">Nenhum lembrete. Toque em + Novo ou num atalho.</div>`}
+      ${withEditor ? "" : presetChips("C")}</div></div>${withEditor ? "" : toast("C")}`;
+}
+
+/* ---------- textos das fichas ---------- */
+const INFO = {
+  now: { name: "Como está", badge: "now", tag: "ReminderContent.kt",
+    lead: "Dois AlertDialogs empilhados sobre o pop-up de detalhes.",
+    list: ["Cada lembrete vira linhas de texto soltas + botões de texto Editar/Excluir, todos com o mesmo peso.",
+      "Data mostrada como 2026-11-18; escopo é um botão de texto “toque para mudar”.",
+      "“Adicionar ou editar lembrete” é o mesmo rótulo para criar e para editar."],
+    edit: ["Tipos aparecem como três botões de texto, sem mostrar qual está escolhido (só o subtítulo).",
+      "Data digitada em AAAA-MM-DD e antecedência em minutos (até 525600): contraria a regra da spec 013 de não digitar datas.",
+      "Não mostra quando o aviso vai tocar; o erro só aparece depois de Salvar."] },
+  A: { name: "A · Folha com atalhos", badge: "", tag: "Proposta",
+    lead: "Folha inferior com a lista e atalhos; o editor é uma folha que cresce, como os editores da spec 029.",
+    list: ["Cada lembrete é uma linha com ícone do tipo, texto principal (“30 min antes”) e quando avisa (“Avisa hoje às 17:30”).",
+      "Escopo da série vira botão segmentado Só esta | Esta e próximas, só em tarefa que repete.",
+      "Atalhos “+ Na hora / 30 min / 1 h / 1 dia antes” criam o lembrete com um toque; somem os que já existem."],
+    edit: ["Resumo no topo diz em português quando vai avisar e muda enquanto você mexe; avisa se o horário já passou.",
+      "Tipo em segmentado de 3 (Antes do prazo · Data e hora · Dias da semana); hábito pula direto para dias.",
+      "Antecedência por chips + −/+; data por Hoje/Amanhã + calendário; horário por −/+ e horários comuns. Nada digitado."],
+    pros: "Mais rápido para o caso comum (um toque). Reaproveita GrowingSheet e o padrão segmentado/chips já usados no app.",
+    impact: "Só interface (ReminderContent.kt + Presentation pura para os textos). Regras, schema 7 e ReminderRules inalterados. Atalhos dependem de prazo com data." },
+  B: { name: "B · Página com linhas rótulo → valor", badge: "", tag: "Proposta",
+    lead: "Página cheia com Voltar, no estilo das telas cheias dos editores (spec 029) e da folha Prazo opção C.",
+    list: ["Topo mostra o prazo/hábito; “Vale para” é uma linha com o valor à direita.",
+      "Lembretes num cartão de linhas; tocar abre o editor; “+ Adicionar lembrete” no fim do cartão.",
+      "Sem atalhos: criar sempre passa pelo editor."],
+    edit: ["Editor em tela cheia com Salvar no topo e linhas Tipo, Antecedência/Dia, Horário com o valor à direita.",
+      "Tocar numa linha abre o seletor ali mesmo, uma linha por vez; o resto fica compacto.",
+      "Resumo do aviso no topo; Excluir lembrete no fim, em vermelho."],
+    pros: "Mais consistente com Prazo e editores em tela cheia; cabe bem com fonte grande e TalkBack (cada linha é um alvo claro).",
+    impact: "Só interface, mas vira destino de navegação (página) em vez de diálogo: precisa preservar o estado salvo já usado em SavedStateHandle." },
+  C: { name: "C · Folha com linha do tempo", badge: "", tag: "Proposta",
+    lead: "Uma folha só: linha do tempo até o prazo e cartões que abrem para editar no lugar.",
+    list: ["Linha do tempo mostra os avisos antes do prazo (tarefa) ou ao longo do dia (hábito); tocar num ponto abre o cartão.",
+      "Cartões fechados mostram o resumo; “+ Novo” no topo e atalhos embaixo.",
+      "Escopo segmentado como em A."],
+    edit: ["Editar acontece dentro do cartão (sanfona): sem segunda tela, a lista continua visível.",
+      "Mesmos seletores de A (segmentado, chips, calendário, −/+).",
+      "Salvar/Cancelar/Excluir no pé do cartão aberto."],
+    pros: "Dá para ver de uma vez se os avisos estão bem espaçados. Menos troca de tela.",
+    impact: "Só interface, porém mais componente novo (linha do tempo) e folha mais alta; com muitos lembretes a sanfona fica longa." },
+};
+function infoCard(o) {
+  const i = INFO[o];
+  return `<div class="card"><h5>Resumo</h5><div>${i.lead}</div><h5>Lista (pop-up)</h5><ul>${i.list.map(x => `<li>${x}</li>`).join("")}</ul>
+    <h5>Editar</h5><ul>${i.edit.map(x => `<li>${x}</li>`).join("")}</ul>
+    ${i.pros ? `<h5>Vantagens</h5><div>${i.pros}</div><h5>Impacto previsto</h5><div>${i.impact}</div>` : ""}</div>`;
+}
+
+/* ---------- render ---------- */
+function phone(o, screen) {
+  const dark = themeMode === "dark" || (themeMode === "page" && pageDark());
+  return `<div class="phone ${dark ? "dark" : ""}">${status()}<div class="p-screen">${background()}${screen}</div><div class="p-nav"></div></div>`;
+}
+function pageDark() {
+  const t = document.documentElement.getAttribute("data-theme");
+  if (t) return t === "dark";
+  return matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function ensureDrafts() { OPTS.forEach(o => { if (!ui[o].draft && o !== "C") ui[o].draft = newDraft(); }); }
+function render() {
+  ensureDrafts();
+  const views = {
+    now: [nowList(), nowEditor()], A: [aList(), aEditor()], B: [bList(), bEditor()], C: [cSheet(false), cSheet(true)],
+  };
+  const caps = { now: ["Lembretes", "Adicionar ou editar"], A: ["Lembretes", "Editar"], B: ["Lembretes", "Editar"], C: ["Lembretes", "Editando no cartão"] };
+  document.getElementById("main").innerHTML = OPTS.map(o => `<section class="opt" aria-labelledby="h-${o}">
+    <div class="opt-head"><h2 id="h-${o}">${INFO[o].name}</h2><span class="badge ${INFO[o].badge}">${INFO[o].tag}</span></div>
+    <div class="opt-body">
+      <div class="ph-col"><div class="ph-cap">${caps[o][0]}</div>${phone(o, views[o][0])}</div>
+      <div class="ph-col"><div class="ph-cap">${caps[o][1]}</div>${phone(o, views[o][1])}</div>
+      ${infoCard(o)}</div></section>`).join("") + pendencias();
+  OPTS.forEach(o => { if (ui[o].toast) { const t = ui[o].toast; setTimeout(() => { if (ui[o].toast === t) { ui[o].toast = null; render(); } }, 4000); } });
+}
+function pendencias() {
+  return `<section class="opt"><div class="opt-head"><h2>Pendências para decidir</h2></div><div class="pend">
+    <div class="card"><h5>Atalhos</h5><ul><li>Quais atalhos aparecem: Na hora, 30 min, 1 h, 1 dia antes? Para tarefa só com data, “1 dia antes” precisa de horário de referência (09:00 no exemplo).</li><li>Atalho cria direto ou abre o editor já preenchido?</li></ul></div>
+    <div class="card"><h5>Escopo da série</h5><ul><li>Padrão continua “Só esta” (como hoje) ou passa a “Esta e próximas”, que é o mais comum para lembrete de tarefa que repete?</li><li>Mostrar no cartão de cada lembrete se ele vale só para esta ocorrência?</li></ul></div>
+    <div class="card"><h5>Fora deste protótipo</h5><ul><li>Diálogo Adiar da notificação (10/30/60 min + data digitada) tem o mesmo problema de digitar AAAA-MM-DD.</li><li>Lembretes de acompanhamento (ReminderKind.TRACKER) e ligar/desligar sem excluir não foram desenhados.</li></ul></div>
+  </div></section>`;
+}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click", e => {
+  const seg = e.target.closest(".seg button[data-v]");
+  if (seg) {
+    const box = seg.parentElement;
+    box.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b === seg));
+    if (box.id === "ctl-item") { itemKey = seg.dataset.v; resetUi(); }
+    if (box.id === "ctl-theme") themeMode = seg.dataset.v;
+    render(); return;
+  }
+  if (e.target.closest("#reset")) { data = sample(); resetUi(); render(); return; }
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const o = b.dataset.o, act = b.dataset.act, v = b.dataset.v, s = ui[o];
+  const d = s.draft;
+  switch (act) {
+    case "scope": s.scope = v; break;
+    case "sel":
+      if (o === "C" && s.sel === +v && s.draft && s.draft.id === +v) { s.sel = null; s.draft = null; break; }
+      select(o, +v); return;
+    case "selc": s.sel = +v; s.draft = fillDraft(item().reminders.find(r => r.id === +v)); break;
+    case "new": s.sel = null; s.draft = newDraft(); s.open = null; break;
+    case "cancelnew": s.draft = null; break;
+    case "del": removeRem(o, +v); return;
+    case "undo": { const u = s.toast.undo; item().reminders.splice(u.i, 0, u.gone); s.toast = null; break; }
+    case "quick": quickAdd(o, +v); return;
+    case "save": saveDraft(o); return;
+    case "open": s.open = s.open === v ? null : v; break;
+    case "mode": d.mode = v; if (v === "rel" && d.off == null) d.off = 30; if (v === "date" && !d.day) d.day = TODAY; break;
+    case "off": d.off = +v; break;
+    case "offstep": d.off = Math.max(0, Math.min(10080, (d.off || 0) + +v)); break;
+    case "tstep": d[b.dataset.f] = fromMin(toMin(d[b.dataset.f] || "09:00") + +v); break;
+    case "time": d[b.dataset.f] = v; break;
+    case "day": d.day = +v; break;
+    case "wd": d.days[+v] = d.days[+v] ? 0 : 1; break;
+    case "days": d.days = v.split("").map(Number); break;
+  }
+  render();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => themeMode === "page" && render());
+new MutationObserver(() => themeMode === "page" && render()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+render();
+</script>

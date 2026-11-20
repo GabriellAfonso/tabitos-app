@@ -1,0 +1,597 @@
+<title>Folha de prazo do Ethos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap">
+<style>
+/* Layout: cabeçalho com controles · fila de celulares (Como está + 3 propostas) · ficha de cada opção · regras e pendências. */
+:root{
+  --paper:#f5f4f7; --sheet:#ffffff; --ink:#1e1a23; --muted:#625b6b; --line:#e3dee8;
+  --plum:#6e4a8e; --plum-soft:#efe6f6; --amber:#93601a; --amber-soft:#fbf0e0;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif; --body:Inter,ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#141216; --sheet:#1d1a21; --ink:#ece6f1; --muted:#a69daf; --line:#332d3a;
+  --plum:#d2b4ee; --plum-soft:#2f2539; --amber:#e8be7a; --amber-soft:#33291d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:15px/1.55 var(--body)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.wrap{max-width:1680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:28px 8px}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+h1{font:800 clamp(30px,4.4vw,46px)/1.05 var(--display);letter-spacing:-.02em;margin:10px 0 8px;text-wrap:balance}
+h2{font:700 22px/1.2 var(--display);margin:0 0 6px;text-wrap:balance}
+h3{font:700 17px/1.3 var(--display);margin:0}
+.lede{max-width:72ch;color:var(--muted);margin:0}
+.controls{display:flex;flex-wrap:wrap;gap:12px;margin-top:18px}
+.ctl{background:var(--sheet);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:grid;gap:6px;min-width:0}
+.ctl>span{font-size:12.5px;color:var(--muted);font-weight:600}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{border:1px solid var(--line);background:var(--paper);padding:5px 11px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:var(--sheet);font-weight:600}
+main{padding-block:22px 60px;display:grid;gap:34px}
+.phones{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,380px),1fr));gap:26px;align-items:start}
+.col{display:grid;gap:12px;min-width:0}
+.col-head{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.badge{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--plum-soft);color:var(--plum);font-weight:600;white-space:nowrap}
+.badge.now{background:var(--amber-soft);color:var(--amber)}
+.saved{font:500 12.5px/1.4 var(--body);color:var(--muted);background:var(--sheet);border:1px dashed var(--line);border-radius:10px;padding:8px 10px;font-variant-numeric:tabular-nums}
+.saved b{color:var(--ink);font-weight:600}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px 16px;min-width:0}
+.card ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.card h5{font:600 11px/1 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:12px 0 4px}
+.card h5:first-child{margin-top:0}
+.rules{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:16px}
+
+/* CELULAR — tokens Ameixa (core/ui/theme/EthosTheme.kt) */
+.phone{--p:#6E4A8E;--onp:#fff;--pc:#F1E7F8;--onpc:#2E1A40;--sc:#F1E7F8;--t:#93601A;--tc:#FBF0E0;--bg:#FBF8FC;--on:#231D29;--onv:#655C6E;--low:#fff;--cont:#F3EEF6;--high:#F1E9F5;--ol:#8F8498;--olv:#E6DEEB;
+  width:100%;max-width:380px;height:760px;margin:0 auto;border:8px solid #26212b;border-radius:44px;background:var(--bg);color:var(--on);position:relative;overflow:hidden;display:flex;flex-direction:column;font:14px/1.4 Roboto,system-ui,sans-serif;box-shadow:0 18px 40px rgba(30,20,40,.18);user-select:none;-webkit-user-select:none}
+.phone.dark{--p:#D7B8F2;--onp:#3B1F55;--pc:#44325A;--onpc:#F1E2FC;--sc:#3A2D47;--t:#E8BE7A;--tc:#352A1F;--bg:#171419;--on:#ECE4F0;--onv:#B1A6B8;--low:#211C25;--cont:#1F1A23;--high:#2A2430;--ol:#82788A;--olv:#372F3D}
+.phone *{box-sizing:border-box}
+.phone button{color:var(--on)}
+.p-status{height:30px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:11px;font-weight:600}
+.p-head{display:flex;align-items:center;gap:6px;padding:6px 10px 8px;flex:none}
+.p-head .x{width:40px;height:40px;border:0;background:none;font-size:18px;border-radius:50%}
+.p-head .h{flex:1;font-size:20px;font-weight:500}
+.p-head .save{border:0;border-radius:20px;background:var(--p);color:var(--onp);padding:8px 16px;font-weight:500}
+.p-body{flex:1;padding:4px 16px;display:flex;flex-direction:column;gap:10px}
+.e-title{font-size:20px;border-bottom:2px solid var(--p);padding:8px 2px}
+.e-chips{display:flex;flex-wrap:wrap;gap:6px}
+.e-chip{border:1px solid var(--olv);border-radius:8px;padding:6px 10px;font-size:12.5px;background:var(--low);display:grid;line-height:1.25}
+.e-chip small{font-size:10.5px;color:var(--onv)}
+.e-chip.on{border-color:var(--p);background:var(--sc)}
+.e-chip.off{opacity:.5}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:8;display:flex;align-items:flex-end}
+.sheet{background:var(--high);border-radius:28px 28px 0 0;width:100%;max-height:86%;display:flex;flex-direction:column;padding:8px 0 14px}
+.handle{width:32px;height:4px;border-radius:2px;background:var(--ol);opacity:.5;margin:4px auto 10px;flex:none}
+.s-scroll{overflow-y:auto;padding:0 16px;display:flex;flex-direction:column;gap:8px;scrollbar-width:thin}
+.s-title{font-size:22px;font-weight:400;margin:0 0 2px}
+.s-done{align-self:flex-end;border:0;background:none;color:var(--p)!important;font-weight:600;padding:10px 14px;border-radius:20px;margin:4px 12px 0}
+.radio{display:flex;align-items:center;gap:14px;min-height:50px;border:0;background:none;width:100%;text-align:left;padding:4px 4px;border-radius:12px}
+.radio:hover{background:var(--cont)}
+.radio .dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--ol);flex:none;display:grid;place-items:center}
+.radio[aria-checked="true"] .dot{border-color:var(--p)}
+.radio[aria-checked="true"] .dot::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--p)}
+.radio .lb{flex:1;font-size:15px}
+.radio .rv{font-size:13px;color:var(--onv)}
+.field{border:1px solid var(--ol);border-radius:12px;padding:8px 16px;min-height:56px;width:100%;text-align:left;background:none;display:grid;gap:1px}
+.field small{font-size:12px;color:var(--onv)}
+.field span{font-size:16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--ol);border-radius:8px;background:none;padding:7px 12px;font-size:13.5px;min-height:36px}
+.chip[aria-pressed="true"]{background:var(--sc);border-color:var(--sc);color:var(--onpc)!important;font-weight:500}
+.segm{display:flex;border:1px solid var(--ol);border-radius:999px;overflow:hidden}
+.segm button{flex:1;border:0;background:none;padding:9px 4px;font-size:13.5px;min-height:40px}
+.segm button+button{border-left:1px solid var(--ol)}
+.segm button[aria-pressed="true"]{background:var(--sc);color:var(--onpc)!important;font-weight:600}
+.summary{background:var(--low);border-radius:16px;padding:10px 14px;display:grid;gap:1px}
+.summary small{font-size:12px;color:var(--onv)}
+.summary b{font-size:18px;font-weight:500}
+.row{display:flex;align-items:center;gap:10px;min-height:48px;border:0;background:none;width:100%;text-align:left;padding:4px 4px;border-radius:12px}
+.row:hover{background:var(--cont)}
+.row .lb{flex:1}
+.row .rv{color:var(--onv);font-size:13.5px}
+.row .rv b{color:var(--p);font-weight:600}
+.switch{width:46px;height:28px;border-radius:14px;border:2px solid var(--ol);position:relative;flex:none;background:var(--cont)}
+.switch::after{content:"";position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:var(--ol);transition:left .15s}
+.switch.on{background:var(--p);border-color:var(--p)}
+.switch.on::after{left:22px;width:20px;height:20px;top:2px;background:var(--onp)}
+.note{font-size:12.5px;color:var(--onv);padding:2px 4px}
+.link{border:0;background:none;color:var(--p)!important;font-weight:600;padding:6px 4px;font-size:13.5px}
+.cal{background:var(--low);border-radius:16px;padding:8px 8px 10px}
+.cal-h{display:flex;align-items:center;justify-content:space-between;padding:0 4px 4px}
+.cal-h b{font-weight:500;font-size:14px;text-transform:capitalize}
+.cal-h button{border:0;background:none;width:36px;height:36px;border-radius:50%;font-size:16px}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px 0;text-align:center}
+.cal-g .wd{font-size:11px;color:var(--onv);padding:4px 0}
+.cal-g button{border:0;background:none;height:38px;font-size:13px;position:relative;font-variant-numeric:tabular-nums}
+.cal-g button span{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;position:relative;z-index:1}
+.cal-g button:disabled{opacity:.3;cursor:default}
+.cal-g button.today span{border:1px solid var(--p)}
+.cal-g button.in{background:var(--sc)}
+.cal-g button.rs{background:linear-gradient(90deg,transparent 50%,var(--sc) 50%)}
+.cal-g button.re{background:linear-gradient(90deg,var(--sc) 50%,transparent 50%)}
+.cal-g button.rs.re{background:none}
+.cal-g button.sel span{background:var(--p);color:var(--onp)}
+.cal-g button.start span{background:none;border:2px solid var(--p);color:var(--p)}
+.cal-cap{font-size:12px;color:var(--onv);padding:6px 6px 0;display:flex;gap:12px;flex-wrap:wrap}
+.cal-cap i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px;font-style:normal}
+.dlg-scrim{position:absolute;inset:0;background:rgba(0,0,0,.42);z-index:12;display:flex;align-items:center;justify-content:center;padding:18px}
+.dlg{background:var(--high);border-radius:28px;padding:18px 14px 10px;width:100%;display:flex;flex-direction:column;gap:8px}
+.dlg h6{margin:0 6px;font-size:13px;color:var(--onv);font-weight:500}
+.dlg .big{margin:0 6px 4px;font-size:26px}
+.dlg-act{display:flex;justify-content:flex-end;gap:4px;flex-wrap:wrap}
+.dlg-act button{border:0;background:none;color:var(--p)!important;font-weight:600;padding:10px 12px;border-radius:20px}
+.times{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.times button{border:1px solid var(--ol);border-radius:10px;background:none;padding:10px 0;font-variant-numeric:tabular-nums}
+.times button[aria-pressed="true"]{background:var(--sc);border-color:var(--sc)}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Protótipo · Editor de tarefa · Prazo</div>
+  <h1>Folha de prazo</h1>
+  <p class="lede">Como está a folha Prazo hoje, com a correção do "Começa em", e três jeitos de reorganizar. Os celulares
+    funcionam: escolha prazos, toque nos dias e veja embaixo de cada um o que seria gravado. Hoje é quinta, 19 nov 2026
+    (dado fictício).</p>
+  <div class="controls">
+    <div class="ctl"><span>Tema dos celulares</span>
+      <div class="seg" id="themeSeg">
+        <button type="button" data-t="light" aria-pressed="false">Claro</button>
+        <button type="button" data-t="dark" aria-pressed="false">Escuro</button>
+        <button type="button" data-t="page" aria-pressed="true">Igual à página</button>
+      </div></div>
+    <div class="ctl"><span>Começar todos com</span>
+      <div class="seg" id="presetSeg">
+        <button type="button" data-p="none" aria-pressed="false">Sem data</button>
+        <button type="button" data-p="day" aria-pressed="true">Hoje</button>
+        <button type="button" data-p="until" aria-pressed="false">Até 28 nov 18:00</button>
+      </div></div>
+  </div>
+</header>
+
+<main>
+  <section class="phones" id="phones"></section>
+
+  <section>
+    <h2>O que muda em cada opção</h2>
+    <div class="rules" id="cards"></div>
+  </section>
+
+  <section class="rules">
+    <div class="card">
+      <h5>Mantido em todas</h5>
+      <ul>
+        <li>Os cinco tipos de prazo e suas regras continuam iguais: Sem data, Dia específico, Até domingo, Até sexta e Até uma data.</li>
+        <li>"Até uma data" começa hoje por padrão, não se repete e fica no grupo de período em Hoje.</li>
+        <li>Datas só por calendário, sem digitar. Horário opcional só em dia específico e em até uma data.</li>
+        <li>Tarefa que se repete não mostra "Sem data" nem "Até uma data".</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h5>Pendências para decidir</h5>
+      <ul>
+        <li>Qual opção (ou mistura) seguir.</li>
+        <li>Calendário dentro da folha (A, B) ou em janela (C, Como está).</li>
+        <li>Se "Até domingo"/"Até sexta" viram atalhos de "Até um dia" (B) ou continuam opções próprias.</li>
+        <li>Mostrar o início só quando a pessoa quer mudar (A, B, C) ou sempre como campo (Como está).</li>
+      </ul>
+    </div>
+  </section>
+</main>
+</div>
+
+<script>
+const TODAY = new Date(2026, 10, 19);
+const MON = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+const MONTH = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const WD = ["dom","seg","ter","qua","qui","sex","sáb"];
+const add = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const key = d => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+const fromKey = k => { const [y, m, d] = k.split("-").map(Number); return new Date(y, m - 1, d); };
+const same = (a, b) => a && b && key(a) === key(b);
+const before = (a, b) => a.getTime() < b.getTime();
+const monday = d => add(d, -((d.getDay() + 6) % 7));
+const WEEK_START = monday(TODAY), SUNDAY = add(WEEK_START, 6), FRIDAY = add(WEEK_START, 4);
+const short = d => same(d, TODAY) ? "Hoje" : same(d, add(TODAY, 1)) ? "Amanhã" : `${d.getDate()} ${MON[d.getMonth()]}`;
+const plain = d => `${d.getDate()} ${MON[d.getMonth()]}`;
+const range = (a, b) => `${a.getDate()}–${plain(b)}`;
+const TIMES = ["08:00", "09:00", "12:00", "14:00", "18:00", "21:00"];
+
+/* Prazo normalizado: { kind: NONE|DAY|WEEK|WORK|UNTIL, start, end, time } */
+const KIND_NAME = {NONE: "Sem data", DAY: "Dia específico", WEEK: "Até domingo", WORK: "Até sexta", UNTIL: "Até uma data"};
+function chipText(v) {
+  if (v.kind === "NONE") return "Sem data";
+  if (v.kind === "WEEK") return "Até domingo";
+  if (v.kind === "WORK") return "Até sexta";
+  const t = v.time ? " " + v.time : "";
+  return v.kind === "DAY" ? short(v.end) + t : "Até " + plain(v.end) + t;
+}
+function savedText(v) {
+  if (v.kind === "NONE") return "<b>Sem data</b> · fica só na lista";
+  const span = v.kind === "DAY" ? plain(v.end) : `${plain(v.start)} → ${plain(v.end)}`;
+  return `<b>${KIND_NAME[v.kind]}</b> · ${span}${v.time ? " · " + v.time : ""}`;
+}
+function presetValue(p) {
+  if (p === "none") return {kind: "NONE", start: TODAY, end: TODAY, time: ""};
+  if (p === "until") return {kind: "UNTIL", start: TODAY, end: new Date(2026, 10, 28), time: "18:00"};
+  return {kind: "DAY", start: TODAY, end: TODAY, time: ""};
+}
+function weekValue(kind) { return {kind, start: WEEK_START, end: kind === "WEEK" ? SUNDAY : FRIDAY, time: ""}; }
+
+/* Calendário mensal. marks: {sel, start, from, to, min} */
+function calendar(month, marks, caption = "") {
+  const first = new Date(month.getFullYear(), month.getMonth(), 1);
+  const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  let cells = WD.map(w => `<div class="wd">${w[0].toUpperCase()}</div>`).join("");
+  for (let i = 0; i < first.getDay(); i++) cells += "<div></div>";
+  for (let n = 1; n <= days; n++) {
+    const d = new Date(month.getFullYear(), month.getMonth(), n);
+    const c = [];
+    if (same(d, TODAY)) c.push("today");
+    if (marks.from && marks.to && !before(d, marks.from) && !before(marks.to, d)) {
+      c.push("in");
+      if (same(d, marks.from)) c.push("rs");
+      if (same(d, marks.to)) c.push("re");
+    }
+    if (same(d, marks.sel)) c.push("sel");
+    if (same(d, marks.start) && !same(d, marks.sel)) c.push("start");
+    const off = marks.min && before(d, marks.min);
+    cells += `<button type="button" class="${c.join(" ")}" data-act="day" data-d="${key(d)}" ${off ? "disabled" : ""}
+      aria-label="${n} de ${MONTH[d.getMonth()]}"><span>${n}</span></button>`;
+  }
+  return `<div class="cal"><div class="cal-h"><button type="button" data-act="prev" aria-label="Mês anterior">‹</button>
+    <b>${MONTH[month.getMonth()]} ${month.getFullYear()}</b>
+    <button type="button" data-act="next" aria-label="Próximo mês">›</button></div>
+    <div class="cal-g">${cells}</div>${caption}</div>`;
+}
+const rangeCaption = `<div class="cal-cap"><span><i style="border:2px solid var(--p)"></i>início</span>
+  <span><i style="background:var(--p)"></i>fim</span></div>`;
+
+function timeDialog(current) {
+  return `<div class="dlg-scrim"><div class="dlg" role="dialog" aria-label="Horário"><h6>Horário</h6>
+    <div class="big">${current || "Sem horário"}</div>
+    <div class="times">${TIMES.map(t => `<button type="button" data-act="time" data-t="${t}"
+      aria-pressed="${t === current}">${t}</button>`).join("")}</div>
+    <div class="dlg-act"><button type="button" data-act="time" data-t="">Remover horário</button>
+      <button type="button" data-act="close">OK</button></div></div></div>`;
+}
+function dateDialog(title, value, month, marks, extra = "") {
+  return `<div class="dlg-scrim"><div class="dlg" role="dialog" aria-label="${title}"><h6>${title}</h6>
+    <div class="big">${value}</div>${calendar(month, marks, extra)}
+    <div class="dlg-act"><button type="button" data-act="close">Cancelar</button>
+      <button type="button" data-act="close">OK</button></div></div></div>`;
+}
+const radio = (val, cur, label, right = "") => `<button type="button" class="radio" role="radio"
+  aria-checked="${val === cur}" data-act="kind" data-k="${val}"><span class="dot"></span>
+  <span class="lb">${label}</span>${right ? `<span class="rv">${right}</span>` : ""}</button>`;
+const field = (act, label, value) => `<button type="button" class="field" data-act="${act}"><small>${label}</small>
+  <span>${value}</span></button>`;
+
+/* ---------- Como está (código atual, já com a correção do início) ---------- */
+const NOW = {
+  title: "Como está", badge: "Como está", now: true,
+  init(v) { return {v, dialog: null, month: TODAY}; },
+  render(s) {
+    const v = s.v;
+    let h = `<h2 class="s-title">Prazo</h2><div role="radiogroup">
+      ${radio("NONE", v.kind, "Sem data")}${radio("DAY", v.kind, "Dia específico")}
+      ${radio("WEEK", v.kind, `Até domingo · ${range(WEEK_START, SUNDAY)}`)}
+      ${radio("WORK", v.kind, `Até sexta (dias úteis) · ${range(WEEK_START, FRIDAY)}`)}
+      ${radio("UNTIL", v.kind, "Até uma data")}</div>`;
+    if (v.kind === "DAY") h += field("pick-end", "Data", short(v.end));
+    if (v.kind === "WEEK" || v.kind === "WORK") h += field("pick-end", "Data", short(TODAY));
+    if (v.kind === "UNTIL") h += field("pick-end", "Termina em", short(v.end)) + field("pick-start", "Começa em", short(v.start));
+    if (v.kind === "DAY" || v.kind === "UNTIL") h += field("pick-time", "Horário", v.time || "Não definido");
+    return h;
+  },
+  dialog(s) {
+    const v = s.v;
+    if (s.dialog === "time") return timeDialog(v.time);
+    if (s.dialog === "end") return dateDialog(v.kind === "UNTIL" ? "Termina em" : "Data", short(v.end), s.month,
+      {sel: v.end, min: v.kind === "UNTIL" ? v.start : null});
+    if (s.dialog === "start") return dateDialog("Começa em", short(v.start), s.month, {sel: v.start, min: TODAY});
+    return "";
+  },
+  act(s, a, el) {
+    const v = s.v;
+    if (a === "kind") {
+      const k = el.dataset.k;
+      if (k === "WEEK" || k === "WORK") s.v = weekValue(k);
+      else s.v = {kind: k, start: k === "UNTIL" ? TODAY : v.start, end: v.kind === "WEEK" || v.kind === "WORK" ? TODAY : v.end,
+        time: k === "DAY" || k === "UNTIL" ? v.time : ""};
+    }
+    if (a === "pick-end") { s.dialog = "end"; s.month = v.end; }
+    if (a === "pick-start") { s.dialog = "start"; s.month = v.start; }
+    if (a === "pick-time") s.dialog = "time";
+    if (a === "day") {
+      const d = fromKey(el.dataset.d);
+      if (s.dialog === "start") { v.start = d; if (before(v.end, d)) v.end = d; } else v.end = d;
+    }
+    if (a === "time") { v.time = el.dataset.t; s.dialog = null; }
+  },
+  card: {
+    what: ["Lista de cinco opções; datas e horário aparecem como campos embaixo.",
+      "Em \"Até uma data\" aparecem Termina em, Começa em e Horário, cada um abre uma janela."],
+    pros: ["Já implementado; nada a migrar."],
+    cons: ["\"Começa em: Hoje\" ocupa espaço mesmo quando ninguém quer mudar.",
+      "Até domingo/sexta mostram um campo Data que não muda nada visível.", "Três janelas para montar um período."],
+    impact: "Nenhum.",
+  },
+};
+
+/* ---------- A · Calendário na folha ---------- */
+const A = {
+  title: "A · Calendário na folha", badge: "Proposta",
+  init(v) { return {v, dialog: null, month: v.end, pickStart: false}; },
+  render(s) {
+    const v = s.v;
+    const shortcut = (k, label, d) => `<button type="button" class="chip" data-act="short" data-k="${k}"
+      aria-pressed="${k === "NONE" ? v.kind === "NONE" : k === "WEEK" || k === "WORK" ? v.kind === k :
+        (v.kind === "DAY" || v.kind === "UNTIL") && same(v.end, d)}">${label}</button>`;
+    let h = `<h2 class="s-title">Prazo</h2><div class="summary"><small>Prazo</small><b>${chipText(v)}</b></div>
+      <div class="chips">${shortcut("NONE", "Sem data")}${shortcut("TODAY", "Hoje", TODAY)}
+      ${shortcut("TOMORROW", "Amanhã", add(TODAY, 1))}${shortcut("WEEK", "Esta semana")}${shortcut("WORK", "Dias úteis")}</div>`;
+    if (v.kind === "NONE") return h + `<p class="note">Toque num dia do calendário para dar um prazo.</p>` +
+      calendar(s.month, {});
+    const isWindow = v.kind !== "DAY";
+    const marks = isWindow ? {from: v.start, to: v.end, sel: v.end, start: v.start} : {sel: v.end};
+    if (s.pickStart) marks.min = TODAY;
+    if (s.pickStart) h += `<p class="note"><b>Escolha o início</b> · o fim continua ${plain(v.end)}</p>`;
+    h += calendar(s.month, marks, isWindow ? rangeCaption : "");
+    if (v.kind === "WEEK" || v.kind === "WORK") return h + `<p class="note">${v.kind === "WEEK" ? "Aparece todo dia até domingo" :
+      "Aparece de segunda a sexta"}, ${range(v.start, v.end)}.</p>`;
+    h += `<button type="button" class="row" data-act="until"><span class="lb">Mostrar todos os dias até lá</span>
+      <span class="switch ${v.kind === "UNTIL" ? "on" : ""}"></span></button>`;
+    if (v.kind === "UNTIL" && !s.pickStart) h += `<button type="button" class="row" data-act="start">
+      <span class="lb">Começa</span><span class="rv"><b>${short(v.start)}</b> · mudar</span></button>`;
+    h += `<button type="button" class="row" data-act="pick-time"><span class="lb">Horário</span>
+      <span class="rv"><b>${v.time || "Sem horário"}</b></span></button>`;
+    return h;
+  },
+  dialog(s) { return s.dialog === "time" ? timeDialog(s.v.time) : ""; },
+  act(s, a, el) {
+    const v = s.v;
+    if (a === "short") {
+      const k = el.dataset.k;
+      if (k === "NONE") s.v = presetValue("none");
+      else if (k === "WEEK" || k === "WORK") { s.v = weekValue(k); s.month = TODAY; }
+      else {
+        const d = k === "TODAY" ? TODAY : add(TODAY, 1);
+        s.v = {kind: v.kind === "UNTIL" ? "UNTIL" : "DAY", start: TODAY, end: d, time: v.kind === "DAY" || v.kind === "UNTIL" ? v.time : ""};
+        s.month = d;
+      }
+      s.pickStart = false;
+    }
+    if (a === "day") {
+      const d = fromKey(el.dataset.d);
+      if (s.pickStart) { v.start = d; if (before(v.end, d)) v.end = d; s.pickStart = false; }
+      else if (v.kind === "UNTIL") { v.end = d; if (before(d, v.start)) v.start = d; }
+      else s.v = {kind: "DAY", start: TODAY, end: d, time: v.kind === "DAY" ? v.time : ""};
+    }
+    if (a === "until") { if (v.kind === "UNTIL") { v.kind = "DAY"; } else { v.kind = "UNTIL"; v.start = before(v.end, TODAY) ? v.end : TODAY; } }
+    if (a === "start") { s.pickStart = true; s.month = v.start; }
+    if (a === "pick-time") s.dialog = "time";
+    if (a === "time") { v.time = el.dataset.t; s.dialog = null; }
+  },
+  card: {
+    what: ["Calendário fica dentro da folha; tocar num dia já escolhe o prazo.",
+      "Atalhos Sem data / Hoje / Amanhã / Esta semana / Dias úteis no topo.",
+      "Chave \"Mostrar todos os dias até lá\" transforma o dia em \"Até uma data\"; o início aparece como \"Começa hoje · mudar\"."],
+    pros: ["Um toque para a maioria dos prazos.", "O período aparece pintado no calendário.",
+      "Começo só aparece quando o prazo é um período."],
+    cons: ["Folha mais alta; em fonte grande o calendário rola.",
+      "\"Até uma data\" fica escondido atrás de uma chave."],
+    impact: "Só interface do editor; os tipos gravados são os mesmos. Precisa de calendário embutido (novo componente).",
+  },
+};
+
+/* ---------- B · Num dia / Até um dia ---------- */
+const B = {
+  title: "B · Num dia ou até um dia", badge: "Recomendada",
+  init(v) { return {v, dialog: null, month: v.end, pickStart: false, mode: v.kind === "NONE" ? "NONE" : v.kind === "DAY" ? "ON" : "UNTIL"}; },
+  render(s) {
+    const v = s.v;
+    const seg = (m, l) => `<button type="button" data-act="mode" data-m="${m}" aria-pressed="${s.mode === m}">${l}</button>`;
+    let h = `<h2 class="s-title">Prazo</h2><div class="segm">${seg("NONE", "Sem data")}${seg("ON", "Num dia")}${seg("UNTIL", "Até um dia")}</div>`;
+    if (s.mode === "NONE") return h + `<p class="note">A tarefa fica só na lista, sem aparecer em Hoje.</p>`;
+    const chip = (k, label, on) => `<button type="button" class="chip" data-act="short" data-k="${k}" aria-pressed="${on}">${label}</button>`;
+    if (s.mode === "ON") {
+      h += `<div class="chips">${chip("TODAY", "Hoje", same(v.end, TODAY))}${chip("TOMORROW", "Amanhã", same(v.end, add(TODAY, 1)))}
+        ${chip("SAT", "Sábado", same(v.end, add(SUNDAY, -1)))}</div>`;
+      h += calendar(s.month, {sel: v.end});
+    } else {
+      h += `<div class="chips">${chip("WEEK", `Domingo · semana`, v.kind === "WEEK")}${chip("WORK", "Sexta · dias úteis", v.kind === "WORK")}
+        ${chip("OTHER", "Outro dia", v.kind === "UNTIL")}</div>`;
+      if (v.kind === "UNTIL") {
+        const marks = {from: v.start, to: v.end, sel: v.end, start: v.start};
+        if (s.pickStart) { marks.min = TODAY; h += `<p class="note"><b>Escolha o início</b> · o fim continua ${plain(v.end)}</p>`; }
+        h += calendar(s.month, marks, rangeCaption);
+        if (!s.pickStart) h += `<button type="button" class="row" data-act="start"><span class="lb">Começa</span>
+          <span class="rv"><b>${short(v.start)}</b> · mudar</span></button>`;
+      } else {
+        h += `<p class="note">Aparece em Hoje todos os dias ${v.kind === "WEEK" ? "desta semana até domingo" : "úteis desta semana até sexta"}
+          (${range(v.start, v.end)}).</p>`;
+      }
+    }
+    if (v.kind === "DAY" || v.kind === "UNTIL") h += `<button type="button" class="row" data-act="pick-time">
+      <span class="lb">Horário</span><span class="rv"><b>${v.time || "Sem horário"}</b></span></button>`;
+    return h;
+  },
+  dialog(s) { return s.dialog === "time" ? timeDialog(s.v.time) : ""; },
+  act(s, a, el) {
+    const v = s.v;
+    if (a === "mode") {
+      s.mode = el.dataset.m; s.pickStart = false;
+      if (s.mode === "NONE") s.v = presetValue("none");
+      if (s.mode === "ON") s.v = {kind: "DAY", start: TODAY, end: v.kind === "NONE" ? TODAY : v.end, time: v.time};
+      if (s.mode === "UNTIL") s.v = v.kind === "DAY" && before(TODAY, v.end) ? {kind: "UNTIL", start: TODAY, end: v.end, time: v.time} : weekValue("WEEK");
+      s.month = s.v.end;
+    }
+    if (a === "short") {
+      const k = el.dataset.k;
+      if (k === "WEEK" || k === "WORK") s.v = weekValue(k);
+      else if (k === "OTHER") { s.v = {kind: "UNTIL", start: TODAY, end: v.kind === "UNTIL" ? v.end : add(TODAY, 7), time: ""}; s.month = s.v.end; }
+      else { v.end = k === "TODAY" ? TODAY : k === "TOMORROW" ? add(TODAY, 1) : add(SUNDAY, -1); s.month = v.end; }
+    }
+    if (a === "day") {
+      const d = fromKey(el.dataset.d);
+      if (s.pickStart) { v.start = d; if (before(v.end, d)) v.end = d; s.pickStart = false; }
+      else { v.end = d; if (v.kind === "UNTIL" && before(d, v.start)) v.start = d; }
+    }
+    if (a === "start") { s.pickStart = true; s.month = v.start; }
+    if (a === "pick-time") s.dialog = "time";
+    if (a === "time") { v.time = el.dataset.t; s.dialog = null; }
+  },
+  card: {
+    what: ["Três abas no topo: Sem data, Num dia, Até um dia.",
+      "Num dia: atalhos Hoje / Amanhã / Sábado e calendário.",
+      "Até um dia: Domingo (semana), Sexta (dias úteis) ou Outro dia; em Outro dia o período aparece no calendário com \"Começa hoje · mudar\"."],
+    pros: ["Separa as duas ideias: fazer num dia ou ter até um dia.",
+      "Até domingo/sexta e \"Até uma data\" ficam juntos, como na lista de Hoje.",
+      "Nenhum campo inútil: Até domingo não mostra data nem horário."],
+    cons: ["Um toque a mais para chegar no calendário de \"Até um dia\".",
+      "\"Sábado\" como atalho é palpite; pode ser outro dia."],
+    impact: "Só interface; Domingo/Sexta continuam gravando os tipos semanais de hoje. Calendário embutido novo.",
+  },
+};
+
+/* ---------- C · Lista com valores ---------- */
+const C = {
+  title: "C · Lista com valores", badge: "Proposta",
+  init(v) { return {v, dialog: null, month: v.end, pickStart: false}; },
+  render(s) {
+    const v = s.v;
+    let h = `<h2 class="s-title">Prazo</h2><div role="radiogroup">
+      ${radio("NONE", v.kind, "Sem data")}
+      ${radio("DAY", v.kind, "Num dia", v.kind === "DAY" ? short(v.end) + (v.time ? " " + v.time : "") : "")}
+      ${radio("WEEK", v.kind, "Até domingo", range(WEEK_START, SUNDAY))}
+      ${radio("WORK", v.kind, "Até sexta", range(WEEK_START, FRIDAY))}
+      ${radio("UNTIL", v.kind, "Até uma data", v.kind === "UNTIL" ? plain(v.end) : "")}</div>`;
+    if (v.kind === "DAY" || v.kind === "UNTIL") {
+      h += `<div class="summary" style="gap:4px">`;
+      h += `<button type="button" class="row" data-act="pick-end"><span class="lb">${v.kind === "DAY" ? "Dia" : "Até"}</span>
+        <span class="rv"><b>${v.kind === "DAY" ? short(v.end) : plain(v.end)}</b></span></button>`;
+      if (v.kind === "UNTIL") h += `<p class="note" style="margin:0">Começa ${short(v.start).toLowerCase()} ·
+        <button type="button" class="link" data-act="pick-start">mudar</button></p>`;
+      h += `<button type="button" class="row" data-act="pick-time"><span class="lb">Horário</span>
+        <span class="rv"><b>${v.time || "Sem horário"}</b></span></button></div>`;
+    }
+    return h;
+  },
+  dialog(s) {
+    const v = s.v;
+    if (s.dialog === "time") return timeDialog(v.time);
+    if (s.dialog === "end" && v.kind === "DAY") return dateDialog("Dia", short(v.end), s.month, {sel: v.end});
+    if (s.dialog === "end" || s.dialog === "start") {
+      const pickingStart = s.dialog === "start";
+      return dateDialog(pickingStart ? "Escolha o início" : "Até quando?", `${short(v.start)} → ${plain(v.end)}`, s.month,
+        {from: v.start, to: v.end, sel: v.end, start: v.start, min: pickingStart ? TODAY : null}, rangeCaption);
+    }
+    return "";
+  },
+  act(s, a, el) {
+    const v = s.v;
+    if (a === "kind") {
+      const k = el.dataset.k;
+      if (k === "WEEK" || k === "WORK") s.v = weekValue(k);
+      else {
+        const wasWeek = v.kind === "WEEK" || v.kind === "WORK";
+        s.v = {kind: k, start: TODAY, end: wasWeek || v.kind === "NONE" ? (k === "UNTIL" ? add(TODAY, 7) : TODAY) : v.end,
+          time: k === "DAY" || k === "UNTIL" ? v.time : ""};
+        if (k === "UNTIL" && v.kind !== "UNTIL") { s.dialog = "end"; s.month = s.v.end; }
+      }
+    }
+    if (a === "pick-end") { s.dialog = "end"; s.month = v.end; }
+    if (a === "pick-start") { s.dialog = "start"; s.month = v.start; }
+    if (a === "pick-time") s.dialog = "time";
+    if (a === "day") {
+      const d = fromKey(el.dataset.d);
+      if (s.dialog === "start") { v.start = d; if (before(v.end, d)) v.end = d; s.dialog = "end"; }
+      else { v.end = d; if (v.kind === "UNTIL" && before(d, v.start)) v.start = d; }
+    }
+    if (a === "time") { v.time = el.dataset.t; s.dialog = null; }
+  },
+  card: {
+    what: ["Mesma lista de hoje, com o valor de cada opção à direita (Até domingo · 16–22 nov).",
+      "\"Dia específico\" vira \"Num dia\". Ao escolher \"Até uma data\" abre direto o calendário de período.",
+      "Início vira texto \"Começa hoje · mudar\", não campo."],
+    pros: ["Menor mudança; a pessoa já conhece a lista.", "Folha baixa, cabe sem rolar mesmo em fonte grande."],
+    cons: ["Calendário continua em janela por cima da folha.", "Cinco opções sempre visíveis."],
+    impact: "Só interface; reaproveita o calendário em janela atual (com pintura de período).",
+  },
+};
+
+const DESIGNS = [NOW, A, B, C];
+let phoneTheme = "page", preset = "day";
+const states = [];
+
+function shell(i) {
+  const d = DESIGNS[i], s = states[i], v = s.v;
+  return `<div class="p-status"><span>14:32</span><span>5G ▮▮▮ 82%</span></div>
+    <div class="p-head"><button type="button" class="x" aria-label="Fechar">✕</button><span class="h">Nova tarefa</span>
+      <span class="save">Salvar</span></div>
+    <div class="p-body"><div class="e-title">Entregar relatório</div>
+      <div class="e-chips"><span class="e-chip on"><small>Prazo</small>${chipText(v)}</span>
+        <span class="e-chip ${v.kind === "UNTIL" ? "off" : ""}"><small>Repetir</small>${v.kind === "UNTIL" ? "Não se repete" : "Não repete"}</span>
+        <span class="e-chip"><small>Lista</small>Trabalho</span></div></div>
+    <div class="scrim"><div class="sheet" role="dialog" aria-label="Prazo"><div class="handle"></div>
+      <div class="s-scroll">${d.render(s)}</div>
+      <button type="button" class="s-done" data-act="noop">Concluído</button></div></div>${d.dialog(s)}`;
+}
+function paint(i) {
+  const el = document.getElementById("phone" + i);
+  const scroll = el.querySelector(".s-scroll")?.scrollTop || 0;
+  el.innerHTML = shell(i);
+  const sc = el.querySelector(".s-scroll"); if (sc) sc.scrollTop = scroll;
+  document.getElementById("saved" + i).innerHTML = "Grava: " + savedText(states[i].v);
+  applyTheme(el);
+}
+function applyTheme(el) {
+  const pageDark = document.documentElement.dataset.theme === "dark" ||
+    (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  el.classList.toggle("dark", phoneTheme === "dark" || (phoneTheme === "page" && pageDark));
+}
+function reset() {
+  DESIGNS.forEach((d, i) => { const v = presetValue(preset); states[i] = d.init({...v}); paint(i); });
+}
+function build() {
+  document.getElementById("phones").innerHTML = DESIGNS.map((d, i) => `<div class="col">
+    <div class="col-head"><h3>${d.title}</h3><span class="badge ${d.now ? "now" : ""}">${d.badge}</span></div>
+    <div class="phone" id="phone${i}"></div><div class="saved" id="saved${i}" aria-live="polite"></div></div>`).join("");
+  document.getElementById("cards").innerHTML = DESIGNS.map(d => `<div class="card"><h3>${d.title}</h3>
+    <h5>O que muda</h5><ul>${d.card.what.map(x => `<li>${x}</li>`).join("")}</ul>
+    <h5>Vantagens</h5><ul>${d.card.pros.map(x => `<li>${x}</li>`).join("")}</ul>
+    <h5>Pontos fracos</h5><ul>${d.card.cons.map(x => `<li>${x}</li>`).join("")}</ul>
+    <h5>Impacto previsto</h5><ul><li>${d.card.impact}</li></ul></div>`).join("");
+  DESIGNS.forEach((d, i) => {
+    document.getElementById("phone" + i).addEventListener("click", e => {
+      const t = e.target.closest("[data-act]"); if (!t) return;
+      const s = states[i], a = t.dataset.act;
+      if (a === "prev" || a === "next") s.month = new Date(s.month.getFullYear(), s.month.getMonth() + (a === "next" ? 1 : -1), 1);
+      else if (a === "close") s.dialog = null;
+      else if (a !== "noop") d.act(s, a, t);
+      paint(i);
+    });
+  });
+  reset();
+}
+function pressOnly(group, btn) { group.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", String(b === btn))); }
+document.getElementById("themeSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  phoneTheme = b.dataset.t; pressOnly(e.currentTarget, b);
+  DESIGNS.forEach((_, i) => applyTheme(document.getElementById("phone" + i)));
+});
+document.getElementById("presetSeg").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  preset = b.dataset.p; pressOnly(e.currentTarget, b); reset();
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () =>
+  DESIGNS.forEach((_, i) => applyTheme(document.getElementById("phone" + i))));
+new MutationObserver(() => DESIGNS.forEach((_, i) => applyTheme(document.getElementById("phone" + i))))
+  .observe(document.documentElement, {attributes: true, attributeFilter: ["data-theme"]});
+build();
+</script>

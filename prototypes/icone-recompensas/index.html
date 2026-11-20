@@ -1,0 +1,101 @@
+<title>Ícone de Recompensas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@700;800&family=Inter:wght@400;500;600&family=Roboto:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block">
+<style>
+/* Layout: cabeçalho com tema · grade de candidatos (menu ☰ + tamanho grande) · onde o ícone aparece. */
+:root{--paper:#f5f4f7;--sheet:#fff;--ink:#1e1a23;--muted:#625b6b;--line:#e3dee8;--plum:#6e4a8e;--plum-soft:#efe6f6;--amber:#93601a;--amber-soft:#fbf0e0;
+  --display:"Schibsted Grotesk",ui-sans-serif,system-ui,sans-serif;--body:Inter,ui-sans-serif,system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#141216;--sheet:#1d1a21;--ink:#ece6f1;--muted:#a69daf;--line:#332d3a;--plum:#d2b4ee;--plum-soft:#2f2539;--amber:#e8be7a;--amber-soft:#33291d;color-scheme:dark}}
+:root[data-theme="dark"]{--paper:#141216;--sheet:#1d1a21;--ink:#ece6f1;--muted:#a69daf;--line:#332d3a;--plum:#d2b4ee;--plum-soft:#2f2539;--amber:#e8be7a;--amber-soft:#33291d;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 var(--body)}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--plum);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{padding-block:28px 8px}
+.eyebrow{font:600 11px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--plum)}
+h1{font:800 clamp(28px,4vw,42px)/1.05 var(--display);letter-spacing:-.02em;margin:10px 0 8px}
+h2{font:700 20px/1.2 var(--display);margin:0 0 10px}
+.lede{max-width:76ch;color:var(--muted);margin:0}
+.seg{display:flex;flex-wrap:wrap;gap:4px;margin-top:16px}
+.seg button{border:1px solid var(--line);background:var(--sheet);padding:5px 12px;border-radius:999px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--plum);border-color:var(--plum);color:var(--sheet);font-weight:600}
+main{padding-block:20px 60px;display:grid;gap:32px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr));gap:14px}
+.opt{background:var(--sheet);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:12px;text-align:left;min-width:0}
+.opt[aria-pressed="true"]{border-color:var(--plum);box-shadow:0 0 0 2px var(--plum)}
+.opt .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.opt b{font-size:15px}
+.tag{font-size:11px;padding:2px 8px;border-radius:999px;background:var(--plum-soft);color:var(--plum);font-weight:600;white-space:nowrap}
+.tag.now{background:var(--amber-soft);color:var(--amber)}
+.opt p{margin:0;font-size:13px;color:var(--muted)}
+/* amostra no tema do app */
+.app{--p:#6E4A8E;--sc:#F1E7F8;--on:#231D29;--onv:#655C6E;--bg:#F7F2FA;--sel:#EADDF5;border-radius:14px;background:var(--bg);color:var(--on);padding:10px;display:grid;gap:4px;font:14px/1.3 Roboto,system-ui,sans-serif}
+.app.dark{--p:#D7B8F2;--sc:#3A2D47;--on:#ECE4F0;--onv:#B1A6B8;--bg:#211C25;--sel:#44325A}
+.ms{font-family:"Material Symbols Rounded";font-weight:normal;font-style:normal;font-size:24px;line-height:1;display:inline-block;white-space:nowrap;-webkit-font-smoothing:antialiased;font-feature-settings:"liga";width:1em;overflow:hidden;flex:none}
+.item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:999px;color:var(--onv)}
+.item.sel{background:var(--sel);color:var(--on);font-weight:500}
+.big{display:flex;gap:14px;align-items:center;padding:6px 4px 2px}
+.tile{width:56px;height:56px;border-radius:18px;background:var(--sc);color:var(--p);display:grid;place-items:center}
+.tile .ms{font-size:32px}
+.small{color:var(--p)}
+.small .ms{font-size:18px}
+.card{background:var(--sheet);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card ul{margin:6px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+</style>
+
+<header class="wrap">
+  <div class="eyebrow">Ethos · protótipo de interface · rodada 1</div>
+  <h1>Ícone de Recompensas</h1>
+  <p class="lede">O ícone atual é o <code>redeem</code> do Material Symbols: uma caixa com laço que, no tamanho pequeno do menu, parece uma tesoura em cima de uma caixa. Abaixo, alternativas do mesmo conjunto (Material Symbols Rounded), cada uma no menu ☰ com Recompensas selecionado e no quadro grande da loja vazia. Toque para marcar a preferida.</p>
+  <div class="seg" id="theme" role="group" aria-label="Tema"></div>
+</header>
+
+<main class="wrap">
+  <div class="grid" id="grid"></div>
+  <section>
+    <h2>Onde o ícone aparece</h2>
+    <div class="card"><ul>
+      <li>Menu ☰, item Recompensas (<code>ShellModels.kt</code>).</li>
+      <li>Loja vazia (<code>RewardsContent.kt</code>).</li>
+      <li>Ícone “Presente” que você pode escolher para uma recompensa (<code>AppIcon.GIFT</code>): trocar o desenho mantém a chave salva, então suas recompensas continuam com o mesmo ícone, só que redesenhado.</li>
+    </ul></div>
+  </section>
+</main>
+
+<script>
+const OPTIONS=[
+  {n:"redeem",t:"Atual · redeem",now:true,d:"Caixa com laço; no menu o laço vira “tesoura”."},
+  {n:"featured_seasonal_and_gifts",t:"Presente com laço",d:"Caixa de presente com laço grande e claro em cima. Mantém a ideia de presente."},
+  {n:"card_giftcard",t:"Vale-presente",d:"Cartão com laço; lê como “prêmio para trocar”."},
+  {n:"storefront",t:"Loja",d:"Fachada de loja: a página é uma loja onde se gasta moedas."},
+  {n:"local_mall",t:"Sacola de compras",d:"Sacola com alça; compra, sem ser carrinho de mercado."},
+  {n:"emoji_events",t:"Troféu",d:"Conquista. Pode confundir com nível/XP."},
+  {n:"stars",t:"Estrelas",d:"Recompensa genérica; menos ligada a gastar moedas."},
+  {n:"toll",t:"Moedas",d:"Pilha de moedas; repete a carteira âmbar ◈."},
+];
+const S={theme:"page",pick:null};
+const dark=()=>S.theme==="dark"||(S.theme==="page"&&matchMedia("(prefers-color-scheme: dark)").matches);
+const ms=n=>`<span class="ms" aria-hidden="true">${n}</span>`;
+function render(){
+  document.getElementById("theme").innerHTML=[["page","Igual à página"],["light","Claro"],["dark","Escuro"]]
+    .map(([v,l])=>`<button data-theme="${v}" aria-pressed="${S.theme===v}">${l}</button>`).join("");
+  document.getElementById("grid").innerHTML=OPTIONS.map(o=>`<button class="opt" data-pick="${o.n}" aria-pressed="${S.pick===o.n}">
+    <div class="top"><b>${o.t}</b><span class="tag${o.now?" now":""}">${o.now?"app atual":S.pick===o.n?"escolhido":"proposta"}</span></div>
+    <div class="app${dark()?" dark":""}">
+      <div class="item">${ms("today")}Hoje</div>
+      <div class="item">${ms("calendar_month")}Calendário</div>
+      <div class="item sel">${ms(o.n)}Recompensas</div>
+      <div class="big"><div class="tile">${ms(o.n)}</div><span class="small">${ms(o.n)}</span><span style="font-size:12px;color:var(--onv)">loja vazia · 18 dp</span></div>
+    </div>
+    <p>${o.d}</p></button>`).join("");
+}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-theme]"); if(t){S.theme=t.dataset.theme;render();return}
+  const p=e.target.closest("[data-pick]"); if(p){S.pick=p.dataset.pick;render()}
+});
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",render);
+render();
+</script>
