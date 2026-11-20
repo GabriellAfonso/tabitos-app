@@ -15,8 +15,11 @@ keystore.properties
 signing.properties
 .env
 .env.*
-*.log
 
-# Local logs and Spec Kit cache
+# Local logs, crash dumps and Spec Kit cache
 *.log
+*.stackdump
 .specify/integrations/.cache/
+
+# Personal Claude Code settings
+.claude/settings.local.json
