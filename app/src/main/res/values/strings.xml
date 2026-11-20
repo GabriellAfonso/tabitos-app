@@ -1128,4 +1128,8 @@
     <string name="backup_inspection_failed">Este arquivo não é um backup válido, está incompleto ou é de uma versão mais nova. Sua rotina não foi alterada.</string>
     <string name="backup_restore_failed">Não foi possível importar. Sua rotina não foi alterada.</string>
     <string name="backup_picker_failed">Nenhum app para escolher arquivos foi encontrado.</string>
+    <string name="update_ready">Atualização pronta</string>
+    <string name="update_restart">Reiniciar</string>
+    <string name="update_not_now">Agora não</string>
+    <string name="update_waiting_timer">Disponível quando o cronômetro parar</string>
 </resources>

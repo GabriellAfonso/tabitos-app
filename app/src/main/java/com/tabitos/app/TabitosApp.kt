@@ -117,6 +117,11 @@ import com.tabitos.app.features.trackers.TrackerPendingCard
 import com.tabitos.app.features.trackers.TrackerTicker
 import com.tabitos.app.features.trackers.TrackerUiState
 import com.tabitos.app.features.trackers.TrackerViewModel
+import com.tabitos.app.features.update.AppUpdatePromptEffect
+import com.tabitos.app.features.update.AppUpdateStrip
+import com.tabitos.app.features.update.AppUpdateStripActions
+import com.tabitos.app.features.update.AppUpdateUiState
+import com.tabitos.app.features.update.AppUpdateViewModel
 import kotlinx.coroutines.CancellationException
 
 /** Requests from notification Intents and popup links; each is consumed once the needed state has loaded. */
@@ -141,6 +146,7 @@ private class AppViewModels(
     val rewards: RewardsViewModel, val reminders: ReminderViewModel, val timers: TimerViewModel,
     val trackers: TrackerViewModel, val calendar: CalendarViewModel, val gameMode: GameModeViewModel,
     val statistics: StatisticsViewModel, val startup: StartupViewModel, val backup: BackupViewModel,
+    val update: AppUpdateViewModel,
 )
 
 /** One frame of collected state, so page functions receive values instead of collecting again. */
@@ -159,7 +165,7 @@ private class AppState(
 @Composable
 private fun appViewModels() = AppViewModels(
     viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(), viewModel(),
-    viewModel(), viewModel(), viewModel(),
+    viewModel(), viewModel(), viewModel(), viewModel(),
 )
 
 /** Composition root of the app; [onDarkTheme] lets the Activity style the system bars. */
@@ -205,6 +211,8 @@ fun TabitosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
         val app = AppState(tasks, habits, financial, reminders, timers, trackers, requestPermission, timerCards,
             gameMode)
         StartupOrder(vm.startup, app.todayReady, requests.handlingNotification)
+        val update by vm.update.state.collectAsStateWithLifecycle()
+        AppUpdatePromptEffect(update.prompt, vm.update::launchPrompt, vm.update::promptResult)
         NotificationRouting(requests, vm, app)
         LaunchedEffect(tasks.snapshot.activeLists) {
             vm.habits.listIds(tasks.snapshot.activeLists.map { it.id }.toSet())
@@ -220,7 +228,7 @@ fun TabitosApp(requests: AppRequests, onDarkTheme: (Boolean) -> Unit) {
                 vm.habits.detail(null)
                 openStatistics(vm, requests, StatisticsItem.Habit(habitId))
             }
-            AppShell(vm, app, requests, appearance, AppearanceActions(appearanceViewModel::select,
+            AppShell(vm, app, update, requests, appearance, AppearanceActions(appearanceViewModel::select,
                 appearanceViewModel::retry, appearanceViewModel::setTimerAlarm))
             TrackerDialogs(trackers, vm.trackers, requestPermission)
             TimerDialogs(timers, vm.timers, { kind, id ->
@@ -243,7 +251,7 @@ private fun openStatistics(vm: AppViewModels, requests: AppRequests, item: Stati
 
 @Composable
 private fun AppShell(
-    vm: AppViewModels, app: AppState, requests: AppRequests, appearance: AppearanceUiState,
+    vm: AppViewModels, app: AppState, update: AppUpdateUiState, requests: AppRequests, appearance: AppearanceUiState,
     appearanceActions: AppearanceActions,
 ) {
     val tasks = app.tasks
@@ -271,9 +279,14 @@ private fun AppShell(
             ))
         },
         snackbar = {
-            tasks.rescheduled?.let {
-                RescheduledSnackbar(it, tasks.today, undo = vm.tasks::undoReschedule,
-                    dismiss = vm.tasks::dismissRescheduled)
+            Column {
+                update.notice?.let {
+                    AppUpdateStrip(it, AppUpdateStripActions(restart = vm.update::install, notNow = vm.update::dismiss))
+                }
+                tasks.rescheduled?.let {
+                    RescheduledSnackbar(it, tasks.today, undo = vm.tasks::undoReschedule,
+                        dismiss = vm.tasks::dismissRescheduled)
+                }
             }
         },
         requested = requests.destination,
