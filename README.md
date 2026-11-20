@@ -29,8 +29,6 @@
 - **Estatísticas** — resumo e histórico por semana, mês, ano ou tudo
 - **Modo jogo** (opcional) — moedas, XP, níveis e recompensas pessoais
 
-Tudo fica no aparelho: sem login, sem servidor, sem anúncios.
-
 ## Stack
 
 Kotlin · Jetpack Compose + Material 3 · Hilt (KSP) · Room · DataStore · Coroutines/Flow · AGP 9
