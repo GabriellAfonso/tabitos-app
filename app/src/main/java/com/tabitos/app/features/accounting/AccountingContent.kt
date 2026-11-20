@@ -2,7 +2,6 @@ package com.tabitos.app.features.accounting
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -16,6 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.tabitos.app.R
 import com.tabitos.app.core.ui.accounting.*
 import com.tabitos.app.core.accounting.domain.*
+import com.tabitos.app.core.ui.components.CardShape
 import com.tabitos.app.core.ui.components.CoinAmount
 import com.tabitos.app.core.ui.components.Eyebrow
 import com.tabitos.app.core.ui.components.SettingsLinkRow
@@ -37,7 +37,7 @@ fun WalletTiles(state: AccountingUiState, rewards: () -> Unit, retry: () -> Unit
     AccountingStatus(state, retry)
     if (state.loading || state.error) return
     val s = state.snapshot
-    val shape = RoundedCornerShape(16.dp)
+    val shape = CardShape
     val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     val cardColors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow)
     // Model B wallet (spec 010): amber coin amount, link to rewards, level with XP bar.

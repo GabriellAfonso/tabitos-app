@@ -23,7 +23,8 @@ class ReminderActivityTest {
     @Test fun dailyReviewOpensTodayWithAllItemsFromSettings() {
         compose.waitUntil(15_000) { compose.onAllNodesWithTag("filter_HABITS").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithTag("filter_HABITS").performClick()
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.open_settings)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.open_menu)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.settings)).performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.appearance)).assertExists()
         val remaining = 60_000L
         val notice = ReminderPlatform(compose.activity).reviewNotification(System.currentTimeMillis(), remaining)

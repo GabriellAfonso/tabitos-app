@@ -24,7 +24,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import com.tabitos.app.core.ui.components.CardShape
 import com.tabitos.app.core.ui.components.ContentFilter
+import com.tabitos.app.core.ui.components.SectionLabel
 import com.tabitos.app.core.ui.components.WeekBars
 import com.tabitos.app.core.ui.components.itemColor
 import com.tabitos.app.core.ui.components.onItemColor
@@ -59,10 +61,16 @@ fun outcomeLabel(p: HabitPeriod, today: LocalDate): Int = when {
     else -> R.string.habit_in_progress
 }
 
+private val HABIT_ICON_SIZE = 36.dp
+private val HABIT_ICON_GAP = 6.dp
+private val HABIT_TEXT_INDENT = HABIT_ICON_SIZE + HABIT_ICON_GAP
+
+/** [sectionLabel] titles the habits with "Hábitos" when tasks are listed above them on Hoje. */
 fun LazyListScope.habitItems(
     state: HabitsUiState, page: HabitPage, listId: String?,
     open: (String) -> Unit, retry: () -> Unit, record: ((String) -> Unit)? = null,
     timerChip: (Habit) -> TimerChip? = { null }, filter: ContentFilter = ContentFilter.HABITS,
+    sectionLabel: Boolean = false,
 ) {
     // Revisão is for tasks only (spec 014).
     if (page == HabitPage.REVIEW) return
@@ -73,6 +81,9 @@ fun LazyListScope.habitItems(
     if (showsEmptyMessage && !state.loading && habits.isEmpty()) item("habit-empty") {
         Text(stringResource(if (page == HabitPage.EXCLUDED) R.string.habit_excluded_empty
             else R.string.habit_empty_real))
+    }
+    if (sectionLabel && habits.isNotEmpty()) item("habit-section") {
+        SectionLabel(stringResource(R.string.habits), Modifier.padding(top = 4.dp))
     }
     items(habits, key = { "habit:${it.id}" }) { h ->
         val period = state.periods.lastOrNull { it.habitId == h.id }
@@ -139,13 +150,15 @@ fun HabitRow(
 ) {
     val breaking = period?.isBadHabit == true
     val colors = MaterialTheme.colorScheme
-    OutlinedCard(open, Modifier.fillMaxWidth(), enabled = !busy, shape = RoundedCornerShape(17.dp),
+    OutlinedCard(open, Modifier.fillMaxWidth(), enabled = !busy, shape = CardShape,
         colors = CardDefaults.outlinedCardColors(
             containerColor = if (breaking) colors.errorContainer else colors.surfaceContainerLow),
         border = BorderStroke(1.dp, if (breaking) colors.errorContainer else colors.outlineVariant)) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(36.dp).clip(RoundedCornerShape(10.dp)).background(itemColor(habit.color)),
+        // The icon sits in the same column as a task's checkbox, so habit names and task titles start together.
+        Column(Modifier.padding(start = 8.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(HABIT_ICON_GAP), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(HABIT_ICON_SIZE).clip(RoundedCornerShape(10.dp)).background(itemColor(habit.color)),
                     contentAlignment = Alignment.Center) {
                     Icon(painterResource(habit.iconDrawable), contentDescription = null,
                         tint = onItemColor(habit.color))
@@ -185,19 +198,19 @@ fun HabitRow(
             consistency?.let { (streak, rate) ->
                 Text(if (rate == null) stringResource(R.string.habit_consistency_streak, streak)
                     else stringResource(R.string.habit_consistency, streak, rate),
-                    Modifier.padding(start = 46.dp), style = MaterialTheme.typography.labelSmall,
+                    Modifier.padding(start = HABIT_TEXT_INDENT), style = MaterialTheme.typography.labelSmall,
                     color = colors.onSurfaceVariant)
             }
             if (todayCount == null) period?.let { p ->
-                Text(stringResource(outcomeLabel(p, today)), Modifier.padding(start = 46.dp),
+                Text(stringResource(outcomeLabel(p, today)), Modifier.padding(start = HABIT_TEXT_INDENT),
                     style = MaterialTheme.typography.labelSmall, color = colors.onSurfaceVariant)
                 if (p.excessIds.isNotEmpty()) Text(stringResource(R.string.habit_excess, p.excessIds.size),
-                    Modifier.padding(start = 46.dp), style = MaterialTheme.typography.labelSmall,
+                    Modifier.padding(start = HABIT_TEXT_INDENT), style = MaterialTheme.typography.labelSmall,
                     color = colors.onSurfaceVariant)
             }
             week?.let {
                 WeekBars(it, stringResource(R.string.habit_week_description, it.count { hit -> hit }),
-                    Modifier.padding(start = 46.dp))
+                    Modifier.padding(start = HABIT_TEXT_INDENT))
             }
         }
     }

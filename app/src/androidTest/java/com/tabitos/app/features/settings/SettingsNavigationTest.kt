@@ -12,7 +12,8 @@ class SettingsNavigationTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun excludedHabitsOpenFromSettingsAndBackReturns() {
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.open_settings)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.open_menu)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.settings)).performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.habit_excluded)).performScrollTo().performClick()
         compose.onNodeWithContentDescription(compose.activity.getString(R.string.back)).assertIsDisplayed()
             .performClick()
@@ -20,7 +21,8 @@ class SettingsNavigationTest {
     }
 
     @Test fun earningsOpenFromSettingsAndBackReturns() {
-        compose.onNodeWithContentDescription(compose.activity.getString(R.string.open_settings)).performClick()
+        compose.onNodeWithContentDescription(compose.activity.getString(R.string.open_menu)).performClick()
+        compose.onNodeWithText(compose.activity.getString(R.string.settings)).performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.earnings_setting)).performScrollTo().performClick()
         compose.onNodeWithText(compose.activity.getString(R.string.finance_edit_table)).performScrollTo()
             .assertIsDisplayed()

@@ -36,6 +36,7 @@ import androidx.compose.ui.res.painterResource
 import com.tabitos.app.R
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.tabitos.app.core.ui.theme.TabitosTheme
+
+/** Corner of every card on Hoje and the list pages, so tasks, habits, wallet and notices line up. */
+val CardShape = RoundedCornerShape(16.dp)
+
+/** Quiet section label ("Nesta semana", "Hábitos", "Minhas listas"): cards stand out, sections recede. */
+@Composable
+fun SectionLabel(text: String, modifier: Modifier = Modifier) {
+    Text(text, modifier.semantics { heading() }, style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+}
 
 /** Amber coin glyph used wherever an amount of coins is shown (spec 010). */
 @Composable
@@ -73,7 +84,7 @@ fun Eyebrow(text: String, modifier: Modifier = Modifier) {
 fun ActionBanner(text: String, @DrawableRes icon: Int, onClick: () -> Unit, modifier: Modifier = Modifier,
                  outlined: Boolean = false, urgent: Boolean = false) {
     val colors = MaterialTheme.colorScheme
-    Card(onClick, modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp),
+    Card(onClick, modifier.fillMaxWidth(), shape = CardShape,
         colors = CardDefaults.cardColors(containerColor = when {
             urgent -> colors.error
             outlined -> colors.surfaceContainerLow

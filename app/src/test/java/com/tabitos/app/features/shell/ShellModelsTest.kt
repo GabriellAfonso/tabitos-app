@@ -22,12 +22,4 @@ class ShellModelsTest {
         assertTrue(ShellDestination.EARNINGS.isGameOnly)
         assertFalse(ShellDestination.EXCLUDED_HABITS.isGameOnly)
     }
-
-    @Test fun settingsShortcutIsHiddenInsideSettings() {
-        assertFalse(ShellDestination.SETTINGS.showsSettingsButton)
-        assertFalse(ShellDestination.EARNINGS.showsSettingsButton)
-        assertFalse(ShellDestination.EXCLUDED_HABITS.showsSettingsButton)
-        assertTrue(ShellDestination.TODAY.showsSettingsButton)
-        assertTrue(ShellDestination.STATISTICS.showsSettingsButton)
-    }
 }

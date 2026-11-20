@@ -60,6 +60,16 @@ class TaskListPresentationTest {
         assertTrue(sections.pending.isEmpty())
         assertEquals(setOf("done", "other", "today", "failure"), sections.completed.map { it.id }.toSet())
     }
+    @Test fun tasksTabCountsOpenItemsTheListShowsWithRepeatingSeriesOnce() {
+        val done = occurrence(1, TaskStatus.DONE).copy(id = "done", taskId = "single")
+        val other = occurrence(1).copy(id = "other", taskId = "other", fields = fields.copy(listId = "other"))
+        val s = TaskSnapshot(definitions = listOf(definition), occurrences = listOf(occurrence(1), occurrence(2),
+            done, other))
+        assertEquals(1, s.openListTaskCount("routine"))
+        assertEquals(1, s.openListTaskCount("other"))
+        assertEquals(0, s.openListTaskCount(null))
+    }
+
     private val today = LocalDate.of(2026, 11, 10)
     private val fields = TaskFields(title = "Bible", listId = "routine", deadline = DeadlineKind.DAY)
     private val definition = TaskDefinition("bible", today, fields, RepeatRule(RepeatKind.DAILY, today))

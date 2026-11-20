@@ -1,5 +1,6 @@
 package com.tabitos.app
 import com.tabitos.app.core.tasks.domain.TaskAction
+import com.tabitos.app.core.tasks.domain.TaskList
 
 import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -41,6 +42,7 @@ import com.tabitos.app.core.ui.accounting.LocalFinancialPrices
 import com.tabitos.app.core.ui.components.ActionBanner
 import com.tabitos.app.core.ui.components.ContentFilter
 import com.tabitos.app.core.ui.components.FilterRow
+import com.tabitos.app.core.ui.components.itemColor
 import com.tabitos.app.core.ui.components.SettingsLinkRow
 import com.tabitos.app.core.ui.components.SettingsSectionHeader
 import com.tabitos.app.core.ui.reminders.LocalOpenReminders
@@ -64,6 +66,7 @@ import com.tabitos.app.features.habits.HabitsRefreshEffect
 import com.tabitos.app.features.habits.HabitsUiState
 import com.tabitos.app.features.habits.HabitsViewModel
 import com.tabitos.app.features.habits.habitItems
+import com.tabitos.app.features.habits.visibleHabits
 import com.tabitos.app.features.reminders.ReminderDialogs
 import com.tabitos.app.features.reminders.NotificationSettings
 import com.tabitos.app.features.reminders.NotificationSystemSettings
@@ -82,6 +85,8 @@ import com.tabitos.app.features.settings.GameModeViewModel
 import com.tabitos.app.features.settings.ThemeSetting
 import com.tabitos.app.features.settings.TimerAlarmSetting
 import com.tabitos.app.features.shell.CreateActions
+import com.tabitos.app.features.shell.ListTitle
+import com.tabitos.app.features.shell.ListTitleActions
 import com.tabitos.app.features.shell.TabitosShell
 import com.tabitos.app.features.shell.ShellDestination
 import com.tabitos.app.features.shell.StartupViewModel
@@ -94,6 +99,7 @@ import com.tabitos.app.features.tasks.RescheduledSnackbar
 import com.tabitos.app.features.tasks.TaskDialogs
 import com.tabitos.app.features.tasks.TaskDrawer
 import com.tabitos.app.features.tasks.TaskPage
+import com.tabitos.app.features.tasks.iconDrawable
 import com.tabitos.app.features.tasks.TasksContent
 import com.tabitos.app.features.tasks.TasksRefreshEffect
 import com.tabitos.app.features.tasks.TasksUiState
@@ -254,6 +260,7 @@ private fun AppShell(
             onNewHabit = { vm.habits.newHabit(tasks.selectedListId) },
             onBreakHabit = { vm.habits.newHabit(tasks.selectedListId, breaking = true) },
         ),
+        listTitle = listTitle(tasks, onEdit = vm.tasks::listDraft, onDelete = { vm.tasks.requestDeleteList(it.id) }),
         drawerLists = { drawer ->
             TaskDrawer(tasks, drawer.tasksOpen, DrawerListCallbacks(
                 onSelect = { vm.tasks.selectList(it); drawer.openTasks() },
@@ -302,6 +309,15 @@ private fun AppShell(
     }
 }
 
+/** Header of the list page: the open list, or Caixa de entrada (which has no icon, editing or deletion). */
+@Composable
+private fun listTitle(tasks: TasksUiState, onEdit: (TaskList) -> Unit, onDelete: (TaskList) -> Unit): ListTitle {
+    val list = tasks.snapshot.activeLists.firstOrNull { it.id == tasks.selectedListId }
+        ?: return ListTitle(stringResource(R.string.inbox), icon = null, tint = null, actions = null)
+    return ListTitle(list.name, list.iconDrawable, itemColor(list.color),
+        ListTitleActions(edit = { onEdit(list) }, delete = { onDelete(list) }))
+}
+
 /** Hoje, list pages and Revisão share the task list; Hoje and list pages also show habits. */
 @Composable
 private fun TaskDestination(
@@ -325,23 +341,22 @@ private fun TaskDestination(
         onDismissError = vm.tasks::dismissError, onComplete = vm.tasks::quickCheck,
         onNotDone = { vm.tasks.action(TaskAction.Resolve(it, false, tasks.today)) },
         timerChip = { app.timerChip(vm, TimerKind.TASK, it.id, tasks.durations[it.taskId]) },
-        extraItems = {
+        listHabitCount = visibleHabits(app.habits, HabitPage.LIST, tasks.selectedListId).size,
+        extraItems = { afterTasks ->
             habitItems(app.habits, habitPage, tasks.selectedListId, vm.habits::detail, vm.habits::retry,
                 vm.habits::quickRecord,
                 timerChip = { app.timerChip(vm, TimerKind.HABIT, it.id, app.habits.durations[it.id]) },
-                filter = filter)
+                filter = filter, sectionLabel = page == TaskPage.TODAY && afterTasks)
         },
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            when (page) {
-                TaskPage.TODAY -> {
+        header = if (page == TaskPage.TODAY) {
+            {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     TodayHeader(vm, app, { navigate(ShellDestination.REWARDS) }, { navigate(ShellDestination.REVIEW) })
                     FilterRow(filter, selectFilter)
                 }
-                TaskPage.REVIEW, TaskPage.LIST -> Unit
             }
-        }
-    }
+        } else null,
+    )
 }
 
 /** Hoje appears complete, so no card shows a missing price or a wrong timer state while sources load. */
@@ -366,9 +381,6 @@ private fun StartupOrder(startup: StartupViewModel, todayReady: Boolean, handlin
 /** Wallet, running timers, pending trackers and the review banner above Hoje's list. */
 @Composable
 private fun TodayHeader(vm: AppViewModels, app: AppState, openRewards: () -> Unit, openReview: () -> Unit) {
-    // The shell header already shows the date (spec 010).
-    Text(stringResource(R.string.one_step), style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant)
     if (app.showsGame) WalletTiles(app.financial, openRewards, vm.accounting::retry)
     TimerSessionCards(app.timers, app.visibleTimerSessions(vm), vm.timers.zone, app.timerCards)
     TrackerPendingCard(app.trackers.pending.size) {

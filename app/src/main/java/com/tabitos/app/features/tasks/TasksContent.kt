@@ -51,12 +51,14 @@ import com.tabitos.app.core.tasks.domain.*
 import com.tabitos.app.core.timers.domain.TimerKind
 import com.tabitos.app.core.ui.accounting.FinancialConfirmation
 import com.tabitos.app.core.ui.components.CHECK_ANIMATION_MILLIS
+import com.tabitos.app.core.ui.components.CardShape
 import com.tabitos.app.core.ui.components.CheckboxRow
 import com.tabitos.app.core.ui.components.ColorPicker
 import com.tabitos.app.core.ui.components.ContentFilter
 import com.tabitos.app.core.ui.components.IconPicker
 import com.tabitos.app.core.ui.components.LazyReorderState
 import com.tabitos.app.core.ui.components.RoundCheck
+import com.tabitos.app.core.ui.components.SectionLabel
 import com.tabitos.app.core.ui.components.itemColor
 import com.tabitos.app.core.ui.components.lazyReorderGestures
 import com.tabitos.app.core.ui.components.moved
@@ -77,17 +79,20 @@ private const val UNCONFIRMED_CHECK_RESET_MILLIS = 1_500L
 private const val SECTION_TOGGLE_MILLIS = 250
 private const val CHEVRON_DOWN_DEGREES = 90f
 
+/** Message of the task error card, or null when there is nothing to show. */
+fun taskErrorMessage(state: TasksUiState): Int? = when {
+    state.storageError -> R.string.task_storage_error
+    state.error == TaskProblem.INVALID_DATE -> R.string.task_invalid_date
+    state.error == TaskProblem.REVIEW_REQUIRED -> R.string.task_review_required
+    state.error == TaskProblem.DEPENDENT_ACTIONS -> R.string.task_dependent_actions
+    state.error == TaskProblem.NOT_OPEN -> R.string.task_not_open
+    state.error != null -> R.string.task_invalid_input
+    else -> null
+}
+
 @Composable
 fun TaskError(state: TasksUiState, retry: () -> Unit, dismiss: () -> Unit) {
-    val resource = when {
-        state.storageError -> R.string.task_storage_error
-        state.error == TaskProblem.INVALID_DATE -> R.string.task_invalid_date
-        state.error == TaskProblem.REVIEW_REQUIRED -> R.string.task_review_required
-        state.error == TaskProblem.DEPENDENT_ACTIONS -> R.string.task_dependent_actions
-        state.error == TaskProblem.NOT_OPEN -> R.string.task_not_open
-        state.error != null -> R.string.task_invalid_input
-        else -> null
-    }
+    val resource = taskErrorMessage(state)
     if (resource != null) {
         OutlinedCard(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(12.dp)) {
@@ -105,11 +110,14 @@ fun TaskError(state: TasksUiState, retry: () -> Unit, dismiss: () -> Unit) {
 fun TasksContent(
     state: TasksUiState, page: TaskPage, filter: ContentFilter, onOpen: (String) -> Unit,
     onAction: (TaskAction) -> Unit, onRetry: () -> Unit, onDismissError: () -> Unit,
-    extraItems: (LazyListScope.() -> Unit)? = null,
+    /** Items after the tasks (habits); receives whether tasks are listed above them. */
+    extraItems: (LazyListScope.(afterTasks: Boolean) -> Unit)? = null,
     onComplete: (String) -> Unit = {},
     onNotDone: (String) -> Unit = {},
     timerChip: (TaskOccurrence) -> TimerChip? = { null },
-    header: @Composable () -> Unit = {},
+    /** Habits of the open list, shown on its Hábitos tab; only the list page uses it. */
+    listHabitCount: Int = 0,
+    header: (@Composable () -> Unit)? = null,
 ) {
     val recurring = state.snapshot.definitions.filter { it.rule.kind != RepeatKind.NONE }.map { it.id }.toSet()
     var collapsed by rememberSaveable(page, state.selectedListId) { mutableStateOf(true) }
@@ -141,24 +149,15 @@ fun TasksContent(
         state = listState, contentPadding = PaddingValues(
         start = 20.dp, top = 20.dp, end = 20.dp, bottom = if (page == TaskPage.REVIEW) 20.dp else 96.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        item { header() }
-        item { TaskError(state, onRetry, onDismissError) }
+        // Only items with content: an empty one would still add the list spacing above the first card.
+        header?.let { item { it() } }
+        if (taskErrorMessage(state) != null) item { TaskError(state, onRetry, onDismissError) }
         if (state.loading) item { Text(stringResource(R.string.loading_tasks)) }
         if (state.busy) item { LinearProgressIndicator(Modifier.fillMaxWidth()) }
-        if (page == TaskPage.LIST) {
-            item {
-                val selectedList = state.snapshot.activeLists.firstOrNull { it.id == state.selectedListId }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    selectedList?.let {
-                        Icon(painterResource(it.iconDrawable), contentDescription = null,
-                            tint = itemColor(it.color))
-                    }
-                    Text(selectedList?.name ?: stringResource(R.string.inbox),
-                        style = MaterialTheme.typography.headlineSmall)
-                }
-                ChoiceRow(R.string.choose_list, listOf(R.string.tasks, R.string.habits), if (habits) 1 else 0) {
-                    habits = it == 1 }
-            }
+        // The list name is the shell header's title; the page only switches between its tasks and habits.
+        if (page == TaskPage.LIST) item {
+            ListTabs(habits, taskCount = state.snapshot.openListTaskCount(state.selectedListId),
+                habitCount = listHabitCount) { habits = it }
         }
         if (!state.loading && sections.isEmpty && !showsHabitItems) item {
             Text(stringResource(when {
@@ -178,14 +177,14 @@ fun TasksContent(
                 timerChip(o), onNotDone = { onNotDone(o.id) }) { onComplete(o.id) }
         }
         if (sections.weekly.isNotEmpty()) {
-            item { Text(stringResource(R.string.weekly_section), style = MaterialTheme.typography.titleMedium) }
+            item { SectionLabel(stringResource(R.string.weekly_section), Modifier.padding(top = 4.dp)) }
             items(sections.weekly, key = { it.id }) { o ->
                 TaskRow(o, state.busy, { onOpen(o.id) }, state.today, Modifier.animateItem(),
                     recurring = o.taskId in recurring, timer = timerChip(o), onNotDone = { onNotDone(o.id) }) {
                     onComplete(o.id) }
             }
         }
-        if (showsHabitItems) extraItems?.invoke(this)
+        if (showsHabitItems) extraItems?.invoke(this, dayItems.isNotEmpty() || sections.weekly.isNotEmpty())
         if (sections.completed.isNotEmpty()) {
             item("completed-section") {
                 CompletedSectionHeader(sections.completed.size, completedSection, onToggle = { collapsed = !collapsed })
@@ -207,25 +206,39 @@ fun TasksContent(
     }
 }
 
+/** Tarefas | Hábitos of a list page, each with how many items it holds (open tasks, active habits). */
+@Composable
+private fun ListTabs(habitsSelected: Boolean, taskCount: Int, habitCount: Int, onSelect: (Boolean) -> Unit) {
+    val tabs = listOf(false to stringResource(R.string.list_tab_tasks, taskCount),
+        true to stringResource(R.string.list_tab_habits, habitCount))
+    SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+        tabs.forEachIndexed { index, (isHabits, label) ->
+            SegmentedButton(
+                selected = habitsSelected == isHabits,
+                onClick = { onSelect(isHabits) },
+                shape = SegmentedButtonDefaults.itemShape(index, tabs.size),
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) { Text(label) }
+        }
+    }
+}
+
 @Composable
 private fun CompletedSectionHeader(count: Int, expansion: Transition<Boolean>, onToggle: () -> Unit) {
     val rotation by expansion.animateFloat(
         transitionSpec = { tween(SECTION_TOGGLE_MILLIS) }, label = "Completed section chevron",
     ) { expanded -> if (expanded) CHEVRON_DOWN_DEGREES else 0f }
     val status = stringResource(if (expansion.targetState) R.string.section_expanded else R.string.section_collapsed)
-    TextButton(
-        onClick = onToggle,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).semantics {
+    // Flush with the cards' edge and styled like the other section labels, not as a padded text button.
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
+        .clickable(role = Role.Button, onClick = onToggle).semantics(mergeDescendants = true) {
             heading()
             stateDescription = status
-        },
-    ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null,
-                modifier = Modifier.size(20.dp).rotate(rotation))
-            Text(stringResource(R.string.resolved_section, count))
-        }
+        }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = null,
+            modifier = Modifier.size(20.dp).rotate(rotation), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.resolved_section, count), style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -252,7 +265,7 @@ fun TaskRow(
         }
     }
     OutlinedCard(onClick = onOpen, modifier = modifier.fillMaxWidth().testTag("task:${o.id}"), enabled = !busy,
-        shape = RoundedCornerShape(14.dp),
+        shape = CardShape,
         colors = CardDefaults.outlinedCardColors(containerColor = if (o.status != TaskStatus.OPEN)
             MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceContainerLow)) {
         Row(Modifier.padding(start = 2.dp, end = 12.dp, top = 4.dp, bottom = 4.dp),
@@ -302,16 +315,19 @@ fun TaskRow(
                 Text(o.fields.title, style = MaterialTheme.typography.titleSmall,
                     textDecoration = if (open) null else TextDecoration.LineThrough,
                     color = if (open) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant)
-                val status = when (o.status) {
+                // An open card says nothing about its status: the empty check already does.
+                val resolvedStatus = when (o.status) {
                     TaskStatus.DONE -> R.string.task_status_done
                     TaskStatus.NOT_DONE -> R.string.task_status_not_done
-                    else -> R.string.task_status_open
+                    else -> null
                 }
                 val dateLabel = o.dueDate?.let { TabitosDates.short(it, today).label() }
                     ?: stringResource(R.string.no_date)
                 val parts = listOfNotNull(o.fields.minute?.let(TabitosDates::time),
                     dateLabel,
-                    stringResource(status))
+                    resolvedStatus?.let { stringResource(it) })
+                val metaColor = if (o.needsReview(today)) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                 // Recurrence sits with the date, leaving the trailing edge to the timer control alone.
                 Row(verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -319,8 +335,7 @@ fun TaskRow(
                         contentDescription = stringResource(R.string.task_repeats),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = metaColor)
                 }
             }
             if (timer != null && o.status == TaskStatus.OPEN) TimerChipButton(timer, o.fields.title, !busy)

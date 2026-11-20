@@ -36,6 +36,10 @@ internal fun TaskSnapshot.listOccurrences(listId: String?): List<TaskOccurrence>
     }
 }
 
+/** Count on the Tarefas tab of a list page: the same open tasks its list shows. */
+internal fun TaskSnapshot.openListTaskCount(listId: String?): Int =
+    listOccurrences(listId).count { it.status == TaskStatus.OPEN }
+
 /** What a task page shows; computed outside Composables so the rules are testable. */
 data class TaskSections(
     val pending: List<TaskOccurrence>,

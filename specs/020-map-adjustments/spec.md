@@ -11,8 +11,8 @@ no próprio menu.
 ## Decisões
 
 - **Sem barra inferior.** Navegação pelo menu ☰: Hoje, Calendário, Revisar pendências, Recompensas (só modo
-  jogo), Minhas listas e Configurações (ícone de engrenagem). O ⚙ do topo continua, exceto dentro de
-  Configurações e das suas sub-páginas (ajuste de 2026-11-17).
+  jogo), Minhas listas e Configurações (ícone de engrenagem). O ⚙ do topo foi removido de todas as
+  telas em 2026-11-20: Configurações abre só pelo menu.
 - **Sem página Hábitos.** Hábitos aparecem em Hoje e na aba Hábitos de cada lista; criar continua pelo +.
 - **Hábitos excluídos** viram sub-página de Configurações, com o mesmo cartão e detalhes (Restaurar).
 - **Histórico de moedas** sai do menu e vira sub-página de Configurações (só com modo jogo). Sub-páginas

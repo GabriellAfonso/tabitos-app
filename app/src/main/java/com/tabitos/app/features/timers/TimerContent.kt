@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import com.tabitos.app.core.ui.components.CardShape
 import com.tabitos.app.core.ui.components.ScrollableTimeField
 import com.tabitos.app.R
 import com.tabitos.app.core.timers.domain.*
@@ -76,7 +77,7 @@ fun TimerSessionCards(state: TimerUiState, sessions: List<TimerSession>, zone: Z
     sessions.sortedByDescending { it.state == TimerState.RUNNING }.forEach { session ->
         val total = TimerRules.sessionTotal(state.snapshot, session.id, state.now)
         val remaining = TimerRules.remaining(state.snapshot, session, state.now, zone)
-        OutlinedCard(onClick = { actions.open(session) }, modifier = Modifier.fillMaxWidth()) {
+        OutlinedCard(onClick = { actions.open(session) }, modifier = Modifier.fillMaxWidth(), shape = CardShape) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(stringResource(when {

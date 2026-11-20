@@ -10,12 +10,9 @@
     <string name="rewards">Recompensas</string>
     <string name="settings">Configurações</string>
     <string name="open_menu">Abrir menu</string>
-    <string name="open_settings">Abrir configurações</string>
     <string name="back">Voltar</string>
-    <string name="your_space">SEU ESPAÇO</string>
     <string name="your_lists">Minhas listas</string>
     <string name="all">Tudo</string>
-    <string name="one_step">Um passo de cada vez</string>
     <string name="habits_empty_detail">Nenhum hábito corresponde a esta seleção.</string>
     <string name="review_empty_detail">Nenhuma pendência para revisar.</string>
     <plurals name="pending_count">
@@ -49,6 +46,9 @@
     <string name="move_down">Mover para baixo</string>
     <string name="drag_to_reorder">Arrastar para reordenar</string>
     <string name="choose_list">Lista</string>
+    <string name="list_tab_tasks">Tarefas %1$d</string>
+    <string name="list_tab_habits">Hábitos %1$d</string>
+    <string name="list_options">Opções da lista %1$s</string>
     <string name="difficulty">Dificuldade</string>
     <string name="importance">Importância</string>
     <string name="easy">Fácil</string>
@@ -312,7 +312,6 @@
     <string name="color_start_from_named">Partir de %1$s</string>
     <string name="color_preview_light">Tema claro</string>
     <string name="color_preview_dark">Tema escuro</string>
-    <string name="task_status_open">Pendente</string>
     <string name="task_status_done">Concluída</string>
     <string name="task_status_not_done">Não realizada</string>
     <string name="new_habit">Novo hábito</string>
