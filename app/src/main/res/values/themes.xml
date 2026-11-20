@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.Ethos" parent="android:style/Theme.Material.Light.NoActionBar">
+    <style name="Theme.Tabitos" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowActionModeOverlay">true</item>
     </style>

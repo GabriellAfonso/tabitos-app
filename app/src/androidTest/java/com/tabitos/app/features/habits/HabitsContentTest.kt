@@ -1,0 +1,98 @@
+package com.tabitos.app.features.habits
+
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.lifecycle.SavedStateHandle
+import com.tabitos.app.core.habits.domain.*
+import com.tabitos.app.core.tasks.domain.TaskClock
+import com.tabitos.app.core.ui.theme.TabitosTheme
+import java.time.LocalDate
+import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.Assert.*
+import org.junit.Rule
+import org.junit.Test
+
+class HabitsContentTest {
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    private val clock = object : TaskClock {
+        override fun today(): LocalDate = LocalDate.of(2026, 11, 6)
+        override fun nowMillis(): Long = System.nanoTime()
+    }
+    @Test fun createPreviewSaveRecordAndCorrect() {
+        val repo = FakeRepository()
+        compose.setContent {
+            val vm = remember { HabitsViewModel(repo, clock, SavedStateHandle()) }
+            TabitosTheme {
+                HabitsScreen(vm) { state ->
+                    Column {
+                        Button({ vm.newHabit(null) }) { Text("Novo hábito") }
+                        HabitsContent(state, HabitPage.LIST, vm::detail, vm::retry)
+                    }
+                    HabitDialogs(state, emptyList(), vm)
+                }
+            }
+        }
+        compose.onNodeWithText("Novo hábito").performClick()
+        compose.onNodeWithTag("editor-name").performTextInput("Ler páginas")
+        compose.onNodeWithTag("editor-save").performClick()
+        compose.waitUntil(15_000) { repo.snapshot.value.habits.size == 1 }
+        compose.onNodeWithText("Ler páginas").performScrollTo().performClick()
+        compose.onNodeWithText("Feito").performScrollTo().performClick()
+        compose.waitUntil(15_000) { repo.snapshot.value.records.size == 1 }
+        compose.onAllNodesWithText("Desfazer").onFirst().performScrollTo().performClick()
+        compose.waitUntil(15_000) { repo.snapshot.value.records.single().deleted }
+        assertEquals(1, repo.snapshot.value.audits.count { it.kind == "DELETE_RECORD" })
+    }
+    @Test fun excludedHistoryAndZeroEventReviewAreReal() {
+        var s = HabitRules.apply(HabitSnapshot(), HabitAction.Save(Habit("h", clock.today().minusDays(1), "Evitar"),
+            HabitRule("r", "h", clock.today().minusDays(1), HabitType.AVOID, HabitUnit.DAY, 0)),
+            clock.today().minusDays(1), 1, emptySet())
+        s = HabitRules.apply(s, HabitAction.Status("h", HabitStatus.EXCLUDED), clock.today(), 2, emptySet())
+        val periods = HabitRules.periods(s, "h", clock.today())
+        compose.setContent {
+            TabitosTheme { HabitsContent(HabitsUiState(snapshot = s, today = clock.today(), periods = periods,
+                loading = false), HabitPage.EXCLUDED, {}, {}) }
+        }
+        compose.onNodeWithText("Evitar").assertExists()
+        // Spec 014: habits never become pending, even right after exclusion.
+        assertEquals(0, periods.count { it.outcome == PeriodOutcome.PENDING })
+    }
+    @Test fun todayKeepsCompletedHabitVisibleAndOnlyShowsToday() {
+        val repo = FakeRepository()
+        repo.snapshot.value = HabitRules.apply(HabitSnapshot(),
+            HabitAction.Save(Habit("h", clock.today(), "Ler hoje"),
+                HabitRule("r", "h", clock.today(), unit = HabitUnit.WEEK, target = 1), partialTarget = 1),
+            clock.today(), 1, emptySet())
+        compose.setContent {
+            val vm = remember { HabitsViewModel(repo, clock, SavedStateHandle()) }
+            TabitosTheme { HabitsScreen(vm) { state ->
+                LazyColumn { habitItems(state, HabitPage.TODAY, null, vm::detail, vm::retry, vm::quickRecord) }
+            } }
+        }
+        compose.onNodeWithText("Feito").performClick()
+        compose.onNodeWithText("✓ Feito hoje").assertExists().performClick()
+        compose.onNodeWithText("Feito").assertExists()
+        compose.onNodeWithText("Ler hoje").assertExists()
+        compose.onAllNodes(hasText("Dias distintos:", substring = true)).assertCountEquals(0)
+        compose.onAllNodes(hasContentDescription("Semana atual:", substring = true)).assertCountEquals(0)
+        compose.onAllNodes(hasText("Metas cumpridas", substring = true)).assertCountEquals(0)
+    }
+    private inner class FakeRepository : HabitRepository {
+        val snapshot = MutableStateFlow(HabitSnapshot())
+        override fun observe() = snapshot
+        override suspend fun execute(action: HabitAction) {
+            snapshot.value = HabitRules.apply(snapshot.value, action, clock.today(), clock.nowMillis(), emptySet())
+        }
+        override suspend fun erase(habitId: String) {
+            val s = snapshot.value
+            snapshot.value = s.copy(habits = s.habits.filterNot { it.id == habitId },
+                records = s.records.filterNot { it.habitId == habitId })
+        }
+    }
+}

@@ -12,5 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "Ethos"
+rootProject.name = "Tabitos"
 include(":app")

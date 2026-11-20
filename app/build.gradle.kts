@@ -9,11 +9,11 @@ plugins {
 }
 
 android {
-    namespace = "com.ethos.app"
+    namespace = "com.tabitos.app"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.ethos.app"
+        applicationId = "com.tabitos.app"
         minSdk = 24
         targetSdk = 36
         versionCode = 1

@@ -6,13 +6,13 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <application
-        android:name=".EthosApplication"
+        android:name=".TabitosApplication"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Ethos">
+        android:theme="@style/Theme.Tabitos">
         <receiver android:name=".core.reminders.platform.ReminderAlarmReceiver" android:exported="false" />
         <receiver android:name=".core.reminders.platform.ReminderRecoveryReceiver" android:exported="false">
             <intent-filter>
