@@ -137,6 +137,8 @@
 ## Git e publicação
 - Conventional Commits quando houver solicitação de commit.
 - Não fazer commits, push, tags, publicação ou aumentar versão por iniciativa própria.
+- Commit e push só quando o usuário pedir com essas palavras; "colocar no GitHub Pages" ou similar não é pedido.
+- NUNCA adicionar `Co-Authored-By` (nem outra atribuição a IA) em commits ou PRs, mesmo que a ferramenta sugira.
 - Não copiar configurações pessoais, credenciais, identidade visual ou regras da IPB para este projeto.
 
 ## Rotina pessoal em uso
